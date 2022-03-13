@@ -103,14 +103,14 @@ class UxnRom():
         assert n >= 0
         assert n <= 0xffff
 
-        low  = n and 0x0f
-        high = n and 0xf0
+        low  = n & 0x00ff
+        high = n >> 8
 
         delta = (self.pc + 1) - len(self.rom) + 1
         self.rom += bytes(delta)
-        self.rom[self.pc] = low
-        self.pc += 1
         self.rom[self.pc] = high
+        self.pc += 1
+        self.rom[self.pc] = low
         self.pc += 1
 
     def write_op(self, op):
