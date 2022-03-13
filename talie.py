@@ -80,6 +80,10 @@ class UxnRom():
             else:
                 self.write_op('lit')
                 self.write_byte(n)
+        elif first_char == '|':
+            n = int(token[1:], 16)
+            assert n < 0x10000
+            self.pc = n
         elif token[:3] in op_table:
             self.write_op(token)
         else:
