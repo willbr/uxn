@@ -6,7 +6,11 @@
 # https://wiki.xxiivv.com/site/uxntal_stacking.html
 # https://wiki.xxiivv.com/site/uxntal_macros.html
 
+from rich.traceback import install
 import fileinput
+import collections
+
+install(show_locals=True)
 
 indent_width = 4
 cur_indent = 0
