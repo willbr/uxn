@@ -113,16 +113,17 @@ class UxnRom():
         self.rom[self.pc] = low
         self.pc += 1
 
+
     def write_op(self, op):
         lhs, rhs = op[:3], op[3:]
         code = op_table[lhs]
         for c in rhs:
             if c == 'k':
-                code = code and 0x80
+                code = code or 0x80
             elif c == 'r':
-                code = code and 0x40
+                code = code or 0x40
             elif c == '2':
-                code = code and 0x20
+                code = code or 0x20
             else:
                 raise SyntaxError(f"unknown mode: {c}")
         self.write_byte(code)
