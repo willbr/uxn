@@ -6,17 +6,19 @@
 # https://wiki.xxiivv.com/site/uxntal_stacking.html
 # https://wiki.xxiivv.com/site/uxntal_macros.html
 
+from rich.console import Console
 from rich.traceback import install
 import fileinput
-import collections
+
+console = Console(markup=False)
+python_print = print
+print = console.print
 
 install(show_locals=True)
 
 indent_width = 4
 cur_indent = 0
 cmd_stack = []
-labels = {}
-references = collections.defaultdict(list)
 
 ops = """
 brk 0x00 a b c m[pc+1]
@@ -66,10 +68,12 @@ class UxnRom():
         self.rom = bytearray()
         self.pc = 0
         self.scope = None
+        self.refs = []
+        self.labels = {}
 
 
     def __repr__(self):
-        return 'Rom: ' + ' '.join(f'{c:02x}' for c in self.rom[100:])
+        return 'Rom: ' + ' '.join(f'{c:02x}' for c in self.rom[0x100:])
 
 
     def write(self, token, note=''):
@@ -96,49 +100,63 @@ class UxnRom():
             label_name = token[1:]
             self.make_label(label_name)
             self.scope = label_name
-        elif first_char == ';': # literal address absolute
-            ref_name = token[1:]
-            references[ref_name].append(self.pc)
-            self.write_short(0xffff)
         elif first_char == '&': # sub-label define
             assert self.scope != None
             sub_name = token[1:]
             self.make_label(self.sub_label(sub_name))
+        elif first_char == ';': # literal address absolute
+            self.make_reference(token, self.pc)
+            self.write_lit_short(0xffff)
         elif first_char == ',': # literal address relative
-            name = token[1:]
-            second_char = name[0]
-            if second_char == '&':
-                label = self.sub_label(name[1:])
-                delta = xxxx - self.pc
-                #how do references work?
-                self.write_byte(delta)
-                assert False
-            else:
-                assert False
+            self.make_reference(token, self.pc)
+            self.write_lit_byte(0xff)
+        elif first_char == '"':
+            for b in bytes(token[1:], 'ascii'):
+                self.write_byte(b)
         elif token[:3].lower() in op_table:
             self.write_op(token)
         else:
-            print(token)
             n = int(token, 16)
-            assert False
+            self.write_byte(n)
 
 
     def sub_label(self, name):
         label_name = f"{self.scope}/{name}"
         return label_name
 
+
     def make_label(self, label_name):
-        assert label_name not in labels
-        labels[label_name] = self.pc
+        assert label_name not in self.labels
+        self.labels[label_name] = self.pc
+
+
+    def make_reference(self, label, addr):
+        rune = label[0]
+        if label[1] == '&':
+            ref_name = self.sub_label(label[2:])
+        else:
+            ref_name = label[1:]
+        self.refs.append([ref_name, rune, addr])
 
 
     def write_byte(self, n):
         assert n >= 0
         assert n <= 0xff
         delta = self.pc - len(self.rom) + 1
-        self.rom += bytes(delta)
+        if delta > 0:
+            self.rom += bytes(delta)
         self.rom[self.pc] = n
         self.pc += 1
+
+
+    def write_signed_byte(self, n):
+        if n < 0:
+            u = n + 128
+        elif n > 127:
+            assert False
+        else:
+            u = n
+        self.write_byte(u)
 
 
     def write_short(self, n):
@@ -148,12 +166,18 @@ class UxnRom():
         low  = n & 0x00ff
         high = n >> 8
 
-        delta = (self.pc + 1) - len(self.rom) + 1
-        self.rom += bytes(delta)
-        self.rom[self.pc] = high
-        self.pc += 1
-        self.rom[self.pc] = low
-        self.pc += 1
+        self.write_byte(high)
+        self.write_byte(low)
+        
+
+    def write_lit_byte(self, n):
+        self.write_op('lit')
+        self.write_byte(n)
+
+
+    def write_lit_short(self, n):
+        self.write_op('lit2')
+        self.write_short(n)
 
 
     def write_op(self, op):
@@ -169,6 +193,28 @@ class UxnRom():
             else:
                 raise SyntaxError(f"unknown mode: {c}")
         self.write_byte(code)
+
+
+    def resolve(self):
+        print(self.labels)
+        for v in self.refs:
+            label, rune, ref_addr = v
+            label_addr = self.labels[label]
+            # print(label, label_addr)
+            # print(rune, ref_addr)
+            if rune == '.':
+                assert False
+            elif rune == ',':
+                self.pc = ref_addr + 1
+                delta = label_addr - self.pc
+                self.write_signed_byte(delta)
+            elif rune == ';':
+                self.pc = ref_addr + 1
+                self.write_short(label_addr)
+            elif rune == ':':
+                assert False
+            else:
+                assert False
 
 
 def read_token(buf):
@@ -202,6 +248,8 @@ def main():
             if (spaces % indent_width) != 0:
                 print(spaces, spaces % indent_width)
                 assert False
+        elif first_char == '\t':
+            raise SyntaxError
 
         else:
             this_indent = cur_indent
@@ -209,6 +257,8 @@ def main():
 
         head, rest = read_token(line)
         rest = rest.rstrip('\n')
+
+        assert head != ''
 
         if this_indent > cur_indent + 1:
             assert False
@@ -230,10 +280,12 @@ def main():
     while cmd_stack:
         rom.write(cmd_stack.pop(), 'unwind')
 
-    # print(rom)
+    rom.resolve()
+
+    print(rom)
 
     with open('out.rom', 'wb') as f:
-        f.write(rom.rom[100:])
+        f.write(rom.rom[0x100:])
 
 if __name__ == "__main__":
     main()
