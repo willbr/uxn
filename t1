@@ -1,14 +1,23 @@
-#12
+|0100
+@program
+;hello-word
 
-#3456
+&while
 
-pop
+LDAk
+#18
+DEO
+INC2
+LDAk
+,&while
+JCN
 
-pop2
+POP2
 
+HALT
+DEO #010f
+	
+BRK
 
-add #12 #34
-addk #12 #34
+@hello-word "Hello 20 "World! 00
 
-
-add2k #1234 #5678
