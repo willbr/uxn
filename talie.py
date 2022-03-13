@@ -15,6 +15,8 @@ install(show_locals=True)
 indent_width = 4
 cur_indent = 0
 cmd_stack = []
+labels = {}
+references = collections.defaultdict(list)
 
 ops = """
 brk 0x00 a b c m[pc+1]
@@ -63,10 +65,11 @@ class UxnRom():
     def __init__(self):
         self.rom = bytearray()
         self.pc = 0
+        self.scope = None
 
 
     def __repr__(self):
-        return 'Rom: ' + ' '.join(f'{c:02x}' for c in self.rom)
+        return 'Rom: ' + ' '.join(f'{c:02x}' for c in self.rom[100:])
 
 
     def write(self, token, note=''):
@@ -89,12 +92,45 @@ class UxnRom():
             n = int(token[1:], 16)
             assert n < 0x10000
             self.pc = n
-        elif token[:3] in op_table:
+        elif first_char == '@':
+            label_name = token[1:]
+            self.make_label(label_name)
+            self.scope = label_name
+        elif first_char == ';': # literal address absolute
+            ref_name = token[1:]
+            references[ref_name].append(self.pc)
+            self.write_short(0xffff)
+        elif first_char == '&': # sub-label define
+            assert self.scope != None
+            sub_name = token[1:]
+            self.make_label(self.sub_label(sub_name))
+        elif first_char == ',': # literal address relative
+            name = token[1:]
+            second_char = name[0]
+            if second_char == '&':
+                label = self.sub_label(name[1:])
+                delta = xxxx - self.pc
+                #how do references work?
+                self.write_byte(delta)
+                assert False
+            else:
+                assert False
+        elif token[:3].lower() in op_table:
             self.write_op(token)
         else:
-            n = int(token, 16)
             print(token)
+            n = int(token, 16)
             assert False
+
+
+    def sub_label(self, name):
+        label_name = f"{self.scope}/{name}"
+        return label_name
+
+    def make_label(self, label_name):
+        assert label_name not in labels
+        labels[label_name] = self.pc
+
 
     def write_byte(self, n):
         assert n >= 0
@@ -122,7 +158,7 @@ class UxnRom():
 
     def write_op(self, op):
         lhs, rhs = op[:3], op[3:]
-        code = op_table[lhs]
+        code = op_table[lhs.lower()]
         for c in rhs:
             if c == 'k':
                 code = code or 0x80
@@ -197,7 +233,7 @@ def main():
     # print(rom)
 
     with open('out.rom', 'wb') as f:
-        f.write(rom.rom)
+        f.write(rom.rom[100:])
 
 if __name__ == "__main__":
     main()
