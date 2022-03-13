@@ -62,7 +62,8 @@ class UxnRom():
 
 
     def __repr__(self):
-        return ' '.join(f'{c:02x}' for c in self.rom)
+        return 'Rom: ' + ' '.join(f'{c:02x}' for c in self.rom)
+
 
     def write(self, token, note=''):
         if note:
@@ -87,6 +88,7 @@ class UxnRom():
         elif token[:3] in op_table:
             self.write_op(token)
         else:
+            n = int(token, 16)
             print(token)
             assert False
 
@@ -149,7 +151,6 @@ def main():
             break
 
         first_char = raw_line[:1]
-        # print(repr(first_char))
 
         if first_char == '\n':
             continue
@@ -181,20 +182,18 @@ def main():
         else:
             assert False
 
-        # print(repr(head), repr(rest))
-
         args = rest
         while args != '':
             arg, args = read_token(args)
-            # print(repr(arg), repr(args))
-            print('arg   ', arg)
+            rom.write(arg, 'arg')
 
-    # print(cmd_stack)
     while cmd_stack:
-        print('unwind', cmd_stack.pop())
+        rom.write(cmd_stack.pop(), 'unwind')
 
-    print(rom)
+    # print(rom)
 
+    with open('out.rom', 'wb') as f:
+        f.write(rom.rom)
 
 if __name__ == "__main__":
     main()
