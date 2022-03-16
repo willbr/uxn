@@ -1,0 +1,24 @@
+inline emit
+    deo #18
+
+inline halt
+    deo #010f
+
+org 0100
+
+label program
+    lit-addr hello-world
+
+    sub-label while
+        emit ldak
+        inc2
+        jcn ldak
+            rel-addr-sub while
+
+    pop2
+    halt
+
+brk
+
+label hello-world "Hello World!"
+
