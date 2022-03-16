@@ -117,7 +117,10 @@ class UxnRom():
             self.write_op(token)
         else:
             n = int(token, 16)
-            self.write_byte(n)
+            if n > 0xff:
+                self.write_short(n)
+            else:
+                self.write_byte(n)
 
 
     def sub_label(self, name):
