@@ -9,6 +9,7 @@
 from rich.console import Console
 from rich.traceback import install
 import fileinput
+import argparse
 
 console = Console(markup=False)
 python_print = print
@@ -57,10 +58,13 @@ sft 0x1f
 """.strip()
 
 op_table = {}
+reverse_op_table = {}
+
 for line in ops.split('\n'):
     op, code, *comment = line.split(' ', 2)
     n = int(code, 16)
     op_table[op] = n
+    reverse_op_table[n] = op
 
 
 class UxnRom():
@@ -292,6 +296,58 @@ def main():
     with open('out.rom', 'wb') as f:
         f.write(rom.rom[0x100:])
 
+
+def decompile(filename):
+    with open(filename, 'rb') as f:
+        rom = bytearray(f.read())
+
+    rom_iter = iter(rom)
+    while True:
+        try:
+            b = next(rom_iter)
+        except StopIteration:
+            break
+        data = [b]
+        base_op_code = b & 0b00011111
+        base_op = reverse_op_table[base_op_code]
+        op = base_op
+        if b & 0b10000000:
+            op += 'k'
+        if b & 0b01000000:
+            op += 'r'
+        if b & 0b00100000:
+            op += '2'
+
+        if base_op == 'lit':
+            if b & 0b10100000:
+                sep = ' '
+                high = next(rom_iter)
+                low  = next(rom_iter)
+                n = (high << 8) + low
+                data += [high, low]
+                op = f"#{n:04x}"
+            elif b & 0b10000000:
+                n  = next(rom_iter)
+                data += [n]
+                op = f"#{n:02x}"
+            else:
+                op = 'brk'
+
+        s = ' '.join(f"{b:02x}" for b in data)
+
+        a = repr(chr(b))
+
+        print(f"{s:8} {a:6} {op}")
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="uxn tool")
+
+    parser.add_argument("--decompile")
+
+    args = parser.parse_args()
+
+    if args.decompile:
+        decompile(args.decompile)
+    else:
+        main()
 
