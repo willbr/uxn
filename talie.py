@@ -115,6 +115,8 @@ class UxnRom():
                 self.write_byte(b)
         elif token[:3].lower() in op_table:
             self.write_op(token)
+        elif token == 'rpn':
+            pass
         else:
             n = int(token, 16)
             if n > 0xff:
