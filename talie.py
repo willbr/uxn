@@ -188,11 +188,11 @@ class UxnRom():
         code = op_table[lhs.lower()]
         for c in rhs:
             if c == 'k':
-                code = code or 0x80
+                code = code | 0x80
             elif c == 'r':
-                code = code or 0x40
+                code = code | 0x40
             elif c == '2':
-                code = code or 0x20
+                code = code | 0x20
             else:
                 raise SyntaxError(f"unknown mode: {c}")
         self.write_byte(code)
