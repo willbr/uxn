@@ -342,9 +342,9 @@ def disassemble(filename):
 
         s = ' '.join(f"{b:02x}" for b in data)
 
-        a = repr(chr(b))
+        a = ' '.join(repr(chr(b)) for b in data)
 
-        print(f"{s:8} {a:6} {op}")
+        print(f"{s:8} {a:20} {op}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
