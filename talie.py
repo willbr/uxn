@@ -160,7 +160,7 @@ class UxnRom():
 
     def write_signed_byte(self, n):
         if n < 0:
-            u = n + 128
+            u = 255 + n
         elif n > 127:
             assert False
         else:
@@ -217,8 +217,9 @@ class UxnRom():
             if rune == '.':
                 assert False
             elif rune == ',':
+                pc = self.pc
                 self.pc = ref_addr + 1
-                delta = label_addr - self.pc
+                delta = label_addr - self.pc - 1
                 self.write_signed_byte(delta)
             elif rune == ';':
                 self.pc = ref_addr + 1
