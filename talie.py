@@ -208,7 +208,7 @@ class UxnRom():
 
 
     def resolve(self):
-        print(self.labels)
+        # print(self.labels)
         for v in self.refs:
             label, rune, ref_addr = v
             label_addr = self.labels[label]
@@ -237,11 +237,11 @@ def read_token(buf):
     return head, tail
 
 
-def main():
+def assemble(filename):
     global cur_indent
 
     rom = UxnRom()
-    buf = fileinput.input()
+    buf = fileinput.input(filename)
     while True:
         try:
             raw_line = next(buf)
@@ -294,13 +294,13 @@ def main():
 
     rom.resolve()
 
-    print(rom)
+    # print(rom)
 
     with open('out.rom', 'wb') as f:
         f.write(rom.rom[0x100:])
 
 
-def decompile(filename):
+def disassemble(filename):
     with open(filename, 'rb') as f:
         rom = bytearray(f.read())
 
@@ -345,12 +345,15 @@ def decompile(filename):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
 
-    parser.add_argument("--decompile")
+    parser.add_argument("--assemble")
+    parser.add_argument("--disassemble")
 
     args = parser.parse_args()
 
-    if args.decompile:
-        decompile(args.decompile)
+    if args.disassemble:
+        disassemble(args.disassemble)
+    elif args.assemble:
+        assemble(args.assemble)
     else:
-        main()
+        assert False
 
