@@ -230,6 +230,201 @@ class UxnRom():
                 assert False
 
 
+class Tokeniser:
+    def __init__(self, filename):
+        self.i = 0
+        self.queued_tokens = []
+        with open(filename) as f:
+            self.data = f.read()
+
+
+    def push_token(self, token):
+        self.queued_tokens.append(token)
+
+
+    def peek_token(self):
+        if self.queued_tokens:
+            t = self.queued_tokens[-1]
+            return t
+
+        t = self.read_token()
+        self.queued_tokens.append(t)
+        return t
+
+
+    def read_token(self):
+        if self.queued_tokens:
+            t = self.queued_tokens.pop()
+            return t
+
+        start_pos = self.i
+
+        try:
+            c = self.data[self.i]
+
+            if c == ' ':
+                while self.data[self.i] in ' ':
+                    self.i += 1
+            elif c == '\n':
+                while self.data[self.i] in '\n':
+                    self.i += 1
+            else:
+                while self.data[self.i] not in ' \n':
+                    self.i += 1
+        except IndexError:
+            pass
+
+        t = self.data[start_pos:self.i]
+        if t.startswith('\n'):
+            return '\n'
+
+        try:
+            while self.data[self.i] in ' ':
+                self.i += 1
+        except IndexError:
+            pass
+
+        return t
+
+
+class IndentParser:
+    def __init__(self, filename):
+        self.tokens = Tokeniser(filename)
+        self.indent_width = 4
+        self.new_indent = 0
+        self.cur_indent = 0
+
+        self.skip_blank_lines()
+
+    def skip_blank_lines(self):
+        while self.tokens.peek_token() == '\n':
+            _ = self.tokens.read_token()
+
+
+    def read_token(self):
+        t = self.tokens.read_token()
+
+        # print(f"t1 = {repr(t)}")
+        while t == '\n':
+            nt = self.tokens.peek_token()
+            if nt.startswith(' '):
+                space_token = self.tokens.read_token()
+                spaces = len(space_token)
+                assert not spaces % self.indent_width
+                if self.tokens.peek_token() == '\n':
+                    pass
+                else:
+                    self.new_indent = spaces // self.indent_width
+            else:
+                self.new_indent = 0
+
+            # print(f"new_indent = {self.new_indent}")
+
+            diff = self.new_indent - self.cur_indent
+            # print(f"diff = {diff}")
+
+            nt = self.tokens.peek_token()
+            # print(f"nt = {repr(nt)}")
+            # print(f"2 {self.cmd_stack}")
+            if nt == '\\':
+                assert False
+            elif diff > 1:
+                assert False
+            elif diff == 1:
+                t = 'ie/indent'
+                self.cur_indent += 1
+            elif diff == 0:
+                t = 'ie/newline'
+                # print(f"3t = {repr(t)}")
+            else:
+                self.cur_indent += diff
+
+                self.tokens.push_token("ie/newline")
+                for j in range(abs(diff)):
+                    self.tokens.push_token("ie/dedent")
+
+                t = self.tokens.read_token()
+
+
+        if t == '':
+            ci = self.cur_indent
+            assert ci == 0
+        # print(f"t2 = {repr(t)}")
+        return t
+
+
+class ExpressionParser:
+    def __init__(self, filename):
+        self.ip = IndentParser(filename)
+        self.stack = []
+        self.read_token = self.read_head
+        self.special_forms = []
+
+
+    def read_head(self):
+        # breakpoint()
+        # print("read_head")
+        t = self.ip.read_token()
+        # print(f"h {t= }")
+
+        if t == '':
+            assert not self.stack
+            return ''
+        elif t == 'ie/dedent':
+            cmd = self.read_dedent()
+            return cmd
+        elif t == 'ie/newline':
+            self.read_token = self.read_head
+            if self.stack:
+                prev_cmd = self.stack.pop()
+                return prev_cmd
+            assert False
+        elif t.startswith('ie/'):
+            assert False
+        elif t in self.special_forms:
+            end_t = 'end-' + t
+            self.stack.append(end_t)
+            self.read_token = self.read_body
+        else:
+            self.stack.append(t)
+            self.read_token = self.read_body
+            t = self.read_token()
+        return t
+
+
+    def read_body(self):
+        # breakpoint()
+        # print("read_body")
+        t = self.ip.read_token()
+        # print(f"b {t= }")
+        if t == 'ie/indent':
+            self.read_token = self.read_head
+            t = self.read_token()
+            return t
+        elif t == 'ie/dedent':
+            cmd = self.read_dedent()
+            return cmd
+        elif t == 'ie/newline':
+            self.read_token = self.read_head
+            prev_cmd = self.stack.pop()
+            return prev_cmd
+        elif t == '':
+            assert not self.stack
+            return ''
+        else:
+            return t
+
+
+    def read_dedent(self):
+        # breakpoint()
+        # print(f"dedent")
+        # print(f"dedent {self.stack =}")
+        prev_cmd = self.stack.pop()
+        self.read_token = self.read_head
+        # print(f"{prev_cmd=}")
+        return prev_cmd
+
+
 def read_token(buf):
     try:
         head, tail = buf.split(' ', 1)
@@ -242,7 +437,28 @@ def assemble(filename):
     global cur_indent
 
     rom = UxnRom()
+    ip = IndentParser(filename)
+    while True:
+        t = ip.read_token()
+        if t == '':
+            print("break")
+            break;
+        print('t', repr(t))
+
+    xp = ExpressionParser(filename)
+    xp.special_forms.append('inline')
+
+    while True:
+        w = xp.read_token()
+        if w == '':
+            print("break")
+            break;
+        print('w', w)
+
+    return
+
     buf = fileinput.input(filename)
+
     while True:
         try:
             raw_line = next(buf)
