@@ -74,6 +74,7 @@ class UxnRom():
         self.scope = None
         self.refs = []
         self.labels = {}
+        self.debug = False
 
 
     def __repr__(self):
@@ -81,7 +82,7 @@ class UxnRom():
 
 
     def write(self, token, note=''):
-        if note:
+        if note and self.debug:
             print(f"{note:6s} {token}")
 
         first_char = token[:1]
