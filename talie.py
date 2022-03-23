@@ -268,6 +268,11 @@ class Tokeniser:
             elif c == '\n':
                 while self.data[self.i] in '\n':
                     self.i += 1
+            elif c == '"':
+                self.i += 1
+                while self.data[self.i] not in '"':
+                    self.i += 1
+                self.i += 1
             else:
                 while self.data[self.i] not in ' \n':
                     self.i += 1
