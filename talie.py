@@ -359,11 +359,15 @@ class IndentParser:
 
 
 class ExpressionParser:
-    def __init__(self, filename):
-        self.ip = IndentParser(filename)
+    def __init__(self):
+        self.ip = None
         self.stack = []
         self.read_token = self.read_head
         self.special_forms = []
+
+
+    def read_file(self, filename):
+        self.ip = IndentParser(filename)
 
 
     def read_head(self):
@@ -430,89 +434,102 @@ class ExpressionParser:
         return prev_cmd
 
 
-def read_token(buf):
-    try:
-        head, tail = buf.split(' ', 1)
-    except ValueError:
-        head, tail = buf.strip(), ''
-    return head, tail
-
-
 def assemble(filename):
     global cur_indent
 
     rom = UxnRom()
-    ip = IndentParser(filename)
-    while True:
-        t = ip.read_token()
-        if t == '':
-            print("break")
-            break;
-        print('t', repr(t))
 
-    xp = ExpressionParser(filename)
+    # ip = IndentParser(filename)
+    # while True:
+        # t = ip.read_token()
+        # if t == '':
+            # print("break")
+            # break;
+        # print('t', repr(t))
+
+    xp = ExpressionParser()
     xp.special_forms.append('inline')
+    xp.special_forms.append('org')
+    xp.special_forms.append('label')
+    xp.special_forms.append('sub-label')
+    xp.special_forms.append('lit-addr')
+    xp.special_forms.append('rel-addr-sub')
+    xp.read_file(filename)
+
+    inline_words = {}
+
+    queue = []
+
+    def next_word():
+        if queue:
+            return queue.pop(0)
+        return xp.read_token()
+
+
+    def read_until(end_marker):
+        body = []
+        while True:
+            w = next_word()
+            if w == end_marker:
+                break
+            elif w == '':
+                break
+            else:
+                body.append(w)
+        return body
+
 
     while True:
-        w = xp.read_token()
+        w = next_word()
+        # print(f'{w = }')
+
         if w == '':
             print("break")
             break;
-        print('w', w)
-
-    return
-
-    buf = fileinput.input(filename)
-
-    while True:
-        try:
-            raw_line = next(buf)
-        except StopIteration:
-            break
-
-        first_char = raw_line[:1]
-
-        if first_char == '\n':
-            continue
-        elif first_char == ' ':
-            line = raw_line.lstrip(' ')
-            spaces = len(raw_line) - len(line)
-            this_indent = spaces / indent_width
-
-            if (spaces % indent_width) != 0:
-                print(spaces, spaces % indent_width)
+        elif w in xp.special_forms:
+            end_marker = f'end-{w}'
+            body = read_until(end_marker)
+            if w == 'inline':
+                name, *body = body
+                inline_words[name] = body
+            elif w == 'org':
+                offset, *body = body
+                queue.extend(body)
+                cmd = '|' + offset
+                rom.write(cmd, 'set pc')
+            elif w == 'label':
+                name, *body = body
+                queue.extend(body)
+                cmd = f'@{name}'
+                rom.write(cmd, 'label')
+            elif w == 'sub-label':
+                name, *body = body
+                queue.extend(body)
+                cmd = f'&{name}'
+                rom.write(cmd, 'sub-label')
+            elif w == 'lit-addr':
+                name, *body = body
+                queue.extend(body)
+                cmd = f';{name}'
+                rom.write(cmd, 'label')
+            elif w == 'rel-addr-sub':
+                name, *body = body
+                queue.extend(body)
+                cmd = f',&{name}'
+                rom.write(cmd, 'label')
+            else:
                 assert False
-        elif first_char == '\t':
-            raise SyntaxError
-
+        elif w in inline_words:
+            body = inline_words[w]
+            assert body
+            queue.extend(body)
+        elif w[0] == '"':
+            s = w[1:-1]
+            for b in bytes(s, 'ascii'):
+                rom.write_byte(b)
+            rom.write_byte(0)
         else:
-            this_indent = cur_indent
-            line = raw_line
-
-        head, rest = read_token(line)
-        rest = rest.rstrip('\n')
-
-        assert head != ''
-
-        if this_indent > cur_indent + 1:
-            assert False
-        elif this_indent == cur_indent + 1:
-            cmd_stack.append(head)
-            cur_indent += 1
-        elif this_indent == cur_indent:
-            if cmd_stack:
-                rom.write(cmd_stack.pop(), 'next')
-            cmd_stack.append(head)
-        else:
-            assert False
-
-        args = rest
-        while args != '':
-            arg, args = read_token(args)
-            rom.write(arg, 'arg')
-
-    while cmd_stack:
-        rom.write(cmd_stack.pop(), 'unwind')
+            rom.write(w, 'asm')
 
     rom.resolve()
 
@@ -520,6 +537,8 @@ def assemble(filename):
 
     with open('out.rom', 'wb') as f:
         f.write(rom.rom[0x100:])
+
+    print("done")
 
 
 def disassemble(filename):
