@@ -25,8 +25,8 @@ wbuild:
 	watchexec -cr --ignore "*.rom" "make build"
 
 build:
-	$(cat) t1
-	python talie.py --assemble t1
+	$(cat) t2
+	python talie.py --assemble t2
 	python talie.py --disassemble out.rom
 	python talie.py --disassemble e1.rom
 #	$(hex) out.rom
