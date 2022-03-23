@@ -482,10 +482,12 @@ def assemble(filename):
 
     while True:
         w = next_word()
-        # print(f'{w = }')
+        # print(f"{w = }")
+        # print(f"{queue = }")
+        # print(f"{w = } {queue[:3]}")
 
         if w == '':
-            print("break")
+            # print("break")
             break;
         elif w in xp.special_forms:
             end_marker = f'end-{w}'
@@ -495,27 +497,27 @@ def assemble(filename):
                 inline_words[name] = body
             elif w == 'org':
                 offset, *body = body
-                queue.extend(body)
+                queue = body + queue
                 cmd = '|' + offset
                 rom.write(cmd, 'set pc')
             elif w == 'label':
                 name, *body = body
-                queue.extend(body)
+                queue = body + queue
                 cmd = f'@{name}'
                 rom.write(cmd, 'label')
             elif w == 'sub-label':
                 name, *body = body
-                queue.extend(body)
+                queue = body + queue
                 cmd = f'&{name}'
                 rom.write(cmd, 'sub-label')
             elif w == 'lit-addr':
                 name, *body = body
-                queue.extend(body)
+                queue = body + queue
                 cmd = f';{name}'
                 rom.write(cmd, 'label')
             elif w == 'rel-addr-sub':
                 name, *body = body
-                queue.extend(body)
+                queue = body + queue
                 cmd = f',&{name}'
                 rom.write(cmd, 'label')
             else:
@@ -523,7 +525,7 @@ def assemble(filename):
         elif w in inline_words:
             body = inline_words[w]
             assert body
-            queue.extend(body)
+            queue = body + queue
         elif w[0] == '"':
             s = w[1:-1]
             for b in bytes(s, 'ascii'):
