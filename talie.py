@@ -527,6 +527,8 @@ def disassemble(filename):
         rom = bytearray(f.read())
 
     rom_iter = iter(rom)
+    i = 0
+
     while True:
         try:
             b = next(rom_iter)
@@ -565,7 +567,9 @@ def disassemble(filename):
 
         a = ' '.join(repr(chr(b)) for b in data)
 
-        print(f"{s:8} {a:20} {op}")
+        print(f"{i:04x} | {s:8} | {a:20} | {op:5} |")
+        i += len(data)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
