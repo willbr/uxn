@@ -231,6 +231,11 @@ class UxnRom():
                 assert False
 
 
+    def write_file(self, filename):
+        with open(filename, 'wb') as f:
+            f.write(self.rom[0x100:])
+
+
 class Tokeniser:
     def __init__(self, data):
         self.i = 0
@@ -431,10 +436,8 @@ class ExpressionParser:
         return prev_cmd
 
 
-def assemble(data):
+def assemble(rom, data):
     global cur_indent
-
-    rom = UxnRom()
 
     # ip = IndentParser(data)
     # while True:
@@ -529,14 +532,6 @@ def assemble(data):
         else:
             rom.write(w, 'asm')
 
-    rom.resolve()
-
-    # print(rom)
-
-    with open('out.rom', 'wb') as f:
-        f.write(rom.rom[0x100:])
-
-    print("done")
 
 
 def disassemble(filename):
@@ -602,7 +597,13 @@ if __name__ == "__main__":
         filename = args.assemble
         with open(filename) as f:
             data = f.read()
-        assemble(data)
+
+        rom = UxnRom()
+        assemble(rom, data)
+        rom.resolve()
+        rom.write_file('out.rom')
+
+        print("done")
     else:
         assert False
 
