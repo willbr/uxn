@@ -232,11 +232,10 @@ class UxnRom():
 
 
 class Tokeniser:
-    def __init__(self, filename):
+    def __init__(self, data):
         self.i = 0
         self.queued_tokens = []
-        with open(filename) as f:
-            self.data = f.read()
+        self.data = data
 
 
     def push_token(self, token):
@@ -294,8 +293,8 @@ class Tokeniser:
 
 
 class IndentParser:
-    def __init__(self, filename):
-        self.tokens = Tokeniser(filename)
+    def __init__(self, data):
+        self.tokens = Tokeniser(data)
         self.indent_width = 4
         self.new_indent = 0
         self.cur_indent = 0
@@ -360,15 +359,12 @@ class IndentParser:
 
 
 class ExpressionParser:
-    def __init__(self):
+    def __init__(self, data):
         self.ip = None
         self.stack = []
         self.read_token = self.read_head
         self.special_forms = []
-
-
-    def read_file(self, filename):
-        self.ip = IndentParser(filename)
+        self.ip = IndentParser(data)
 
 
     def read_head(self):
@@ -435,12 +431,12 @@ class ExpressionParser:
         return prev_cmd
 
 
-def assemble(filename):
+def assemble(data):
     global cur_indent
 
     rom = UxnRom()
 
-    # ip = IndentParser(filename)
+    # ip = IndentParser(data)
     # while True:
         # t = ip.read_token()
         # if t == '':
@@ -448,14 +444,13 @@ def assemble(filename):
             # break;
         # print('t', repr(t))
 
-    xp = ExpressionParser()
+    xp = ExpressionParser(data)
     xp.special_forms.append('inline')
     xp.special_forms.append('org')
     xp.special_forms.append('label')
     xp.special_forms.append('sub-label')
     xp.special_forms.append('lit-addr')
     xp.special_forms.append('rel-addr-sub')
-    xp.read_file(filename)
 
     inline_words = {}
 
@@ -604,7 +599,10 @@ if __name__ == "__main__":
     if args.disassemble:
         disassemble(args.disassemble)
     elif args.assemble:
-        assemble(args.assemble)
+        filename = args.assemble
+        with open(filename) as f:
+            data = f.read()
+        assemble(data)
     else:
         assert False
 
