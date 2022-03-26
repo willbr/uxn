@@ -132,3 +132,30 @@ inline -
     sub
 
 
+# forthy
+
+
+    fn double dup + end
+
+    fn double
+        dup +
+
+    if (n > 1)
+        print
+
+    if ( n > 1 ) ie/eol ie/block print ie/end-block
+
+
+    fn double block dup + end
+
+
+
+    fn hi
+        "hello world" puts
+
+    fn hi
+        call puts "hello"
+
+
+    fn hi ie/eol
+        ie/block "hello world" puts ie/eol ie/end-block
