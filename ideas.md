@@ -1,135 +1,140 @@
-inline emit
-    deo $18
+# ideas
 
-inline halt
-    deo $010f
+    inline emit
+        deo $18
 
-pad-abs $0100
+    inline halt
+        deo $010f
 
-push-abs @program
-    label &while
-        ldak
-        emit
-        inc2
-        ldak
-        ,&while
-        jcn
-    pop2
-    halt
-brk
+    pad-abs $0100
 
-push-abs @hello-world
-"Hello 20 "World! 00
+    push-abs @program
+        label &while
+            ldak
+            emit
+            inc2
+            ldak
+            ,&while
+            jcn
+        pop2
+        halt
+    brk
 
-comment
-    modes:
-        keep
-        return
-        short
+    push-abs @hello-world
+    "Hello 20 "World! 00
 
-    runes:
-        % macro-define
-        | pad absolute
-        $ pad relative
-        @ label-define
-        & sublabel-define
-        ~ include
-        # literal hex
-        . literal addr zero-page
-        , literal addr relative
-        ; literal addr absolute
-        : raw addr absolute
-        ' raw char
-        " raw word
+# comment
 
-rpn 1 48 +
-rpn (1 + 48)
-infix (3 + 5) / (2 + 48)
+modes:
+    keep
+    return
+    short
 
+runes:
+    % macro-define
+    | pad absolute
+    $ pad relative
+    @ label-define
+    & sublabel-define
+    ~ include
+    # literal hex
+    . literal addr zero-page
+    , literal addr relative
+    ; literal addr absolute
+    : raw addr absolute
+    ' raw char
+    " raw word
 
-pad-abs $0100
-68 lit
-18 lit
-deo
-
-rpn lit 68
-rpn lit 17
-deo
+# syntax
+    rpn 1 48 +
+    rpn (1 + 48)
+    infix (3 + 5) / (2 + 48)
 
 
-|0100
-deo #68 #18
-deo #65 #18
-deo #6c #18
-deo #6c #18
-deo #6f #18
-deo #0a #18
+# misc
+    pad-abs $0100
+    68 lit
+    18 lit
+    deo
+
+    rpn lit 68
+    rpn lit 17
+    deo
 
 
-
-|10
-@Console
-    &vector
-    $2
-    &read
-    $1
-    &pad
-    $5
-    &write
-    $1
-    &error
-    $1
-
-|0100
-    rpn lit 'h .Console/write deo
-    rpn lit 'e .Console/write deo
-    rpn lit 'l .Console/write deo
-    rpn lit 'l .Console/write deo
-    rpn lit 'o .Console/write deo
-    rpn #0a    .Console/write deo
-
-
-%emit
-    rpn .Console/write deo
-
-%nl
-    rpn #0a emit
-
-|0100
-    emit lit 'h
-    emit lit 'e
-    emit lit 'l
-    emit lit 'l
-    emit lit 'o
-    nl
+    |0100
+    deo #68 #18
+    deo #65 #18
+    deo #6c #18
+    deo #6c #18
+    deo #6f #18
+    deo #0a #18
 
 
 
+    |10
+    @Console
+        &vector
+        $2
+        &read
+        $1
+        &pad
+        $5
+        &write
+        $1
+        &error
+        $1
+
+    |0100
+        rpn lit 'h .Console/write deo
+        rpn lit 'e .Console/write deo
+        rpn lit 'l .Console/write deo
+        rpn lit 'l .Console/write deo
+        rpn lit 'o .Console/write deo
+        rpn #0a    .Console/write deo
 
 
-rpn (#02 add #30)
+    %emit
+        rpn .Console/write deo
 
-32 <- top
+    %nl
+        rpn #0a emit
 
-rpn lit 02 lit 30 add
-
-
-rpn lit2 02 30 add
-
-rpn #0004 #0008 add2
-add2 #0004 #0008
+    |0100
+        emit lit 'h
+        emit lit 'e
+        emit lit 'l
+        emit lit 'l
+        emit lit 'o
+        nl
 
 
 
 
 
+    rpn (#02 add #30)
+
+    32 <- top
+
+    rpn lit 02 lit 30 add
 
 
-inline +
-    add
+    rpn lit2 02 30 add
 
-inline -
-    sub
+    rpn #0004 #0008 add2
+    add2 #0004 #0008
+
+
+
+
+
+
+
+    inline +
+        add
+
+    inline -
+        sub
 
 
 # forthy
