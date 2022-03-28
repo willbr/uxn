@@ -28,7 +28,7 @@ build:
 	$(cat) t2
 	python talie.py --assemble t2
 	python talie.py --disassemble out.rom
-	python talie.py --disassemble e1.rom
+#	python talie.py --disassemble e1.rom
 #	$(hex) out.rom
 #	$(hex) e1.rom
 #	../uxnemu/bin/uxncli out.rom

@@ -1,8 +1,8 @@
 inline emit
-    deo #18
+    deo(#18)
 
 inline halt
-    deo #010f
+    deo(#010f)
 
 org 0100
 
@@ -10,10 +10,9 @@ label program
     lit-addr hello-world
 
     sub-label while
-        emit ldak
+        emit(ldak)
         inc2
-        jcn ldak
-            rel-addr-sub while
+        jcn(ldak, rel-addr-sub(while))
 
     pop2
     halt
