@@ -25,25 +25,27 @@
 
 # comment
 
-modes:
-    keep
-    return
-    short
+## modes
 
-runes:
-    % macro-define
-    | pad absolute
-    $ pad relative
-    @ label-define
-    & sublabel-define
-    ~ include
-    # literal hex
-    . literal addr zero-page
-    , literal addr relative
-    ; literal addr absolute
-    : raw addr absolute
-    ' raw char
-    " raw word
+- keep
+- return
+- short
+
+## runes
+
+- % macro-define
+- | pad absolute
+- $ pad relative
+- @ label-define
+- & sublabel-define
+- ~ include
+- # literal hex
+- . literal addr zero-page
+- , literal addr relative
+- ; literal addr absolute
+- : raw addr absolute
+- ' raw char
+- " raw word
 
 # syntax
     rpn 1 48 +
