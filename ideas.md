@@ -164,3 +164,170 @@ runes:
 
     fn hi ie/eol
         ie/block "hello world" puts ie/eol ie/end-block
+
+
+# c syntax
+
+    func hello {
+        puts("hello")
+    }
+
+    func hello
+        puts("hello")
+
+    word hello {
+        puts("hi")
+    }
+
+    word hello
+        puts("hi")
+
+
+    if (n > 1) {
+        puts("hi")
+    }
+
+    if n 1 >
+        "hi" puts
+
+    n 1 > if
+        "hi" puts
+
+    if(n > 1)
+        "hi" puts
+
+    if(n > 1)
+        puts("hi")
+
+
+    n 1 > if { "hi" puts }
+
+
+# no prefix
+
+## one
+
+    rpn + neoteric + blocks
+
+    inline emit
+        deo(#18)
+
+    inline halt
+        deo(#010f)
+
+    org(0100)
+
+    label program
+        lit-addr hello-world
+
+        &while
+            emit(ldak)
+            inc2
+            jcn(ldak, rel-addr(&while))
+
+        pop2
+        halt
+
+    brk
+
+    label hello-world
+        "Hello World!"
+
+
+### into
+
+    inline emit
+        #18 deo
+
+    inline halt
+        #010f deo
+
+    org 0100
+
+    label program
+        lit-addr hello-world
+
+        &while
+            ldak emit
+            inc2
+            ldak rel-addr &while jcn
+
+        pop2
+        halt
+
+    brk
+
+    label hello-world "Hello World!"
+
+## two
+
+    rpn + neoteric + blocks
+
+    inline emit {
+        deo(#18)
+    }
+
+    inline halt {
+        deo(#010f)
+    }
+
+    org(0100)
+
+    label program {
+        lit-addr hello-world
+
+        &while {
+            emit(ldak)
+            inc2
+            jcn(ldak, rel-addr(&while))
+        }
+
+        pop2
+        halt
+    }
+
+    brk
+
+    label hello-world {
+        "Hello World!"
+    }
+
+
+# neoteric
+
+## normal
+
+    a(b, c)
+
+    into
+
+    b c a
+
+example
+
+    deo(#18)
+    add(#01, #02)
+
+    into
+
+    #18 deo
+    #01 #02 add
+
+## special forms
+
+    a(b, c)
+
+    into
+
+    a b , c
+
+example 'inline'
+    
+    inline(emit)
+        deo(#18)
+
+    into
+
+    inline emit
+        #18 deo
+
