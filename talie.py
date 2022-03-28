@@ -278,8 +278,10 @@ class Tokeniser:
                 while self.data[self.i] not in '"':
                     self.i += 1
                 self.i += 1
+            elif c in '(),':
+                self.i += 1
             else:
-                while self.data[self.i] not in ' \n':
+                while self.data[self.i] not in ' \n(),':
                     self.i += 1
         except IndexError:
             pass
@@ -289,6 +291,11 @@ class Tokeniser:
             return '\n'
 
         try:
+            c = self.data[self.i]
+            if c == '(':
+                self.queued_tokens.append(t)
+                t = 'ie/neoteric'
+
             while self.data[self.i] in ' ':
                 self.i += 1
         except IndexError:
@@ -367,85 +374,85 @@ class ExpressionParser:
     def __init__(self, data):
         self.ip = None
         self.stack = []
-        self.read_token = self.read_head
         self.special_forms = []
+        self.queued_tokens = []
         self.ip = IndentParser(data)
 
 
-    def read_head(self):
-        # breakpoint()
-        # print("read_head")
+    def read_token(self):
+        if self.queued_tokens:
+            t = self.queued_tokens.pop(0)
+            return t
+
         t = self.ip.read_token()
         # print(f"h {t= }")
 
         if t == '':
+            s = self.stack
             assert not self.stack
             return ''
-        elif t == 'ie/dedent':
-            cmd = self.read_dedent()
-            return cmd
-        elif t == 'ie/newline':
-            self.read_token = self.read_head
-            if self.stack:
-                prev_cmd = self.stack.pop()
-                return prev_cmd
-            assert False
-        elif t.startswith('ie/'):
-            assert False
-        elif t in self.special_forms:
-            end_t = 'end-' + t
-            self.stack.append(end_t)
-            self.read_token = self.read_body
-        else:
+
+        if t == 'ie/neoteric':
+            name = self.read_token()
+            self.stack.append(name)
             self.stack.append(t)
-            self.read_token = self.read_body
-            t = self.read_token()
+            return self.read_token()
+        elif t == '(':
+            self.parse_infix()
+            prev = self.stack[-1] if self.stack else None
+            if prev == 'ie/neoteric':
+                _ = self.stack.pop()
+                name = self.stack.pop()
+                self.queued_tokens.append(name)
+                return self.read_token()
+            assert False
+
         return t
 
 
-    def read_body(self):
-        # breakpoint()
-        # print("read_body")
-        t = self.ip.read_token()
-        # print(f"b {t= }")
-        if t == 'ie/indent':
-            self.read_token = self.read_head
-            t = self.read_token()
-            return t
-        elif t == 'ie/dedent':
-            cmd = self.read_dedent()
-            return cmd
-        elif t == 'ie/newline':
-            self.read_token = self.read_head
-            prev_cmd = self.stack.pop()
-            return prev_cmd
-        elif t == '':
-            assert not self.stack
-            return ''
+    def parse_infix(self):
+        stack = []
+        op = None
+        i = 0
+
+        while True:
+            t = self.ip.read_token()
+            if t == '(':
+                assert False
+            elif t == ')':
+                if op:
+                    stack.append(op)
+                break
+            elif t == ',':
+                if op:
+                    stack.append(op)
+                self.queued_tokens.extend(stack)
+                stack = []
+                i = -1
+                op = None
+            elif t == '':
+                assert False
+            elif i % 2 == 1:
+                if op:
+                    assert t == op
+                else:
+                    op = t
+            else:
+                stack.append(t)
+
+            i += 1
+
+        n = len(stack)
+        if n == 0:
+            pass
+        elif n == 1:
+            self.queued_tokens.append(stack[0])
         else:
-            return t
-
-
-    def read_dedent(self):
-        # breakpoint()
-        # print(f"dedent")
-        # print(f"dedent {self.stack =}")
-        prev_cmd = self.stack.pop()
-        self.read_token = self.read_head
-        # print(f"{prev_cmd=}")
-        return prev_cmd
+            self.queued_tokens.extend(stack)
 
 
 def assemble(rom, data):
     global cur_indent
-
-    # ip = IndentParser(data)
-    # while True:
-        # t = ip.read_token()
-        # if t == '':
-            # print("break")
-            # break;
-        # print('t', repr(t))
 
     xp = ExpressionParser(data)
     xp.special_forms.append('inline')
@@ -454,6 +461,12 @@ def assemble(rom, data):
     xp.special_forms.append('sub-label')
     xp.special_forms.append('lit-addr')
     xp.special_forms.append('rel-addr-sub')
+
+    while True:
+        t = xp.read_token()
+        if t == '':
+            break
+        print(t)
 
     inline_words = {}
 
