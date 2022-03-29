@@ -23,6 +23,31 @@
     push-abs @hello-world
     "Hello 20 "World! 00
 
+# ideas 2
+
+    inline(emit)
+        deo($18)
+
+    inline(halt)
+        deo($010f)
+
+    pad-abs($0100)
+
+    push-abs(@program)
+        label(&while)
+            ldak
+            emit
+            inc2
+            ldak
+            ,&while
+            jcn
+        pop2
+        halt
+    brk
+
+    push-abs(@hello-world)
+    "Hello 20 "World! 00
+
 # comment
 
 ## modes
