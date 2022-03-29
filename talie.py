@@ -344,6 +344,8 @@ class ExpressionParser:
             assert next_t == '('
             paren = self.read_raw()
             stack.extend((name, t, paren))
+            if name in self.special_forms:
+                self.queued_tokens.append(name)
         elif t == '(':
             stack.append(t)
         elif t == ')':
@@ -378,7 +380,8 @@ class ExpressionParser:
                 if prev == 'ie/neoteric':
                     _ = stack.pop()
                     name = stack.pop()
-                    self.queued_tokens.append(name)
+                    if name not in self.special_forms:
+                        self.queued_tokens.append(name)
 
                 assert not stack
                 return
@@ -407,18 +410,21 @@ def assemble(rom, data):
         # print(t)
 
     xp = ExpressionParser(data)
-    xp.special_forms.append('inline')
-    xp.special_forms.append('org')
-    xp.special_forms.append('label')
-    xp.special_forms.append('sub-label')
-    xp.special_forms.append('lit-addr')
-    xp.special_forms.append('rel-addr-sub')
+    xp.special_forms.extend("""
+    inline
+    org
+    label
+    sub-label
+    rel-addr-sub
+    lit-addr
+    rel-addr-sub
+    """.strip().split())
 
-    while True:
-        t = xp.read_token()
-        if t == '':
-            break
-        print(t)
+    # while True:
+        # t = xp.read_token()
+        # if t == '':
+            # break
+        # print(t)
 
     inline_words = {}
 
@@ -430,17 +436,48 @@ def assemble(rom, data):
         return xp.read_token()
 
 
-    def read_until(end_marker):
+    def peek_word():
+        if queue:
+            return queue[0]
+
+        t = xp.read_token()
+        queue.append(t)
+        return t
+
+
+    def read_block():
+        depth = 0
         body = []
+        open_marker = next_word()
+        assert open_marker == '{'
         while True:
             w = next_word()
-            if w == end_marker:
-                break
+            if w == '{':
+                body.append(w)
+                depth += 1
+            elif w == '}':
+                depth -= 1
+                if depth == -1:
+                    break
+                else:
+                    body.append(w)
             elif w == '':
                 break
             else:
                 body.append(w)
         return body
+
+
+    def assemble_label(prefix, name):
+        nonlocal queue
+        p = peek_word()
+        if p == '{':
+            body = read_block()
+            queue = body + queue + ['label', f"end-{name}"]
+            print(f"{name} {body = }")
+
+        cmd = f'{prefix}{name}'
+        rom.write(cmd, 'label')
 
 
     while True:
@@ -452,39 +489,29 @@ def assemble(rom, data):
         if w == '':
             # print("break")
             break;
-        elif w in xp.special_forms:
-            end_marker = f'end-{w}'
-            body = read_until(end_marker)
-            if w == 'inline':
-                name, *body = body
-                inline_words[name] = body
-            elif w == 'org':
-                offset, *body = body
-                queue = body + queue
-                cmd = '|' + offset
-                rom.write(cmd, 'set pc')
-            elif w == 'label':
-                name, *body = body
-                queue = body + queue
-                cmd = f'@{name}'
-                rom.write(cmd, 'label')
-            elif w == 'sub-label':
-                name, *body = body
-                queue = body + queue
-                cmd = f'&{name}'
-                rom.write(cmd, 'sub-label')
-            elif w == 'lit-addr':
-                name, *body = body
-                queue = body + queue
-                cmd = f';{name}'
-                rom.write(cmd, 'label')
-            elif w == 'rel-addr-sub':
-                name, *body = body
-                queue = body + queue
-                cmd = f',&{name}'
-                rom.write(cmd, 'label')
-            else:
-                assert False
+        elif w == '{':
+            a = next_word()
+            assert False
+        elif w == 'inline':
+            name = next_word()
+            body = read_block()
+            inline_words[name] = body
+        elif w == 'org':
+            offset = next_word()
+            cmd = '|' + offset
+            rom.write(cmd, 'set pc')
+        elif w == 'label':
+            name = next_word()
+            assemble_label('@', name)
+        elif w == 'sub-label':
+            name = next_word()
+            assemble_label('&', name)
+        elif w == 'lit-addr':
+            name = next_word()
+            assemble_label(';', name)
+        elif w == 'rel-addr-sub':
+            name = next_word()
+            assemble_label(',&', name)
         elif w in inline_words:
             body = inline_words[w]
             assert body
@@ -551,24 +578,17 @@ def disassemble(filename):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
 
-    parser.add_argument("--assemble")
-    parser.add_argument("--disassemble")
+    parser.add_argument("filename")
 
     args = parser.parse_args()
 
-    if args.disassemble:
-        disassemble(args.disassemble)
-    elif args.assemble:
-        filename = args.assemble
-        with open(filename) as f:
-            data = f.read()
+    with open(args.filename) as f:
+        data = f.read()
 
-        rom = UxnRom()
-        assemble(rom, data)
-        rom.resolve()
-        rom.write_file('out.rom')
+    rom = UxnRom()
+    assemble(rom, data)
+    rom.resolve()
+    rom.write_file('out.rom')
 
-        print("done")
-    else:
-        assert False
+    print("done")
 
