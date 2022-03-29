@@ -345,7 +345,7 @@ class ExpressionParser:
             paren = self.read_raw()
             stack.extend((name, t, paren))
         elif t == '(':
-            pass
+            stack.append(t)
         elif t == ')':
             assert False
         elif t == ',':
@@ -357,10 +357,8 @@ class ExpressionParser:
         op = None
         while True:
             p = self.peek_raw()
-            if p == 'ie/neoteric':
-                assert False
-            elif p == '(':
-                assert False
+            if p in ['ie/neoteric', '(']:
+                self.parse_expr()
 
             t = self.read_raw()
             # print(f"{t = }")
@@ -371,7 +369,8 @@ class ExpressionParser:
                 i = -1
                 op = None
             elif t == ')':
-                assert (i == 0) or (i == 1) or (i % 2 == 0)
+                if i % 2 == 0:
+                    self.queued_tokens.append(op)
                 tos = stack.pop()
                 assert tos == '('
                 prev = stack[-1] if stack else None
@@ -387,9 +386,10 @@ class ExpressionParser:
             elif i == 1:
                 op = t
             elif i % 2:
-                assert False
+                assert t == op
             else:
-                assert False
+                self.queued_tokens.append(t)
+                self.queued_tokens.append(op)
 
             i += 1
 
