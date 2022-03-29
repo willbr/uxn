@@ -352,6 +352,7 @@ class ExpressionParser:
             assert False
         else:
             self.queued_tokens.append(t)
+            return
 
         i = 0
         op = None
@@ -369,7 +370,7 @@ class ExpressionParser:
                 i = -1
                 op = None
             elif t == ')':
-                if i % 2 == 0:
+                if i % 2 == 0 and op:
                     self.queued_tokens.append(op)
                 tos = stack.pop()
                 assert tos == '('
