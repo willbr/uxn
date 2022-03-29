@@ -363,9 +363,14 @@ class ExpressionParser:
                 assert False
 
             t = self.read_raw()
+            # print(f"{t = }")
+
             if t == '':
                 assert False
-            if t == ')':
+            elif t == ',':
+                i = -1
+                op = None
+            elif t == ')':
                 assert (i == 0) or (i == 1) or (i % 2 == 0)
                 tos = stack.pop()
                 assert tos == '('
