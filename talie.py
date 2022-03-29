@@ -17,8 +17,6 @@ print = console.print
 
 install(show_locals=True)
 
-indent_width = 4
-cur_indent = 0
 cmd_stack = []
 
 ops = """
@@ -296,7 +294,7 @@ class Tokeniser:
                 self.queued_tokens.append(t)
                 t = 'ie/neoteric'
 
-            while self.data[self.i] in ' ':
+            while self.data[self.i] in ' \n':
                 self.i += 1
         except IndexError:
             pass
@@ -304,79 +302,13 @@ class Tokeniser:
         return t
 
 
-class IndentParser:
-    def __init__(self, data):
-        self.tokens = Tokeniser(data)
-        self.indent_width = 4
-        self.new_indent = 0
-        self.cur_indent = 0
-
-        self.skip_blank_lines()
-
-    def skip_blank_lines(self):
-        while self.tokens.peek_token() == '\n':
-            _ = self.tokens.read_token()
-
-
-    def read_token(self):
-        t = self.tokens.read_token()
-
-        # print(f"t1 = {repr(t)}")
-        while t == '\n':
-            nt = self.tokens.peek_token()
-            if nt.startswith(' '):
-                space_token = self.tokens.read_token()
-                spaces = len(space_token)
-                assert not spaces % self.indent_width
-                if self.tokens.peek_token() == '\n':
-                    pass
-                else:
-                    self.new_indent = spaces // self.indent_width
-            else:
-                self.new_indent = 0
-
-            # print(f"new_indent = {self.new_indent}")
-
-            diff = self.new_indent - self.cur_indent
-            # print(f"diff = {diff}")
-
-            nt = self.tokens.peek_token()
-            # print(f"nt = {repr(nt)}")
-            # print(f"2 {self.cmd_stack}")
-            if nt == '\\':
-                assert False
-            elif diff > 1:
-                assert False
-            elif diff == 1:
-                t = 'ie/indent'
-                self.cur_indent += 1
-            elif diff == 0:
-                t = 'ie/newline'
-                # print(f"3t = {repr(t)}")
-            else:
-                self.cur_indent += diff
-
-                self.tokens.push_token("ie/newline")
-                for j in range(abs(diff)):
-                    self.tokens.push_token("ie/dedent")
-
-                t = self.tokens.read_token()
-
-
-        if t == '':
-            ci = self.cur_indent
-            assert ci == 0
-        # print(f"t2 = {repr(t)}")
-        return t
-
-
 class ExpressionParser:
     def __init__(self, data):
-        self.ip = None
-        self.stack = []
         self.special_forms = []
         self.queued_tokens = []
-        self.ip = IndentParser(data)
+        self.tokeniser = Tokeniser(data)
+        self.read_raw = self.tokeniser.read_token
+        self.peek_raw = self.tokeniser.peek_token
 
 
     def read_token(self):
@@ -384,75 +316,89 @@ class ExpressionParser:
             t = self.queued_tokens.pop(0)
             return t
 
-        t = self.ip.read_token()
+        t = self.peek_raw()
         # print(f"h {t= }")
 
         if t == '':
-            s = self.stack
-            assert not self.stack
             return ''
-
-        if t == 'ie/neoteric':
-            name = self.read_token()
-            self.stack.append(name)
-            self.stack.append(t)
-            return self.read_token()
-        elif t == '(':
-            self.parse_infix()
-            prev = self.stack[-1] if self.stack else None
-            if prev == 'ie/neoteric':
-                _ = self.stack.pop()
-                name = self.stack.pop()
-                self.queued_tokens.append(name)
-                return self.read_token()
-            assert False
-
-        return t
-
-
-    def parse_infix(self):
-        stack = []
-        op = None
-        i = 0
-
-        while True:
-            t = self.ip.read_token()
-            if t == '(':
-                assert False
-            elif t == ')':
-                if op:
-                    stack.append(op)
-                break
-            elif t == ',':
-                if op:
-                    stack.append(op)
-                self.queued_tokens.extend(stack)
-                stack = []
-                i = -1
-                op = None
-            elif t == '':
-                assert False
-            elif i % 2 == 1:
-                if op:
-                    assert t == op
-                else:
-                    op = t
+        else:
+            self.parse_expr()
+            if self.queued_tokens:
+                new_t = self.queued_tokens.pop(0)
             else:
-                stack.append(t)
+                new_t = ''
+            return new_t
+
+
+    def parse_expr(self):
+        stack = []
+
+        t = self.read_raw()
+
+        if t == '':
+            assert False
+        elif t == 'ie/neoteric':
+            name = self.read_raw()
+            s = stack
+            next_t = self.peek_raw()
+            assert next_t == '('
+            paren = self.read_raw()
+            stack.extend((name, t, paren))
+        elif t == '(':
+            pass
+        elif t == ')':
+            assert False
+        elif t == ',':
+            assert False
+        else:
+            self.queued_tokens.append(t)
+
+        i = 0
+        op = None
+        while True:
+            p = self.peek_raw()
+            if p == 'ie/neoteric':
+                assert False
+            elif p == '(':
+                assert False
+
+            t = self.read_raw()
+            if t == '':
+                assert False
+            if t == ')':
+                assert (i == 0) or (i == 1) or (i % 2 == 0)
+                tos = stack.pop()
+                assert tos == '('
+                prev = stack[-1] if stack else None
+                if prev == 'ie/neoteric':
+                    _ = stack.pop()
+                    name = stack.pop()
+                    self.queued_tokens.append(name)
+
+                assert not stack
+                return
+            elif i == 0:
+                self.queued_tokens.append(t)
+            elif i == 1:
+                op = t
+            elif i % 2:
+                assert False
+            else:
+                assert False
 
             i += 1
 
-        n = len(stack)
-        if n == 0:
-            pass
-        elif n == 1:
-            self.queued_tokens.append(stack[0])
-        else:
-            self.queued_tokens.extend(stack)
+        assert False
 
 
 def assemble(rom, data):
-    global cur_indent
+
+    # tok = Tokeniser(data)
+    # while True:
+        # t = tok.read_token()
+        # if t == '':
+            # break
+        # print(t)
 
     xp = ExpressionParser(data)
     xp.special_forms.append('inline')
