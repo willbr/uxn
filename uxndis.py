@@ -465,7 +465,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with open(args.filename, 'rb') as f:
-        rom = bytearray(f.read())
+        rom = bytearray(0x100) + bytearray(f.read())
 
     disassemble(rom)
 
