@@ -1,5 +1,6 @@
 import talie
 import uxndis
+import uxnemu
 
 def read_block():
     block = []
@@ -7,7 +8,11 @@ def read_block():
 
     prompt = "& "
     while True:
-        line = input(prompt)
+        try:
+            line = input(prompt)
+        except EOFError:
+            line = ''
+
         prompt = "> "
 
         if line == '':
@@ -47,6 +52,9 @@ if __name__ == "__main__":
         rom.resolve()
         uxndis.disassemble(rom.rom, pc)
 
+    rom.write('brk')
     rom.resolve()
     uxndis.disassemble(rom.rom)
+
+    uxnemu.trace(rom)
 
