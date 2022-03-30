@@ -499,12 +499,9 @@ def assemble(rom, data):
 
 
 
-def disassemble(filename):
-    with open(filename, 'rb') as f:
-        rom = bytearray(f.read())
-
-    rom_iter = iter(rom)
-    i = 0
+def disassemble(rom, offset=0x100):
+    rom_iter = iter(rom[offset:])
+    i = offset
 
     while True:
         try:
@@ -557,5 +554,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    disassemble(args.filename)
+    with open(args.filename, 'rb') as f:
+        rom = bytearray(f.read())
+
+    disassemble(rom)
 
