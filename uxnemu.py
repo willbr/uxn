@@ -1,5 +1,7 @@
-import talie
 from uxn import *
+
+import talie
+import uxndis 
 
 
 def decode_byte(b):
@@ -61,7 +63,10 @@ class Uxn:
     def load_rom(self, rom):
         self.rom = rom
 
-    def step(self):
+    def step(self, echo=False):
+        if echo:
+            uxndis.disassemble(self.rom.rom, self.pc, 1)
+
         op_byte = self.rom.rom[self.pc]
         self.pc += 1
 
@@ -92,15 +97,18 @@ def trace(rom):
     emu = Uxn()
     emu.load_rom(rom)
 
+    print()
     while emu.running:
         try:
-            emu.step()
+            emu.step(echo=True)
+            print('wst', emu.wst)
+            print('rst', emu.rst)
+            print()
         except StopIteration:
+            print('wst', emu.wst)
+            print('rst', emu.rst)
+            print()
             break
-
-
-    print('wst', emu.wst)
-    print('rst', emu.rst)
 
 
 if __name__ == '__main__':
