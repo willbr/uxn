@@ -21,13 +21,22 @@ install(show_locals=True)
 
 
 class UxnRom():
-    def __init__(self):
-        self.rom = bytearray()
+    def __init__(self, filename=None):
         self.pc = 0
         self.scope = None
         self.refs = []
         self.labels = {}
         self.debug = False
+
+        if filename:
+            self.load_rom(filename)
+        else:
+            self.rom = bytearray()
+
+
+    def load_rom(self, filename):
+        with open(filename, 'rb') as f:
+            self.rom = bytearray(0x100) + bytearray(f.read())
 
 
     def __repr__(self):
