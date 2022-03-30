@@ -474,7 +474,7 @@ def assemble(rom, data):
         if p == '{':
             body = read_block()
             queue = body + queue + ['label', f"end-{name}"]
-            print(f"{name} {body = }")
+            # print(f"{name} {body = }")
 
         cmd = f'{prefix}{name}'
         rom.write(cmd, 'label')
