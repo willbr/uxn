@@ -43,14 +43,11 @@ if __name__ == "__main__":
         if not block:
             break
 
-        # print("block")
         pc = rom.pc
         data = '\n'.join(block) + '\n'
         talie.assemble(rom, data)
-        # print(block)
-        # print()
-        rom.resolve()
-        uxndis.disassemble(rom.rom, pc)
+        # rom.resolve()
+        # uxndis.disassemble(rom.rom, pc)
 
     rom.write('brk')
     rom.resolve()

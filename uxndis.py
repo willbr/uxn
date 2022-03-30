@@ -397,11 +397,23 @@ class ExpressionParser:
         assert False
 
 
-def disassemble(rom, offset=0x100):
+def disassemble(rom, offset=0x100, length=None):
     rom_iter = iter(rom[offset:])
     i = offset
 
+    if length:
+        pass
+    else:
+        length = len(rom) - offset
+
+    remaining = length
+
     while True:
+        if remaining == 0:
+            break
+        else:
+            remaining -= 1
+
         try:
             b = next(rom_iter)
         except StopIteration:
