@@ -189,14 +189,24 @@ class UxnRom():
             f.write(self.rom[0x100:])
 
 
+    def peek(self, short_mode, offset):
+        if short_mode:
+            peek = self.peek16
+        else:
+            peek = self.peek8
+
+        peek = self.peek16 if short_mode else self.peek8
+        n = peek(offset)
+        return n
+
     def peek8(self, offset):
-        return self.rom[offset]
+        n = self.rom[offset]
+        return n
 
     def peek16(self, offset):
         high = self.rom[offset]
         low  = self.rom[offset+1]
         n = (high << 8) + low
-        assert False
         return n
 
 
