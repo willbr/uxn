@@ -563,17 +563,16 @@ def disassemble(filename):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
 
-    parser.add_argument("filename")
+    parser.add_argument("input")
+    parser.add_argument("output")
 
     args = parser.parse_args()
 
-    with open(args.filename) as f:
+    with open(args.input) as f:
         data = f.read()
 
     rom = UxnRom()
     assemble(rom, data)
     rom.resolve()
-    rom.write_file('out.rom')
-
-    print("done")
+    rom.write_file(args.output)
 
