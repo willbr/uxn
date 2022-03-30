@@ -177,7 +177,10 @@ class Uxn:
 
         orig_i = src.i
 
-        if op == 'lit':
+        # Stack
+        if op == 'brk':
+            raise StopIteration
+        elif op == 'lit':
             if short_mode:
                 n = self.rom.peek16(self.pc)
                 src.push(n)
@@ -186,32 +189,83 @@ class Uxn:
                 n = self.rom.peek8(self.pc)
                 src.push(n)
                 self.pc += 1
-        elif op == 'add':
+        elif op == 'inc':
+            n = src.pop()
+            src.push(n + 1)
+        elif op == 'pop':
+            _ = src.pop()
+        elif op == 'dup':
+            assert False
+        elif op == 'nip':
+            assert False
+        elif op == 'swp':
+            assert False
+        elif op == 'ovr':
+            assert False
+        elif op == 'rot':
+            assert False
+        # Logic
+        elif op == 'equ':
+            assert False
+        elif op == 'neq':
+            assert False
+        elif op == 'gth':
+            assert False
+        elif op == 'lth':
+            assert False
+        elif op == 'jmp':
+            assert False
+        elif op == 'jcn':
             a = src.pop()
-            b = src.pop()
-            src.push(b + a)
-        elif op == 'brk':
-            raise StopIteration
+            b = src.pop8()
+            if b:
+                self.warp(short_mode, a)
+        elif op == 'jsr':
+            assert False
+        elif op == 'sth':
+            assert False
+        # Memory
+        elif op == 'ldz':
+            assert False
+        elif op == 'stz':
+            assert False
+        elif op == 'ldr':
+            assert False
+        elif op == 'str':
+            assert False
         elif op == 'lda':
             addr = src.pop16()
             n = self.rom.peek(short_mode, addr)
             src.push(n)
+        elif op == 'sta':
+            assert False
+        elif op == 'dei':
+            assert False
         elif op == 'deo':
             a = src.pop8()
             b = src.pop()
 
             d = self.dev[a >> 4]
             self.devw(short_mode, d, a, b)
-        elif op == 'inc':
-            n = src.pop()
-            src.push(n + 1)
-        elif op == 'jcn':
+        # Arithmetic
+        elif op == 'add':
             a = src.pop()
-            b = src.pop8()
-            if b:
-                self.warp(short_mode, a)
-        elif op == 'pop':
-            _ = src.pop()
+            b = src.pop()
+            src.push(b + a)
+        elif op == 'sub':
+            assert False
+        elif op == 'mul':
+            assert False
+        elif op == 'div':
+            assert False
+        elif op == 'and':
+            assert False
+        elif op == 'ora':
+            assert False
+        elif op == 'eor':
+            assert False
+        elif op == 'sft':
+            assert False
         else:
             assert False
 
