@@ -1,0 +1,60 @@
+label paint-sprite {
+    deo2(#0020, .Screen/x)
+    deo2(#0030, .Screen/x)
+}
+
+
+
+
+org 00
+label System {
+    &vector $2
+    &pad    $6
+    &r      $2
+    &g      $2
+    &b      $2
+}
+
+org 20
+label Screen {
+    &vector $2
+    &width  $2
+    &height $2
+    &pad    $2
+    &x      $2
+    &y      $2
+    &addr   $2
+    &pixel  $1
+    &sprite $1
+}
+
+
+
+
+
+data square {
+    ff81 8181 8181 81ff
+}
+
+
+
+
+/* args char color -- */
+
+word draw-hly  {
+	STH STH 
+	.Screen/y DEI2
+	/* y */ #00 STHkr #30 AND #24 SFT OVR2 ++ .Screen/y DEO2
+	#0400
+	&loop
+		STHkr #0f AND OVR SFT #01 AND 
+		/* pixel */ OVRr STHr #00 ! * .Screen/pixel DEO
+		INC GTHk ,&loop JCN
+	POP2
+	.Screen/y DEO2
+	/* x */ NIPr STHr #06 SFT #01 AND JMP RTN 
+		.Screen/x DEI2k INC2 ROT DEO2
+
+    RTN
+}
+
