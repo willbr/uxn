@@ -1,0 +1,42 @@
+17 5 +
+
+7 8 *
+
+(4 + (17 * 12)) puts
+
+17 12 * 4 _ puts
+
+word yards>in { 36 * }
+word ft>in { 12 * }
+
+
+word yards  { 36 * }
+word feet   { 12 * }
+word inches {}
+
+
+10 yards 2 feet + 9 inches + puts
+
+word 5#sum {
+    + + + + +
+}
+
+17 20 132 3 9 5#sum
+
+
+word flight-distance {
+    + *
+}
+
+
+word quarters {
+    4 /mod puts
+    " ones and " puts
+    puts
+    " quarters " puts
+}
+
+22 quarters
+
+/* 5 ones and 2 quarters */
+

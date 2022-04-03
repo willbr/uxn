@@ -1,0 +1,73 @@
+
+word washer {
+    wash spin rinse spin
+}
+
+word rinse {
+    fill agitate drain
+}
+
+word fill {
+    faucets open till-full faucets close
+}
+
+15 spaces
+
+42 emit
+
+word star {
+    42 emit
+}
+
+cr
+
+cr start cr star cr star
+
+word margin {
+    cr 30 spaces
+}
+
+margin star margin star margin star
+
+word blip {
+    margin star
+}
+
+word stars {
+    0 do star loop
+}
+
+5 stars
+
+35 stars
+
+
+word bar {
+    margin 5 stars
+}
+
+
+bar blip bar blip blip cr
+
+
+word f {
+    bar
+    blip
+    bar
+    blip
+    blip
+    cr
+}
+
+/* Large letter F */
+
+word greet {
+    "Hello, I speak Forth" puts
+}
+
+word four-more {
+    4 +
+}
+
+-1 four-more
+
