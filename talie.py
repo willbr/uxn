@@ -273,17 +273,6 @@ class Tokeniser:
         if t.startswith('\n'):
             return '\n'
 
-        try:
-            c = self.data[self.i]
-            if c == '(':
-                self.queued_tokens.append(t)
-                t = 'ie/neoteric'
-
-            while self.data[self.i] in ' \n':
-                self.i += 1
-        except IndexError:
-            pass
-
         return t
 
 
@@ -322,20 +311,9 @@ class ExpressionParser:
 
         if t == '':
             assert False
-        elif t == 'ie/neoteric':
-            name = self.read_raw()
-            s = stack
-            next_t = self.peek_raw()
-            assert next_t == '('
-            paren = self.read_raw()
-            stack.extend((name, t, paren))
-            if name in self.special_forms:
-                self.queued_tokens.append(name)
         elif t == '(':
             stack.append(t)
         elif t == ')':
-            assert False
-        elif t == ',':
             assert False
         else:
             self.queued_tokens.append(t)
@@ -345,7 +323,7 @@ class ExpressionParser:
         op = None
         while True:
             p = self.peek_raw()
-            if p in ['ie/neoteric', '(']:
+            if p == '('
                 self.parse_expr()
 
             t = self.read_raw()
@@ -353,21 +331,12 @@ class ExpressionParser:
 
             if t == '':
                 assert False
-            elif t == ',':
-                i = -1
-                op = None
             elif t == ')':
                 if i % 2 == 0 and op:
                     self.queued_tokens.append(op)
                 tos = stack.pop()
                 assert tos == '('
                 prev = stack[-1] if stack else None
-                if prev == 'ie/neoteric':
-                    _ = stack.pop()
-                    name = stack.pop()
-                    if name not in self.special_forms:
-                        self.queued_tokens.append(name)
-
                 assert not stack
                 return
             elif i == 0:
