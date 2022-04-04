@@ -261,10 +261,10 @@ class Tokeniser:
                 while self.data[self.i] not in '"':
                     self.i += 1
                 self.i += 1
-            elif c in '(),':
+            elif c in '()':
                 self.i += 1
             else:
-                while self.data[self.i] not in ' \n(),':
+                while self.data[self.i] not in ' \n()':
                     self.i += 1
         except IndexError:
             pass
