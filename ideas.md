@@ -1,100 +1,60 @@
 # ideas
 
-    inline(emit)
-        deo($18)
+## c ish syntax
 
-    inline(halt)
-        deo($010f)
-
-    pad-abs($0100)
-
-    push-abs(@program)
-        label(&while)
-            emit(ldak)
-            inc2
-            jcn(ldak, rel(&while))
-        pop2
-        halt
-    brk
-
-    push-abs(@hello-world)
-    "Hello 20 "World! 00
-
-# comment
-
-## modes
-
-- keep
-- return
-- short
-
-## runes
-
-- % macro-define
-- | pad absolute
-- $ pad relative
-- @ label-define
-- & sublabel-define
-- ~ include
-- # literal hex
-- . literal addr zero-page
-- , literal addr relative
-- ; literal addr absolute
-- : raw addr absolute
-- ' raw char
-- " raw word
-
-
-# c ish syntax
-
-## word
-
-    word hello {
-        puts("hi")
-    }
-
-    if(n > 1) {
-        puts("hi")
-    }
+    (n > 1) if { "hi" puts }
 
     n 1 > if { "hi" puts }
 
 
-# neoteric
+## comment
 
-## normal
+    /*
+     *
+     * use c like comments
+     *
+     */
 
-    a(b, c)
 
-    into
+or
 
-    b c a
+    comment {
+        use blocks to denote comments?
+    }
 
-example
 
-    deo(#18)
-    add(#01, #02)
+## label blocks
 
-    into
+    label square {
+        ff81 8181 8181 81ff
+    }
 
-    #18 deo
-    #01 #02 add
+is
 
-## special forms
+    label square
+        ff81 8181 8181 81ff
+        label end-square
 
-    a(b, c)
 
-    into
+## data blocks
 
-    a b , c
+numbers should be literal by default
+to enter raw blocks, you should use a data block
 
-example 'inline'
-    
-    inline(emit)
-        deo(#18)
+    data square {
+        ff81 8181 8181 81ff
+    }
 
-    into
 
-    inline emit
-        #18 deo
+## incbin
+
+    incbin "filename" offset length
+
+    incbin "sprite.gly" 0 0
+
+## repeat block
+
+    repeat 10 {
+        0000 1111 2222 3333
+    }
 
