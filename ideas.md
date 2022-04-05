@@ -9,15 +9,6 @@
 
 ## comment
 
-    /*
-     *
-     * use c like comments
-     *
-     */
-
-
-or
-
     comment {
         use blocks to denote comments?
     }

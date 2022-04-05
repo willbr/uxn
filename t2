@@ -6,6 +6,10 @@ inline halt {
     #010f deo
 }
 
+comment {
+    This is a comment!
+}
+
 origin 0100
 
 @program {
