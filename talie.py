@@ -226,6 +226,7 @@ class Tokeniser:
         self.i = 0
         self.queued_tokens = []
         self.data = data
+        self.whitespace = ' \n'
 
 
     def push_token(self, token):
@@ -252,10 +253,7 @@ class Tokeniser:
         try:
             c = self.data[self.i]
 
-            if c == ' ':
-                while self.data[self.i] in ' ':
-                    self.i += 1
-            elif c == '\n':
+            if c == '\n':
                 while self.data[self.i] in '\n':
                     self.i += 1
             elif c == '"':
@@ -272,6 +270,13 @@ class Tokeniser:
             pass
 
         t = self.data[start_pos:self.i]
+
+        try:
+            while self.data[self.i] in self.whitespace:
+                self.i += 1
+        except IndexError:
+            pass
+
         if t.startswith('\n'):
             return '\n'
 
@@ -325,7 +330,7 @@ class ExpressionParser:
         op = None
         while True:
             p = self.peek_raw()
-            if p == '('
+            if p == '(':
                 self.parse_expr()
 
             t = self.read_raw()
