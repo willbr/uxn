@@ -83,6 +83,9 @@ class UxnRom():
         elif first_char == '"':
             for b in bytes(token[1:], 'ascii'):
                 self.write_byte(b)
+        elif first_char == '$':
+            n = int(token[1:], 16)
+            self.pc += n
         elif token[:3].lower() in op_table:
             self.write_op(token)
         elif token == 'rpn':
