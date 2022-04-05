@@ -441,9 +441,7 @@ def assemble(rom, data):
         if w == '':
             # print("break")
             break;
-        elif w == '{':
-            pass
-        elif w == '}':
+        elif w in '{}[]':
             pass
         elif w == 'inline':
             name = next_word()
