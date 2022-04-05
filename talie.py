@@ -375,6 +375,7 @@ def assemble(rom, data):
     xp.special_forms.extend("""
     inline
     origin
+    comment
     """.strip().split())
 
     # while True:
@@ -458,6 +459,8 @@ def assemble(rom, data):
             offset = next_word()
             cmd = '|' + offset
             rom.write(cmd, 'set pc')
+        elif w == 'comment':
+            body = read_block()
         elif w in inline_words:
             body = inline_words[w]
             assert body
