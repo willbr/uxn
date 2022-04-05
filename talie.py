@@ -369,16 +369,12 @@ def assemble(rom, data):
         # if t == '':
             # break
         # print(t)
+    # return
 
     xp = ExpressionParser(data)
     xp.special_forms.extend("""
     inline
-    org
-    label
-    sub-label
-    rel-addr-sub
-    lit-addr
-    rel-addr-sub
+    origin
     """.strip().split())
 
     # while True:
@@ -451,28 +447,17 @@ def assemble(rom, data):
             # print("break")
             break;
         elif w == '{':
-            a = next_word()
-            assert False
+            pass
+        elif w == '}':
+            pass
         elif w == 'inline':
             name = next_word()
             body = read_block()
             inline_words[name] = body
-        elif w == 'org':
+        elif w == 'origin':
             offset = next_word()
             cmd = '|' + offset
             rom.write(cmd, 'set pc')
-        elif w == 'label':
-            name = next_word()
-            assemble_label('@', name)
-        elif w == 'sub-label':
-            name = next_word()
-            assemble_label('&', name)
-        elif w == 'lit-addr':
-            name = next_word()
-            assemble_label(';', name)
-        elif w == 'rel-addr-sub':
-            name = next_word()
-            assemble_label(',&', name)
         elif w in inline_words:
             body = inline_words[w]
             assert body
