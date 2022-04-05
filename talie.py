@@ -285,7 +285,6 @@ class Tokeniser:
 
 class ExpressionParser:
     def __init__(self, data):
-        self.special_forms = []
         self.queued_tokens = []
         self.tokeniser = Tokeniser(data)
         self.read_raw = self.tokeniser.read_token
@@ -372,11 +371,6 @@ def assemble(rom, data):
     # return
 
     xp = ExpressionParser(data)
-    xp.special_forms.extend("""
-    inline
-    origin
-    comment
-    """.strip().split())
 
     # while True:
         # t = xp.read_token()
@@ -461,6 +455,14 @@ def assemble(rom, data):
             rom.write(cmd, 'set pc')
         elif w == 'comment':
             body = read_block()
+        elif w == "data":
+            name = next_word()
+            body = read_block()
+            cmd = '@' + name
+            rom.write(cmd, 'data label')
+            for b in body:
+                n = int(b, 16)
+                rom.write_byte(n)
         elif w in inline_words:
             body = inline_words[w]
             assert body
@@ -472,7 +474,6 @@ def assemble(rom, data):
             rom.write_byte(0)
         else:
             rom.write(w, 'asm')
-
 
 
 def disassemble(filename):
