@@ -29,3 +29,7 @@ brk
 
 @hello-world "Hello World!"
 
+data goodbye {
+    47 6f 6f 64 62 79 65 00
+}
+
