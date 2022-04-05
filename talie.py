@@ -77,6 +77,9 @@ class UxnRom():
         elif first_char == ',': # literal address relative
             self.make_reference(token, self.pc)
             self.write_lit_byte(0xff)
+        elif first_char == '.': # zero-page address
+            self.make_reference(token, self.pc)
+            self.write_lit_byte(0xff)
         elif first_char == '"':
             for b in bytes(token[1:], 'ascii'):
                 self.write_byte(b)
@@ -180,7 +183,9 @@ class UxnRom():
             # print(label, label_addr)
             # print(rune, ref_addr)
             if rune == '.':
-                assert False
+                assert 0x00 <= label_addr  <= 0xff
+                self.pc = ref_addr + 1
+                self.write_byte(label_addr)
             elif rune == ',':
                 pc = self.pc
                 self.pc = ref_addr + 1
