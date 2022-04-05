@@ -87,8 +87,10 @@ class UxnRom():
         else:
             n = int(token, 16)
             if n > 0xff:
+                self.write_op('lit2')
                 self.write_short(n)
             else:
+                self.write_op('lit')
                 self.write_byte(n)
 
 
