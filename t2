@@ -1,20 +1,20 @@
 inline emit {
-    deo(#18)
+    18 deo
 }
 
 inline halt {
-    deo(#010f)
+    #010f deo
 }
 
-org 0100
+origin 0100
 
-label program {
-    lit-addr hello-world
+@program {
+    ;hello-world
 
-    sub-label while {
-        emit(ldak)
+    &while {
+        ldak emit
         inc2
-        jcn(ldak, rel-addr-sub(while))
+        ldak ,&while jcn
     }
 
     pop2
@@ -23,5 +23,5 @@ label program {
 
 brk
 
-label hello-world "Hello World!"
+@hello-world "Hello World!"
 
