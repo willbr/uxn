@@ -476,55 +476,6 @@ def assemble(rom, data):
             rom.write(w, 'asm')
 
 
-def disassemble(filename):
-    with open(filename, 'rb') as f:
-        rom = bytearray(f.read())
-
-    rom_iter = iter(rom)
-    i = 0
-
-    while True:
-        try:
-            b = next(rom_iter)
-        except StopIteration:
-            break
-        data = [b]
-        base_op_code = b & 0b00011111
-        base_op = reverse_op_table[base_op_code]
-        op = base_op
-        short_mode = False
-
-        if b & 0b10000000:
-            op += 'k'
-        if b & 0b01000000:
-            op += 'r'
-        if b & 0b00100000:
-            short_mode = True
-            op += '2'
-
-        if base_op == 'lit':
-            if short_mode:
-                sep = ' '
-                high = next(rom_iter)
-                low  = next(rom_iter)
-                n = (high << 8) + low
-                data += [high, low]
-                op = f"#{n:04x}"
-            elif b & 0b10000000:
-                n  = next(rom_iter)
-                data += [n]
-                op = f"#{n:02x}"
-            else:
-                op = 'brk'
-
-        s = ' '.join(f"{b:02x}" for b in data)
-
-        a = ' '.join(repr(chr(b)) for b in data)
-
-        print(f"{i:04x} | {s:8} | {a:20} | {op:5} |")
-        i += len(data)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
 
