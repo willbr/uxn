@@ -195,7 +195,9 @@ class Uxn:
         elif op == 'pop':
             _ = src.pop()
         elif op == 'dup':
-            assert False
+            a = src.pop()
+            src.push(a)
+            src.push(a)
         elif op == 'nip':
             assert False
         elif op == 'swp':
