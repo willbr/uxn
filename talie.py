@@ -19,6 +19,7 @@ print = console.print
 
 install(show_locals=True)
 
+gensym_counter =0
 
 class UxnRom():
     def __init__(self, filename=None):
@@ -479,6 +480,13 @@ def assemble(rom, data):
             for b in body:
                 n = int(b, 16)
                 rom.write_byte(n)
+        elif w == "loop":
+            name = gensym('loop')
+            cmd = '@' + name
+            rom.write(cmd, 'data label')
+            cmd = ';' + name
+            body = read_block() + [cmd, 'jmp2']
+            queue = body + queue
         elif w == "word":
             name = next_word()
             body = read_block() + ['jmp2r']
@@ -524,6 +532,16 @@ def assemble(rom, data):
             rom.write_byte(0)
         else:
             rom.write(w, 'asm')
+
+
+
+def gensym(name=None):
+    global gensym_counter
+    if not name:
+        name = "g-"
+    sym_name = f"{name}{gensym_counter:x}"
+    gensym_counter += 1
+    return sym_name
 
 
 if __name__ == "__main__":
