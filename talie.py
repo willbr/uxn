@@ -94,7 +94,9 @@ class UxnRom():
             self.write_op(token)
         else:
             n = int(token, 16)
-            if n > 0xff:
+            assert n >= 0
+            assert n <= 0xffff
+            if len(token) >= 4:
                 self.write_op('lit2')
                 self.write_short(n)
             else:
