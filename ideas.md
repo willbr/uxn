@@ -34,12 +34,6 @@ into
     ;loop jmp
 
 
-## incbin
-
-    incbin "filename" offset length
-
-    incbin "sprite.gly" 0 0
-
 ## repeat block
 
     repeat 10 {

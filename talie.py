@@ -486,6 +486,22 @@ def assemble(rom, data):
             cmd = '@' + name
             rom.write(cmd, 'word def')
             queue = body + queue
+        elif w == "incbin":
+            name = next_word()
+            offset = int(next_word(), 16)
+            length = int(next_word(), 16)
+            assert name[0] == '"'
+            assert name[-1] == '"'
+            name = name[1:-1]
+            with open(name, 'rb') as f:
+                if offset:
+                    f.seek(offset)
+                if length:
+                    data = f.read(length)
+                else:
+                    data = f.read()
+            for b in data:
+                rom.write_byte(b)
         elif w in inline_words:
             body = inline_words[w]
             assert body
