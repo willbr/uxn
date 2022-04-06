@@ -276,7 +276,8 @@ class Uxn:
         if short_mode:
             self.pc = x
         else:
-            self.pc += sint8(x)
+            n = sint8(x)
+            self.pc += n
 
 
 def trace(rom):
