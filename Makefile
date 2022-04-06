@@ -26,12 +26,9 @@ wbuild:
 	watchexec -cr --ignore "*.rom" "make build"
 
 build:
-	$(cat) t2
-	python talie.py t2 out.rom
+	$(cat) t3
+	python talie.py t3 out.rom
 	python uxndis.py out.rom
-	python uxndis.py e1.rom
 	$(hex) out.rom
-	$(hex) e1.rom
 	python uxnemu.py out.rom
-	python uxnemu.py e1.rom
 

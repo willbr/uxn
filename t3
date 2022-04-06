@@ -1,0 +1,24 @@
+inline emit {
+    #18 deo
+}
+
+inline cr {
+    #0a emit
+}
+
+inline halt {
+    #010f deo
+}
+
+comment {
+    This is a comment!
+}
+
+origin 0100
+
+@program {
+    'h emit
+    cr
+    halt
+}
+
