@@ -507,14 +507,14 @@ def assemble(rom, data):
             assert body
             queue = body + queue
         elif w in words:
-            label_addr = rom.labels[name]
+            label_addr = rom.labels[w]
             delta = label_addr - rom.pc - 1
             if -128 <= delta <= 127:
-                cmd = ',' + name
+                cmd = ',' + w
                 rom.write(cmd, 'word call')
                 rom.write('jsr', 'word call')
             else:
-                cmd = ';' + name
+                cmd = ';' + w
                 rom.write(cmd, 'word call')
                 rom.write('jsr2', 'word call')
         elif w[0] == '"':
