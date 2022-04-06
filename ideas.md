@@ -62,3 +62,25 @@ to enter raw blocks, you should use a data block
         0000 1111 2222 3333
     }
 
+## functions
+
+declare functions
+jump to functions with jsr or jsr2
+
+    word double {
+        dup +
+    }
+
+    10
+    double
+
+into
+
+    @word {
+        dup +
+        jmp2r
+    }
+
+    10
+    ;word jsr2
+
