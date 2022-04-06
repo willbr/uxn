@@ -12,9 +12,8 @@
 | 0x05  | swp     | Swap      | a c b         |
 | 0x06  | ovr     | Over      | a b c b       |
 | 0x07  | rot     | Rotate    | b c a         |
-|-------|---------|-----------|-------------------|
+|       |         |           |                   |
 |       | Logic   |           |                   |
-|-------|---------|-----------|-------------------|
 | 0x08  | equ     | Equal     | a b?c             |
 | 0x09  | neq     | Not Equal | a b!c             |
 | 0x0a  | gth     | Greater   | a b\>c            |
@@ -23,9 +22,7 @@
 | 0x0d  | jcn     | JumpCond  | a {(b8)PC+=c}     |
 | 0x0e  | jsr     | JumpStash | a b {rs.PC PC+=c} |
 | 0x0f  | sth     | Stash     | a b {rs.c}        |
-|-------|---------|-----------|-------------------|
 |       | Memory |               |                |
-|-------|--------|---------------|----------------|
 | 0x10  | ldz    | Load Zeropage | a b M[c8]      |
 | 0x11  | stz    | Save Zeropage | a {M[c8]=b}    |
 | 0x12  | ldr    | Load Rel      | a b M[PC+c8]   |
@@ -34,7 +31,7 @@
 | 0x15  | sta    | Save Abs      | a b {M[c16]=b} |
 | 0x16  | deo    | Device In     | a b D[c8]      |
 | 0x17  | dei    | Device Out    | a {D[c8]=b}    |
-|-------|---------|-----------|-------------------|
+|       |            |              |                   |
 |       | Arithmetic |              |                   |
 |-------|------------|--------------|-------------------|
 | 0x18  | add        | Add          | a b+c             |
@@ -45,6 +42,7 @@
 | 0x1d  | ora        | Or           | a b\|c            |
 | 0x1e  | eor        | Exclusive Or | a b^c             |
 | 0x1f  | sft        | Shift        | a b\>\>c8l\<\<c8h |
+|-------|------------|--------------|-------------------|
 
 ## labels
 
