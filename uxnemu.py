@@ -191,7 +191,12 @@ class Uxn:
                 self.pc += 1
         elif op == 'inc':
             n = src.pop()
-            src.push(n + 1)
+            n += 1
+            if short_mode:
+                n %= 0xffff
+            else:
+                n %= 0xff
+            src.push(n)
         elif op == 'pop':
             _ = src.pop()
         elif op == 'dup':
