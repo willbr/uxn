@@ -2,9 +2,22 @@
 
 ## c ish syntax
 
-    (n > 1) if { "hi" puts }
+    (n > 1) if {
+        "hi" puts
+    } else {
+        "nope" puts
+    }
 
-    n 1 > if { "hi" puts }
+into
+
+    n 1 >
+    ;true jcn
+    @else
+        "nope" ;puts jsr2
+        ;endif jmp
+    @true
+        "hi" ;puts jsr2
+    @endif
 
 
 ## comment
