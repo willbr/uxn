@@ -397,7 +397,7 @@ def assemble(rom, data):
         # print(t)
 
     inline_words = {}
-
+    words = []
     queue = []
 
     def next_word():
@@ -479,10 +479,28 @@ def assemble(rom, data):
             for b in body:
                 n = int(b, 16)
                 rom.write_byte(n)
+        elif w == "word":
+            name = next_word()
+            body = read_block() + ['jmp2r']
+            words.append(name)
+            cmd = '@' + name
+            rom.write(cmd, 'word def')
+            queue = body + queue
         elif w in inline_words:
             body = inline_words[w]
             assert body
             queue = body + queue
+        elif w in words:
+            label_addr = rom.labels[name]
+            delta = label_addr - rom.pc - 1
+            if -128 <= delta <= 127:
+                cmd = ',' + name
+                rom.write(cmd, 'word call')
+                rom.write('jsr', 'word call')
+            else:
+                cmd = ';' + name
+                rom.write(cmd, 'word call')
+                rom.write('jsr2', 'word call')
         elif w[0] == '"':
             s = w[1:-1]
             for b in bytes(s, 'ascii'):
