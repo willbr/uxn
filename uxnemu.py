@@ -214,14 +214,17 @@ class Uxn:
         elif op == 'lth':
             assert False
         elif op == 'jmp':
-            assert False
+            a = src.pop()
+            self.warp(short_mode, a)
         elif op == 'jcn':
             a = src.pop()
             b = src.pop8()
             if b:
                 self.warp(short_mode, a)
         elif op == 'jsr':
-            assert False
+            a = src.pop()
+            self.rst.push16(self.pc)
+            self.warp(short_mode, a)
         elif op == 'sth':
             assert False
         # Memory
