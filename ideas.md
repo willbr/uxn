@@ -21,7 +21,7 @@ into
 
 ## loop
 
-infiniate loop
+infinite loop
 
     loop {
         "beep" puts
