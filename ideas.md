@@ -19,6 +19,20 @@ into
         "hi" ;puts jsr2
     @endif
 
+## loop
+
+infiniate loop
+
+    loop {
+        "beep" puts
+    }
+
+into
+
+    @loop
+        "beep" puts
+    ;loop jmp
+
 
 ## comment
 
