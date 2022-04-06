@@ -81,7 +81,10 @@ class UxnRom():
             self.make_reference(token, self.pc)
             self.write_lit_byte(0xff)
         elif first_char == "'":
-            assert False # literal char
+            assert len(token) == 2
+            c = token[1]
+            n = ord(c)
+            self.write_lit_byte(n)
         elif first_char == '"':
             for b in bytes(token[1:], 'ascii'):
                 self.write_byte(b)
@@ -271,6 +274,11 @@ class Tokeniser:
                 while self.data[self.i] not in '"':
                     self.i += 1
                 self.i += 1
+            elif c == "'":
+                self.i += 1
+                assert self.data[self.i] not in ' \n'
+                self.i += 1
+                assert self.data[self.i] in ' \n'
             elif c in '()':
                 self.i += 1
             else:
