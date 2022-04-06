@@ -10,15 +10,27 @@ inline halt {
     #010f deo
 }
 
-comment {
-    This is a comment!
+origin 0100
+;main jmp2
+
+
+word puts {
+    &while {
+        ldak emit
+        inc2
+        ldak ,&while jcn
+    }
+    cr
+    pop2
 }
 
-origin 0100
-
-@program {
-    'h emit
-    cr
+@main {
+    ;hello-world puts
+    ;goodbye puts
     halt
 }
+
+
+@hello-world "Hello, world!"
+@goodbye "Goodbye"
 
