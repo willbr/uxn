@@ -41,7 +41,6 @@
 | 0x1d  | ora        | Or           | a b\|c            |
 | 0x1e  | eor        | Exclusive Or | a b^c             |
 | 0x1f  | sft        | Shift        | a b\>\>c8l\<\<c8h |
-|-------|------------|--------------|-------------------|
 
 ## labels
 
