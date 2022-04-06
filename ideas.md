@@ -90,11 +90,11 @@ jump to functions with jsr or jsr2
 
 into
 
-    @word {
+    @double{
         dup +
         jmp2r
     }
 
     10
-    ;word jsr2
+    ;double jsr2
 
