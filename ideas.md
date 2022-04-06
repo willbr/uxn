@@ -46,25 +46,3 @@ into
         0000 1111 2222 3333
     }
 
-## functions
-
-declare functions
-jump to functions with jsr or jsr2
-
-    word double {
-        dup +
-    }
-
-    10
-    double
-
-into
-
-    @double{
-        dup +
-        jmp2r
-    }
-
-    10
-    ;double jsr2
-
