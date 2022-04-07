@@ -211,7 +211,10 @@ class Uxn:
             assert False
         # Logic
         elif op == 'equ':
-            assert False
+            a = src.pop()
+            b = src.pop()
+            n = 1 if a == b else 0
+            src.push(n)
         elif op == 'neq':
             assert False
         elif op == 'gth':
