@@ -33,6 +33,16 @@ into
         "beep" puts
     ;loop jmp
 
+### named loops
+
+    loop beeper {
+        "beep" puts
+        1 if {
+            break
+        } else {
+            continue
+        }
+    }
 
 ## repeat block
 
