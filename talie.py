@@ -196,9 +196,8 @@ class UxnRom():
                 self.pc = ref_addr + 1
                 self.write_byte(label_addr)
             elif rune == ',':
-                pc = self.pc
                 self.pc = ref_addr + 1
-                delta = label_addr - self.pc - 1
+                delta = label_addr - self.pc - 2
                 self.write_signed_byte(delta)
             elif rune == ';':
                 self.pc = ref_addr + 1
