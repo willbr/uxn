@@ -85,9 +85,11 @@ class Stack:
 
     def push(self, n):
         if self.short_mode:
-            self.push16(n)
+            i = n % 0xffff
+            self.push16(i)
         else:
-            self.push8(n)
+            i = n % 0xff
+            self.push8(i)
 
 
     def push16(self, n):
@@ -192,10 +194,6 @@ class Uxn:
         elif op == 'inc':
             n = src.pop()
             n += 1
-            if short_mode:
-                n %= 0xffff
-            else:
-                n %= 0xff
             src.push(n)
         elif op == 'pop':
             _ = src.pop()
