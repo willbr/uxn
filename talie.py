@@ -564,12 +564,11 @@ def assemble(rom, data):
             rom.write(w, 'asm')
 
 
-
 def gensym(name=None):
     global gensym_counter
     if not name:
         name = "g-"
-    sym_name = f"{name}{gensym_counter:x}"
+    sym_name = f"{name}-{gensym_counter:x}"
     gensym_counter += 1
     return sym_name
 
