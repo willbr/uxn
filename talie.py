@@ -486,6 +486,26 @@ def assemble(rom, data):
             rom.write(cmd, 'data label')
             cmd = ';' + name
             body = read_block() + [cmd, 'jmp2']
+        elif w == "if":
+            p = peek_word()
+            true_clause = read_block()
+            assert true_clause
+            p = peek_word()
+            true_marker = gensym('if-true')
+            end_marker   = gensym('if-end')
+            if p == 'else':
+                body = [';' + true_marker, 'jcn2']
+                _ = next_word()
+                else_clause = read_block()
+                body += else_clause
+                body += [';' + end_marker, 'jcn2']
+                body += true_clause
+                body += ['@' + end_marker]
+                assert False
+            else:
+                body = ['#00', 'EQU', ';' + end_marker, 'jcn2']
+                body += true_clause
+                body += ['@' + end_marker]
             queue = body + queue
         elif w == "word":
             name = next_word()
