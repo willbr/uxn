@@ -481,11 +481,21 @@ def assemble(rom, data):
                 n = int(b, 16)
                 rom.write_byte(n)
         elif w == "loop":
-            name = gensym('loop')
-            cmd = '@' + name
-            rom.write(cmd, 'data label')
-            cmd = ';' + name
-            body = read_block() + [cmd, 'jmp2']
+            pw = peek_word()
+            if pw == '{':
+                start_marker = gensym('loop-start')
+                end_marker = gensym('loop-end')
+            else:
+                start_marker = next_word()
+                end_marker = start_marker + '-end'
+            cmd = '&' + start_marker
+            body = [cmd]
+            body += read_block()
+            cmd = ';&' + start_marker
+            body += [cmd, 'jmp2']
+            cmd = '&' + end_marker
+            body += [cmd]
+            queue = body + queue
         elif w == "if":
             p = peek_word()
             true_clause = read_block()
