@@ -1,0 +1,26 @@
+inline emit {
+    #18 deo
+}
+
+inline cr {
+    #0a emit
+}
+
+inline halt {
+    #010f deo
+}
+
+origin 0100
+
+@main {
+    '* emit
+    ,&asdf-end jmp
+    &asdf-end
+    '# emit
+    ;&asdf-end2 jmp2
+    &asdf-end2
+
+    halt
+}
+
+
