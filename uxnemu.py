@@ -168,7 +168,11 @@ class Uxn:
         if echo:
             uxndis.disassemble(self.rom.rom, self.pc, 1)
 
-        op_byte = self.rom.rom[self.pc]
+        try:
+            op_byte = self.rom.rom[self.pc]
+        except IndexError:
+            raise StopIteration(f"read past end of rom at: 0x{self.pc:02x}")
+
         self.pc += 1
 
         keep_mode, return_mode, short_mode, op, modes, opcode = decode_byte(op_byte)
