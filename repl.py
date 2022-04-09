@@ -30,7 +30,25 @@ def read_block():
     return block
 
 
+def iter_trace(emu, rom):
+    print()
+    while emu.running:
+        try:
+            emu.step(echo=True)
+            print('wst', emu.wst)
+            print('rst', emu.rst)
+            print()
+        except StopIteration:
+            print('wst', emu.wst)
+            print('rst', emu.rst)
+            print()
+            break
+        # input()
+
+
 if __name__ == "__main__":
+    emu = uxnemu.Uxn()
+
     rom = talie.UxnRom()
     rom.pc = 0x100
 
@@ -48,6 +66,11 @@ if __name__ == "__main__":
         talie.assemble(rom, data)
         # rom.resolve()
         # uxndis.disassemble(rom.rom, pc)
+        rom.resolve()
+        uxndis.disassemble(rom.rom)
+
+        emu.load_rom(rom)
+        iter_trace(emu, rom)
 
     rom.write('brk')
     rom.resolve()
