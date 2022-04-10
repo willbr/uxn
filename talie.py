@@ -240,6 +240,15 @@ class Tokeniser:
         self.queued_tokens = []
         self.data = data
         self.whitespace = ' \n'
+        self.chomp_whitespace()
+
+
+    def chomp_whitespace(self):
+        try:
+            while self.data[self.i] in self.whitespace:
+                self.i += 1
+        except IndexError:
+            pass
 
 
     def push_token(self, token):
@@ -289,11 +298,7 @@ class Tokeniser:
 
         t = self.data[start_pos:self.i]
 
-        try:
-            while self.data[self.i] in self.whitespace:
-                self.i += 1
-        except IndexError:
-            pass
+        self.chomp_whitespace()
 
         if t.startswith('\n'):
             return '\n'
