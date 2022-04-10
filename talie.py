@@ -582,6 +582,7 @@ if __name__ == "__main__":
 
     parser.add_argument("input")
     parser.add_argument("output")
+    parser.add_argument("--print-labels")
 
     args = parser.parse_args()
 
@@ -591,5 +592,9 @@ if __name__ == "__main__":
     rom = UxnRom()
     assemble(rom, data)
     rom.resolve()
+
+    if args.print_labels:
+        print(rom.labels)
+
     rom.write_file(args.output)
 
