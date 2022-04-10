@@ -188,7 +188,12 @@ class UxnRom():
         # print(self.labels)
         for v in self.refs:
             label, rune, ref_addr = v
-            label_addr = self.labels[label]
+            try:
+                label_addr = self.labels[label]
+            except KeyError:
+                print(self.labels)
+                print(f"unknown label: {repr(label)}")
+                exit(1)
             # print(label, label_addr)
             # print(rune, ref_addr)
             if rune == '.':
