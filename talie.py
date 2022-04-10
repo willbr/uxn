@@ -569,8 +569,18 @@ def assemble(rom, data):
             for b in bytes(s, 'ascii'):
                 rom.write_byte(b)
             rom.write_byte(0)
+        elif is_syntax(w):
+            rom.write(w, 'syntax')
+        elif is_op(w):
+            rom.write(w, 'op')
         else:
-            rom.write(w, 'asm')
+            try:
+                n = int(w, 16)
+                rom.write(w, 'asm')
+            except ValueError:
+                cmd = ';' + w
+                rom.write(cmd, 'word call')
+                rom.write('jsr2', 'word call')
 
 
 def gensym(name=None):
