@@ -1,0 +1,37 @@
+inline draw-pixel { #41   .screen/pixel deo }
+
+origin 00 @system  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+origin 20 @screen  [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+
+origin 0100
+@main {
+    #2ce9 .system/r deo2
+    #21c0 .system/g deo2
+    #2ce5 .system/b deo2
+
+    #2ce9 .system/r DEO2
+    #01c0 .system/g DEO2
+    #2ce5 .system/b DEO2
+
+    paint-sprite
+
+    #0008 .screen/x DEO2
+    #0008 .screen/y DEO2
+    draw-pixel
+    brk
+
+}
+
+
+word paint-sprite {
+    #0010 .screen/x deo2
+    #0020 .screen/y deo2
+    ;sprite .screen/addr deo2
+    #0a .screen/sprite deo
+}
+
+
+@sprite {
+    0f38 675f dfbf bfbf
+}
+
