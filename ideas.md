@@ -50,3 +50,12 @@ into
         0000 1111 2222 3333
     }
 
+# 3-INSTRUCTION FORTH
+
+A 3-INSTRUCTION FORTH FOR EMBEDDED SYSTEMS WORK
+Illustrated on the Motorola MC68HC11 by Frank Sergeant Copyright 1991 Frank Sergeant 
+
+    XC@   fetch byte
+    XC!   store byte
+    XCALL call sub
+
