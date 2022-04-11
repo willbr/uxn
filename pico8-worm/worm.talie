@@ -1,8 +1,14 @@
-origin 00 @system  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
-origin 20 @screen  [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+|00 @system  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 &debug $1 &state $1 ]
+|20 @screen  [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+|80 @controller [ &vector $2 &button $1 &key $1 ]
 
 |0100
 @main {
+    init
+    brk
+}
+
+word init {
     (128 x 128)
     #0080 .screen/width  DEO2
     #0080 .screen/height DEO2
@@ -11,17 +17,31 @@ origin 20 @screen  [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $
     #0f0f .system/g DEO2
     #020f .system/b DEO2
 
-    paint-sprite
-
-    brk
+    ;on-controller .controller/vector deo2
 }
-
 
 word paint-sprite {
     #0010 .screen/x deo2
     #0020 .screen/y deo2
     ;sprite .screen/addr deo2
     #81 .screen/sprite deo
+}
+
+@on-controller {
+    .controller/key dei
+    lit '1 equ
+    ,&draw-sprite jcn
+    ,&end jmp
+
+    &draw-sprite {
+        #0010 .screen/x deo2
+        #0020 .screen/y deo2
+        ;sprite .screen/addr deo2
+        #81 .screen/sprite deo
+    }
+
+    &end
+    brk
 }
 
 
