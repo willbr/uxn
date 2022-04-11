@@ -474,8 +474,11 @@ def assemble(rom, data):
             break;
         elif w in '{}[]':
             pass
-        elif w == 'inline':
-            name = next_word()
+        elif w == 'inline' or first_char == '%':
+            if first_char == '%':
+                name = w[1:]
+            else:
+                name = next_word()
             body = read_block()
             inline_words[name] = body
         elif w == 'origin':
