@@ -88,7 +88,7 @@ class UxnRom():
             assert len(token) == 2
             c = token[1]
             n = ord(c)
-            self.write_lit_byte(n)
+            self.write_byte(n)
         elif first_char == '"':
             for b in bytes(token[1:], 'ascii'):
                 self.write_byte(b)
