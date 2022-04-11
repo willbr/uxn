@@ -1,8 +1,8 @@
-inline emit {
+%emit {
     #18 deo
 }
 
-inline cr {
+%cr {
     #0a emit
 }
 
@@ -12,6 +12,7 @@ inline halt {
 
 origin 0100
 
+( haha )
 @main {
     '* emit
     ,&asdf-end jmp
