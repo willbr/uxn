@@ -4,7 +4,7 @@ op_table = {}
 reverse_op_table = {}
 
 def is_syntax(w):
-    return w[0] in "~;:,.|@&$#"
+    return w[0] in "~';:,.|@&$#"
 
 def is_op(w):
     lhs = w[:3].lower()
