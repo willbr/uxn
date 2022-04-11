@@ -314,100 +314,19 @@ class Tokeniser:
         return t
 
 
-class ExpressionParser:
-    def __init__(self, data):
-        self.queued_tokens = []
-        self.tokeniser = Tokeniser(data)
-        self.read_raw = self.tokeniser.read_token
-        self.peek_raw = self.tokeniser.peek_token
-
-
-    def read_token(self):
-        if self.queued_tokens:
-            t = self.queued_tokens.pop(0)
-            return t
-
-        t = self.peek_raw()
-        # print(f"h {t= }")
-
-        if t == '':
-            return ''
-        else:
-            self.parse_expr()
-            if self.queued_tokens:
-                new_t = self.queued_tokens.pop(0)
-            else:
-                new_t = ''
-            return new_t
-
-
-    def parse_expr(self):
-        stack = []
-
-        t = self.read_raw()
-
-        if t == '':
-            assert False
-        elif t == '(':
-            stack.append(t)
-        elif t == ')':
-            assert False
-        else:
-            self.queued_tokens.append(t)
-            return
-
-        i = 0
-        op = None
-        while True:
-            p = self.peek_raw()
-            if p == '(':
-                self.parse_expr()
-
-            t = self.read_raw()
-            # print(f"{t = }")
-
-            if t == '':
-                assert False
-            elif t == ')':
-                if i % 2 == 0 and op:
-                    self.queued_tokens.append(op)
-                tos = stack.pop()
-                assert tos == '('
-                prev = stack[-1] if stack else None
-                assert not stack
-                return
-            elif i == 0:
-                self.queued_tokens.append(t)
-            elif i == 1:
-                op = t
-            elif i % 2:
-                assert t == op
-            else:
-                self.queued_tokens.append(t)
-                self.queued_tokens.append(op)
-
-            i += 1
-
-        assert False
-
-
 def assemble(rom, data):
 
-    # tok = Tokeniser(data)
-    # while True:
-        # t = tok.read_token()
-        # if t == '':
-            # break
-        # print(t)
-    # return
+    preview_tokens = False
+    if preview_tokens:
+        tok = Tokeniser(data)
+        while True:
+            t = tok.read_token()
+            if t == '':
+                break
+            print(t)
+        return
 
-    xp = ExpressionParser(data)
-
-    # while True:
-        # t = xp.read_token()
-        # if t == '':
-            # break
-        # print(t)
+    xp = Tokeniser(data)
 
     inline_words = {}
     words = []
@@ -428,17 +347,20 @@ def assemble(rom, data):
         return t
 
 
-    def read_block():
+    def read_block(skip_open=False, open_marker='{', close_maker='}'):
         depth = 0
         body = []
-        open_marker = next_word()
-        assert open_marker == '{'
+
+        if not skip_open:
+            open_word = next_word()
+            assert open_word == open_marker
+
         while True:
             w = next_word()
-            if w == '{':
+            if w == open_marker:
                 body.append(w)
                 depth += 1
-            elif w == '}':
+            elif w == close_maker:
                 depth -= 1
                 if depth == -1:
                     break
@@ -465,13 +387,14 @@ def assemble(rom, data):
 
     while True:
         w = next_word()
-        # print(f"{w = }")
-        # print(f"{queue = }")
-        # print(f"{w = } {queue[:3]}")
-
         if w == '':
-            # print("break")
             break;
+
+        first_char = w[0]
+
+        if w == '(':
+            comment = read_block(True, '(', ')')
+            pass
         elif w in '{}[]':
             pass
         elif w == 'inline' or first_char == '%':
