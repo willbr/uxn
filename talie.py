@@ -75,6 +75,9 @@ class UxnRom():
         elif first_char == ';': # literal address absolute
             self.make_reference(token, self.pc)
             self.write_lit_short(0xffff)
+        elif first_char == ':': # raw address absolute
+            self.make_reference(token, self.pc)
+            self.write_short(0xffff)
         elif first_char == ',': # literal address relative
             self.make_reference(token, self.pc)
             self.write_lit_byte(0xff)
@@ -208,7 +211,7 @@ class UxnRom():
                 self.pc = ref_addr + 1
                 self.write_short(label_addr)
             elif rune == ':':
-                assert False
+                self.write_short(label_addr)
             else:
                 assert False
 
