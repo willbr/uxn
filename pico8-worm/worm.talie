@@ -17,6 +17,8 @@ type point {
 
 point a
 
+allot 10
+
 |0100
 vector main {
     init

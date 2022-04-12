@@ -401,6 +401,10 @@ def assemble(rom, data):
             pass
         elif w in '{}[]':
             pass
+        elif w == 'allot':
+            allot_size = next_word()
+            n = int(allot_size, rom.base)
+            var_ptr += n
         elif w == 'type':
             name = next_word()
             body = read_block()
