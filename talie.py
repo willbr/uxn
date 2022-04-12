@@ -442,18 +442,20 @@ def assemble(rom, data):
             true_marker = gensym('if-true')
             end_marker   = gensym('if-end')
             if p == 'else':
-                body = [';' + true_marker, 'jcn2']
                 _ = next_word()
                 else_clause = read_block()
+
+                body = [';&' + true_marker, 'jcn2']
                 body += else_clause
-                body += [';' + end_marker, 'jcn2']
+                body += [';&' + end_marker, 'jcn2']
+                body += ['&' + true_marker]
                 body += true_clause
-                body += ['@' + end_marker]
-                assert False
+                body += ['&' + end_marker]
             else:
-                body = ['#00', 'EQU', ';' + end_marker, 'jcn2']
+                body = ['#00', 'equ']
+                body += [';&' + end_marker, 'jcn2']
                 body += true_clause
-                body += ['@' + end_marker]
+                body += ['&' + end_marker]
             queue = body + queue
         elif w == "word":
             name = next_word()
