@@ -275,7 +275,9 @@ class Uxn:
         elif op == 'sub':
             assert False
         elif op == 'mul':
-            assert False
+            a = src.pop()
+            b = src.pop()
+            src.push(b * a)
         elif op == 'div':
             assert False
         elif op == 'and':
