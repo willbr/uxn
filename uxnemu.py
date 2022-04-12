@@ -253,7 +253,9 @@ class Uxn:
             n = self.rom.peek(short_mode, addr)
             src.push(n)
         elif op == 'sta':
-            assert False
+            addr = src.pop16()
+            n = src.pop()
+            self.rom.poke(short_mode, addr, n)
         elif op == 'dei':
             assert False
         elif op == 'deo':
