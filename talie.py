@@ -297,10 +297,10 @@ class Tokeniser:
                 assert self.data[self.i] not in ' \n'
                 self.i += 1
                 assert self.data[self.i] in ' \n'
-            elif c in '()':
+            elif c in '{}()':
                 self.i += 1
             else:
-                while self.data[self.i] not in ' \n()':
+                while self.data[self.i] not in ' \n(){}':
                     self.i += 1
         except IndexError:
             pass
