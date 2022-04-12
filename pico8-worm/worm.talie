@@ -17,7 +17,7 @@ type point {
 
 point a
 
-allot 10
+array 4 point
 
 |0100
 vector main {
