@@ -2,18 +2,20 @@
 |20 @screen  [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
 |80 @controller [ &vector $2 &button $1 &key $1 ]
 
-|10 @up
-|20 @down
-|40 @left
-|80 @right
+%up    { #10 }
+%down  { #20 }
+%left  { #40 }
+%right { #80 }
 
 %dec  { #01 sub }
 %dec2 { #0001 sub2 }
 
-|0000
-@a {
-    &x $2 &y $2
+type point {
+    x 2
+    y 2
 }
+
+point a
 
 |0100
 vector main {
@@ -33,8 +35,8 @@ word init {
 
     ;frame .screen/vector deo2
 
-    #0040 .a/x stz2
-    #0040 .a/y stz2
+    #0040 ;a/x sta2
+    #0040 ;a/y sta2
 
 }
 
@@ -59,12 +61,12 @@ word draw-sprite {
 }
 
 word get-xy { ( i -- x y)
-    #4 mul .a add
-    sthk
+    #4 mul #00 swp ;a add2
+    sth2k
 
-    ldz2
-    sthr #2 add
-    ldz2
+    lda2
+    sth2r #0002 add2
+    lda2
 }
 
 word paint-sprite { (x y -- )
@@ -78,10 +80,10 @@ word paint-sprite { (x y -- )
 word check-buttons {
     .controller/button dei
 
-    dup .up and if { .a/y ldz2 dec2 .a/y stz2 }
-    dup .down and if { .a/y ldz2 inc2 .a/y stz2 }
-    dup .left and if { .a/x ldz2 dec2 .a/x stz2 }
-    .right and if { .a/x ldz2 inc2 .a/x stz2 }
+    dup up and if { ;a/y lda2 dec2 ;a/y sta2 }
+    dup down and if { ;a/y lda2 inc2 ;a/y sta2 }
+    dup left and if { ;a/x lda2 dec2 ;a/x sta2 }
+    right and if { ;a/x lda2 inc2 ;a/x sta2 }
 }
 
 
