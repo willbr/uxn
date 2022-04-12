@@ -22,9 +22,11 @@ vector main {
 
 word init {
     (128 x 128)
-    #0080 .screen/width  DEO2
-    #0080 .screen/height DEO2
+    decimal
+    #128 .screen/width  DEO2
+    #128 .screen/height DEO2
 
+    hex
     #01ff .system/r DEO2
     #0f0f .system/g DEO2
     #020f .system/b DEO2
