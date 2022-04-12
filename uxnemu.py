@@ -208,7 +208,10 @@ class Uxn:
         elif op == 'nip':
             assert False
         elif op == 'swp':
-            assert False
+            a = src.pop()
+            b = src.pop()
+            src.push(a)
+            src.push(b)
         elif op == 'ovr':
             assert False
         elif op == 'rot':
