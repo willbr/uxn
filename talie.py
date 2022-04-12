@@ -23,6 +23,7 @@ gensym_counter =0
 
 class UxnRom():
     def __init__(self, filename=None):
+        self.base = 16
         self.pc = 0
         self.scope = None
         self.refs = []
@@ -51,7 +52,7 @@ class UxnRom():
         first_char = token[:1]
 
         if first_char == '#':
-            n = int(token[1:], 16)
+            n = int(token[1:], self.base)
             assert n >= 0
             assert n <= 0xffff
             if len(token) >= 4:
@@ -61,7 +62,7 @@ class UxnRom():
                 self.write_op('lit')
                 self.write_byte(n)
         elif first_char == '|':
-            n = int(token[1:], 16)
+            n = int(token[1:], self.base)
             assert n < 0x10000
             self.pc = n
         elif first_char == '@':
@@ -100,7 +101,7 @@ class UxnRom():
         elif token[:3].lower() in op_table:
             self.write_op(token)
         else:
-            n = int(token, 16)
+            n = int(token, self.base)
             assert n >= 0
             assert n <= 0xffff
             if len(token) >= 4:
@@ -416,7 +417,7 @@ def assemble(rom, data):
             cmd = '@' + name
             rom.write(cmd, 'data label')
             for b in body:
-                n = int(b, 16)
+                n = int(b, rom.base)
                 rom.write_byte(n)
         elif w == "loop":
             pw = peek_word()
@@ -473,8 +474,8 @@ def assemble(rom, data):
             queue = body + queue
         elif w == "incbin":
             name = next_word()
-            offset = int(next_word(), 16)
-            length = int(next_word(), 16)
+            offset = int(next_word(), self.base)
+            length = int(next_word(), self.base)
             assert name[0] == '"'
             assert name[-1] == '"'
             name = name[1:-1]
@@ -487,6 +488,12 @@ def assemble(rom, data):
                     data = f.read()
             for b in data:
                 rom.write_byte(b)
+        elif w == 'binary':
+            rom.base = 2
+        elif w == 'decimal':
+            rom.base = 10
+        elif w == 'hex':
+            rom.base = 16
         elif w in inline_words:
             body = inline_words[w]
             assert body
@@ -513,7 +520,7 @@ def assemble(rom, data):
             rom.write(w, 'op')
         else:
             try:
-                n = int(w, 16)
+                n = int(w, rom.base)
                 rom.write(w, 'asm')
             except ValueError:
                 cmd = ';' + w
