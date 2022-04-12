@@ -374,6 +374,8 @@ def assemble(rom, data):
                 break
             else:
                 body.append(w)
+
+        assert depth == -1
         return body
 
 
@@ -397,6 +399,7 @@ def assemble(rom, data):
         return n
 
 
+    blocks = []
     while True:
         w = next_word()
         if w == '':
@@ -407,8 +410,14 @@ def assemble(rom, data):
         if w == '(':
             comment = read_block(True, '(', ')')
             pass
-        elif w in '{}[]':
-            pass
+        elif w in '{[':
+            blocks.append(w)
+        elif w in '}':
+            open_word = blocks.pop()
+            assert open_word == '{'
+        elif w in ']':
+            open_word = blocks.pop()
+            assert open_word == '['
         elif w == 'allot':
             allot_size = next_word()
             n = int(allot_size, rom.base)
@@ -571,6 +580,8 @@ def assemble(rom, data):
                 rom.write(cmd, 'word call')
                 rom.write('jsr2', 'word call')
 
+    assert not blocks
+
 
 def gensym(name=None):
     global gensym_counter
@@ -584,6 +595,7 @@ def gensym(name=None):
 def pprint_tokens(l):
     a = [t + '\n' if is_op(t) else t  + ' ' for t in l]
     print(''.join(a))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
