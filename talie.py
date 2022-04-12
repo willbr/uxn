@@ -330,8 +330,11 @@ def assemble(rom, data):
     xp = Tokeniser(data)
 
     inline_words = {}
+    types = {}
     words = []
     queue = []
+
+    var_ptr  = 0xc000
 
     def next_word():
         if queue:
@@ -398,6 +401,15 @@ def assemble(rom, data):
             pass
         elif w in '{}[]':
             pass
+        elif w == 'type':
+            name = next_word()
+            body = read_block()
+            spec = []
+            while body:
+                property_name, property_size, *body = body
+                n = int(property_size, rom.base)
+                spec.append([property_name, n])
+            types[name] = spec
         elif w == 'inline' or first_char == '%':
             if first_char == '%':
                 name = w[1:]
@@ -494,6 +506,19 @@ def assemble(rom, data):
             rom.base = 10
         elif w == 'hex':
             rom.base = 16
+        elif w in types:
+            name = next_word()
+            assert not is_syntax(name)
+            spec = types[w]
+            var_pad = f"|{var_ptr:04x}"
+            body = [var_pad ,'@' + name, '{']
+            for property_name, property_size in spec:
+                var_ptr += property_size
+                lbl = f"&{property_name}"
+                pad = f"${property_size}"
+                body += [lbl, pad]
+            body += ['}']
+            queue = body + queue
         elif w in inline_words:
             body = inline_words[w]
             assert body
