@@ -130,12 +130,7 @@ class UxnRom():
 
 
     def write_byte(self, n):
-        assert n >= 0
-        assert n <= 0xff
-        delta = self.pc - len(self.rom) + 1
-        if delta > 0:
-            self.rom += bytes(delta)
-        self.rom[self.pc] = n
+        self.poke8(self.pc, n)
         self.pc += 1
 
 
@@ -241,6 +236,27 @@ class UxnRom():
         low  = self.rom[offset+1]
         n = (high << 8) + low
         return n
+
+    def poke(self, short_mode, offset, n):
+        if short_mode:
+            self.poke16(offset, n)
+        else:
+            self.poike8(offset, n)
+
+    def poke8(self, offset, n):
+        assert n >= 0
+        assert n <= 0xff
+        delta = offset - len(self.rom) + 1
+        if delta > 0:
+            self.rom += bytes(delta)
+        self.rom[offset] = n
+
+    def poke16(self, offset, n):
+        high = n >> 8
+        low  = n & 0x00ff
+
+        self.poke8(offset, high)
+        self.poke8(offset+1, low)
 
 
 class Tokeniser:
