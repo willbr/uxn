@@ -389,6 +389,14 @@ def assemble(rom, data):
         rom.write(cmd, 'label')
 
 
+    def sizeof(type_name):
+        spec = types[type_name]
+        n = 0
+        for property_name, property_size in spec:
+            n += property_size
+        return n
+
+
     while True:
         w = next_word()
         if w == '':
@@ -405,6 +413,13 @@ def assemble(rom, data):
             allot_size = next_word()
             n = int(allot_size, rom.base)
             var_ptr += n
+        elif w == 'array':
+            count = next_word()
+            n = int(count, rom.base)
+            type_name = next_word()
+            type_size = sizeof(type_name)
+            array_size = n * type_size
+            body = ['allot', array_size]
         elif w == 'type':
             name = next_word()
             body = read_block()
