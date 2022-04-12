@@ -457,6 +457,13 @@ def assemble(rom, data):
                 body += true_clause
                 body += ['&' + end_marker]
             queue = body + queue
+        elif w == "vector":
+            name = next_word()
+            body = read_block() + ['brk']
+            words.append(name)
+            cmd = '@' + name
+            rom.write(cmd, 'vector def')
+            queue = body + queue
         elif w == "word":
             name = next_word()
             body = read_block() + ['jmp2r']
