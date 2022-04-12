@@ -63,7 +63,7 @@ word draw-sprite {
 }
 
 
-word get-pointer { (i -- addr) {
+word get-pointer { (i -- addr)
     #00 swp #0004 mul2
     ;a add2
 }
