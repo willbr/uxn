@@ -50,3 +50,30 @@ word paint-sprite {
     003c 7e7e 7e7e 3c00 0000 1c1c 0000 0000
 }
 
+(
+a={}
+for i=1,20 do
+    b={}
+    b.x=64
+    b.y=64
+    add(a,b)
+end
+
+function _update()
+    if (btn(0)) a[1].x-=1
+    if (btn(1)) a[1].x+=1
+    if (btn(2)) a[1].y-=1
+    if (btn(3)) a[1].y+=1
+
+    for i=2,20 do
+        a[i].x=a[i].x*0.8+a[i-1].x*0.2
+    end
+end
+
+function _draw()
+    cls()
+    for z in all(a) do
+        spr(1,z.x,z.y)
+    end
+end
+)
