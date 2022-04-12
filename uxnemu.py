@@ -177,9 +177,18 @@ class Uxn:
 
         keep_mode, return_mode, short_mode, op, modes, opcode = decode_byte(op_byte)
 
-        src = self.rst if return_mode else self.wst
+        if return_mode:
+            src = self.rst
+            dst = self.wst
+        else:
+            src = self.wst
+            dst = self.rst
+
         src.short_mode = short_mode
-        src.keep_mode = keep_mode
+        src.keep_mode  = keep_mode
+
+        dst.short_mode = short_mode
+        dst.keep_mode  = keep_mode
 
         orig_i = src.i
 
@@ -241,7 +250,8 @@ class Uxn:
             self.rst.push16(self.pc)
             self.warp(short_mode, a)
         elif op == 'sth':
-            assert False
+            c = src.pop()
+            dst.push(c)
         # Memory
         elif op == 'ldz':
             assert False
