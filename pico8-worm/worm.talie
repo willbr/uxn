@@ -70,7 +70,7 @@ word get-pointer { (i -- addr)
 
 
 word get-xy { ( i -- x y)
-    #4 mul #00 swp ;a add2
+    get-pointer
     sth2k
 
     lda2
