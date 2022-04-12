@@ -2,10 +2,22 @@
 |20 @screen  [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
 |80 @controller [ &vector $2 &button $1 &key $1 ]
 
+|10 @up
+|20 @down
+|40 @left
+|80 @right
+
+%dec  { #01 sub }
+%dec2 { #0001 sub2 }
+
+|0000
+@a {
+    &x $2 &y $2
+}
+
 |0100
-@main {
+vector main {
     init
-    brk
 }
 
 word init {
@@ -17,63 +29,66 @@ word init {
     #0f0f .system/g DEO2
     #020f .system/b DEO2
 
-    ;on-controller .controller/vector deo2
+    ;frame .screen/vector deo2
+
+    #0040 .a/x stz2
+    #0040 .a/y stz2
+
 }
 
-word paint-sprite {
-    #0010 .screen/x deo2
-    #0020 .screen/y deo2
+
+vector frame {
+    (clear)
+
+    check-buttons
+
+    (
+        update array
+        a[i].x=a[i].x*0.8+a[i-1].x*0.2)
+
+    #0 draw-sprite
+    #1 draw-sprite
+
+}
+
+word draw-sprite {
+    get-xy
+    paint-sprite
+}
+
+word get-xy { ( i -- x y)
+    #4 mul .a add
+    sthk
+
+    ldz2
+    sthr #2 add
+    ldz2
+}
+
+word paint-sprite { (x y -- )
+    .screen/y deo2
+    .screen/x deo2
     ;sprite .screen/addr deo2
-    #81 .screen/sprite deo
+    #c1 .screen/sprite deo
 }
 
-@on-controller {
-    .controller/key dei
-    lit '1 equ
-    ,&draw-sprite jcn
-    ,&end jmp
 
-    &draw-sprite {
-        #0010 .screen/x deo2
-        #0020 .screen/y deo2
-        ;sprite .screen/addr deo2
-        #81 .screen/sprite deo
-    }
+word check-buttons {
+    .controller/button dei
 
-    &end
-    brk
+    dup .up and if { .a/y ldz2 dec2 .a/y stz2 }
+    dup .down and if { .a/y ldz2 inc2 .a/y stz2 }
+    dup .left and if { .a/x ldz2 dec2 .a/x stz2 }
+    .right and if { .a/x ldz2 inc2 .a/x stz2 }
 }
 
+
+@clear {
+    0000 0000 0000 0000
+}
 
 (1f2 is green)
 @sprite {
     003c 7e7e 7e7e 3c00 0000 1c1c 0000 0000
 }
 
-(
-a={}
-for i=1,20 do
-    b={}
-    b.x=64
-    b.y=64
-    add(a,b)
-end
-
-function _update()
-    if (btn(0)) a[1].x-=1
-    if (btn(1)) a[1].x+=1
-    if (btn(2)) a[1].y-=1
-    if (btn(3)) a[1].y+=1
-
-    for i=2,20 do
-        a[i].x=a[i].x*0.8+a[i-1].x*0.2
-    end
-end
-
-function _draw()
-    cls()
-    for z in all(a) do
-        spr(1,z.x,z.y)
-    end
-end
-)
