@@ -62,6 +62,13 @@ word draw-sprite {
     paint-sprite
 }
 
+
+word get-pointer { (i -- addr) {
+    #00 swp #0004 mul2
+    ;a add2
+}
+
+
 word get-xy { ( i -- x y)
     #4 mul #00 swp ;a add2
     sth2k
