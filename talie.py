@@ -521,6 +521,10 @@ def gensym(name=None):
     return sym_name
 
 
+def pprint_tokens(l):
+    a = [t + '\n' if is_op(t) else t  + ' ' for t in l]
+    print(''.join(a))
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
 
