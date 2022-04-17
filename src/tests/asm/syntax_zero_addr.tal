@@ -1,0 +1,13 @@
+|0000
+@zero $1
+@one $2
+@three
+
+|0100
+BRK
+#00 #01 #03
+BRK
+.zero
+.one
+.three
+
