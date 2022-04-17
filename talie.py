@@ -585,11 +585,6 @@ def assemble(rom, data):
                 cmd = ';' + w
                 rom.write(cmd, 'word call')
                 rom.write('jsr2', 'word call')
-        elif w[0] == '"':
-            s = w[1:-1]
-            for b in bytes(s, 'ascii'):
-                rom.write_byte(b)
-            rom.write_byte(0)
         elif is_syntax(w):
             rom.write(w, 'syntax')
         elif is_op(w):
