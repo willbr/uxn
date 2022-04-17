@@ -130,6 +130,10 @@ class TestTalie(unittest.TestCase):
         for filename in test_folder.glob("op_*.tal"):
             assemble_and_compare(self, filename)
 
+    def test_syntax(self):
+        for filename in test_folder.glob("syntax_*.tal"):
+            assemble_and_compare(self, filename)
+
 def hexdump_file(filename):
     lines = []
     with open(filename, 'rb') as f:
