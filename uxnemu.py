@@ -222,7 +222,11 @@ class Uxn:
             src.push(a)
             src.push(b)
         elif op == 'ovr':
-            assert False
+            a = src.pop()
+            b = src.pop()
+            src.push(b)
+            src.push(a)
+            src.push(b)
         elif op == 'rot':
             assert False
         # Logic
@@ -234,7 +238,10 @@ class Uxn:
         elif op == 'neq':
             assert False
         elif op == 'gth':
-            assert False
+            a = src.pop()
+            b = src.pop()
+            n = 1 if a > b else 0
+            src.push(n)
         elif op == 'lth':
             assert False
         elif op == 'jmp':
@@ -254,9 +261,13 @@ class Uxn:
             dst.push(c)
         # Memory
         elif op == 'ldz':
-            assert False
+            addr = src.pop8()
+            b = self.rom.peek(short_mode, addr)
+            src.push(b)
         elif op == 'stz':
-            assert False
+            addr = src.pop8()
+            n = src.pop()
+            self.rom.poke(short_mode, addr, n)
         elif op == 'ldr':
             assert False
         elif op == 'str':
@@ -291,13 +302,18 @@ class Uxn:
         elif op == 'div':
             assert False
         elif op == 'and':
-            assert False
+            a = src.pop()
+            b = src.pop()
+            src.push(b & a)
         elif op == 'ora':
             assert False
         elif op == 'eor':
             assert False
         elif op == 'sft':
-            assert False
+            a = src.pop8()
+            b = src.pop()
+            c = b >> (a & 0x0f) << ((a & 0x0f) >> 4)
+            src.push(c)
         else:
             assert False
 
