@@ -98,7 +98,10 @@ class UxnRom():
             n = int(token[1:], 16)
             self.pc += n
         elif first_char == '~':
-            assert False # todo include
+            filename = token[1:]
+            with open(filename) as f:
+                data = f.read()
+            assemble(self, data)
         elif token[:3].lower() in op_table:
             self.write_op(token)
         else:
