@@ -265,8 +265,10 @@ class Tokeniser:
         self.i = 0
         self.queued_tokens = []
         self.data = data
-        self.whitespace = ' \n'
+        self.whitespace = ' \t\n'
+        self.break_chars = self.whitespace + "(){}"
         self.chomp_whitespace()
+        self.parse_alt_strings = False
 
 
     def chomp_whitespace(self):
@@ -298,26 +300,23 @@ class Tokeniser:
 
         start_pos = self.i
 
+
         try:
             c = self.data[self.i]
+            # print(f"{c=}")
 
-            if c == '\n':
-                while self.data[self.i] in '\n':
+            if c in self.whitespace:
+                while self.data[self.i] in self.whitespace:
                     self.i += 1
-            elif c == '"':
+            elif c == '"' and self.parse_alt_strings:
                 self.i += 1
                 while self.data[self.i] not in '"':
                     self.i += 1
                 self.i += 1
-            elif c == "'":
-                self.i += 1
-                assert self.data[self.i] not in ' \n'
-                self.i += 1
-                assert self.data[self.i] in ' \n'
             elif c in '{}()':
                 self.i += 1
             else:
-                while self.data[self.i] not in ' \n(){}':
+                while self.data[self.i] not in self.break_chars:
                     self.i += 1
         except IndexError:
             pass
@@ -328,6 +327,8 @@ class Tokeniser:
 
         if t.startswith('\n'):
             return '\n'
+
+        assert t != '\t'
 
         return t
 
@@ -419,6 +420,7 @@ def assemble(rom, data):
     blocks = []
     while True:
         w = next_word()
+        # print(f"{w=}")
         if w == '':
             break;
 
