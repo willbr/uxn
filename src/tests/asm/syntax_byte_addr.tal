@@ -3,8 +3,8 @@
 BRK
 &sub
 BRK
-;main
-:main
-;&sub
-:&sub
+,main
+.main
+,&sub
+.&sub
 
