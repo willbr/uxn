@@ -157,7 +157,7 @@ def talie(in_path, out_path):
 
 
 def uxnasm(in_path, out_path):
-    p = Popen(["uxnasm", in_path, out_path], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    p = Popen(["uxnasm", in_path, out_path], cwd=in_path.parent, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     prog = ""
     out, err = [x.decode() for x in p.communicate(prog.encode())]
 
