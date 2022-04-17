@@ -1,7 +1,7 @@
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     detected_OS := Windows
-	PATH := $(PATH);./bin/
+	PATH := $(PATH);./bin/;c:/tools/uxn
 	mkdir := mkdir
 	make := make
 	rm := del
@@ -31,4 +31,19 @@ build:
 	python uxndis.py out.rom
 	$(hex) out.rom
 	python uxnemu.py --trace out.rom
+
+bin/test.rom : ../uxn5/etc/tests.tal
+	python talie.py $< $@
+	$(hex) bin/test.rom > hex1.txt
+	$(hex) bin/test2.rom > hex2.txt
+	python uxnemu.py --trace $@
+#	python uxnemu.py $@
+
+test: bin/test.rom
+
+wtest-asm:
+	watchexec -crv --ignore "*.rom" --on-busy-update do-nothing "make test-asm"
+
+test-asm:
+	python src/test-asm.py
 
