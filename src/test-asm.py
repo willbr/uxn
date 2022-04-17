@@ -77,7 +77,13 @@ def talie(in_path, out_path):
     # print("Err:", err)
 
     if p.returncode:
-        raise ValueError(err)
+        msg = dedent(f"""
+        Out:
+        {out}
+        Err:
+        {err}
+        """).strip()
+        raise ValueError(msg)
 
 
 def uxnasm(in_path, out_path):
