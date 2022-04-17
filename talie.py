@@ -86,7 +86,6 @@ class UxnRom():
             else:
                 self.write_lit_byte(n)
         elif first_char == '.': # zero-page address
-            assert False
             self.make_reference(token, self.pc)
             self.write_lit_byte(0xff)
         elif first_char == ',': # literal address relative
