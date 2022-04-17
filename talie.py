@@ -29,6 +29,7 @@ class UxnRom():
         self.refs = []
         self.labels = {}
         self.debug = False
+        self.litlast = False
 
         if filename:
             self.load_rom(filename)
@@ -52,40 +53,51 @@ class UxnRom():
 
         first_char = token[:1]
 
-        if first_char == '#':
-            n = int(token[1:], self.base)
-            assert n >= 0
-            assert n <= 0xffff
-            if len(token) >= 4:
-                self.write_op('lit2')
-                self.write_short(n)
-            else:
-                self.write_op('lit')
-                self.write_byte(n)
+        if first_char == '~':
+            filename = token[1:]
+            with open(filename) as f:
+                data = f.read()
+            assemble(self, data)
         elif first_char == '|':
             n = int(token[1:], self.base)
             assert n < 0x10000
             self.pc = n
+            self.litlast = False
+        elif first_char == '$':
+            n = int(token[1:], 16)
+            self.pc += n
+            self.litlast = False
         elif first_char == '@':
             label_name = token[1:]
             self.make_label(label_name)
             self.scope = label_name
+            self.litlast = False
         elif first_char == '&': # sub-label define
             assert self.scope != None
             sub_name = token[1:]
             self.make_label(self.sub_label(sub_name))
+            self.litlast = False
+        elif first_char == '#':
+            n = int(token[1:], self.base)
+            assert n >= 0
+            assert n <= 0xffff
+            if len(token) >= 4:
+                self.write_lit_short(n)
+            else:
+                self.write_lit_byte(n)
+        elif first_char == '.': # zero-page address
+            assert False
+            self.make_reference(token, self.pc)
+            self.write_lit_byte(0xff)
+        elif first_char == ',': # literal address relative
+            self.make_reference(token, self.pc)
+            self.write_lit_byte(0xff)
         elif first_char == ';': # literal address absolute
             self.make_reference(token, self.pc)
             self.write_lit_short(0xffff)
         elif first_char == ':': # raw address absolute
             self.make_reference(token, self.pc)
             self.write_short(0xffff)
-        elif first_char == ',': # literal address relative
-            self.make_reference(token, self.pc)
-            self.write_lit_byte(0xff)
-        elif first_char == '.': # zero-page address
-            self.make_reference(token, self.pc)
-            self.write_lit_byte(0xff)
         elif first_char == "'":
             assert len(token) == 2
             c = token[1]
@@ -94,14 +106,6 @@ class UxnRom():
         elif first_char == '"':
             for b in bytes(token[1:], 'ascii'):
                 self.write_byte(b)
-        elif first_char == '$':
-            n = int(token[1:], 16)
-            self.pc += n
-        elif first_char == '~':
-            filename = token[1:]
-            with open(filename) as f:
-                data = f.read()
-            assemble(self, data)
         elif token[:3].lower() in op_table:
             self.write_op(token)
         else:
@@ -124,8 +128,13 @@ class UxnRom():
         self.labels[label_name] = self.pc
 
 
-    def make_reference(self, label, addr):
+    def make_reference(self, label, raw_addr):
         rune = label[0]
+        if rune in ",." and self.litlast:
+            addr = raw_addr - 1
+        else:
+            addr = raw_addr
+
         if label[1] == '&':
             ref_name = self.sub_label(label[2:])
         else:
@@ -136,6 +145,7 @@ class UxnRom():
     def write_byte(self, n):
         self.poke8(self.pc, n)
         self.pc += 1
+        self.litlast = False
 
 
     def write_signed_byte(self, n):
@@ -157,11 +167,18 @@ class UxnRom():
 
         self.write_byte(high)
         self.write_byte(low)
-        
+
 
     def write_lit_byte(self, n):
+        if self.litlast: # combine literals
+            hb = self.peek8(self.pc - 1)
+            self.pc -= 2
+            i = (hb << 8) + n
+            self.write_lit_short(i)
+            return
         self.write_op('lit')
         self.write_byte(n)
+        self.litlast = True
 
 
     def write_lit_short(self, n):
@@ -201,9 +218,10 @@ class UxnRom():
             # print(label, label_addr)
             # print(rune, ref_addr)
             if rune == '.':
-                assert 0x00 <= label_addr  <= 0xff
+                # assert 0x00 <= label_addr  <= 0xff
+                n = label_addr & 0xff
                 self.pc = ref_addr + 1
-                self.write_byte(label_addr)
+                self.write_byte(n)
             elif rune == ',':
                 self.pc = ref_addr + 1
                 delta = label_addr - self.pc - 1
