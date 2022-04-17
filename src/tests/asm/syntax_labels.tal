@@ -1,5 +1,5 @@
 |100
 @loop
 #ff
-;JMP2
+;loop JMP2
 BRK
