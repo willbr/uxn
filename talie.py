@@ -42,7 +42,8 @@ class UxnRom():
 
 
     def __repr__(self):
-        return 'Rom: ' + ' '.join(f'{c:02x}' for c in self.rom[0x100:])
+        #return 'Rom: ' + ' '.join(f'{c:02x}' for c in self.rom[0x100:])
+        return f"<Rom 0x{len(self.rom):02x}>"
 
 
     def write(self, token, note=''):
