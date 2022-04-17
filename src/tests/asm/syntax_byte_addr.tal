@@ -2,9 +2,7 @@
 @main
 BRK
 &sub
-BRK
 ,main
-.main
+,main/sub
 ,&sub
-.&sub
 
