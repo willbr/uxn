@@ -43,10 +43,10 @@ def assemble_and_compare(test, tal_path):
 
 
 class TestTalie(unittest.TestCase):
-    # def test_ops(self):
-        # for filename in cur_dir.glob("op_*.tal"):
-            # # print(filename)
-            # assemble_and_compare(self, filename)
+    def test_ops(self):
+        for filename in cur_dir.glob("op_*.tal"):
+            # print(filename)
+            assemble_and_compare(self, filename)
 
     def test_syntax(self):
         for filename in cur_dir.glob("syntax_*.tal"):
