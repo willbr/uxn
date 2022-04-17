@@ -620,7 +620,7 @@ if __name__ == "__main__":
 
     parser.add_argument("input")
     parser.add_argument("output")
-    parser.add_argument("--print-labels")
+    parser.add_argument("--print-labels", action='store_true')
 
     args = parser.parse_args()
 
