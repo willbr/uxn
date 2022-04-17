@@ -241,7 +241,7 @@ class UxnRom():
         if short_mode:
             self.poke16(offset, n)
         else:
-            self.poike8(offset, n)
+            self.poke8(offset, n)
 
     def poke8(self, offset, n):
         assert n >= 0
