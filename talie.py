@@ -167,11 +167,12 @@ class UxnRom():
 
 
     def write_op(self, op):
+        op = op.lower()
         lhs, rhs = op[:3], op[3:]
         if lhs == 'lit': # force keep for lit
             if 'k' not in rhs:
                 rhs += 'k'
-        code = op_table[lhs.lower()]
+        code = op_table[lhs]
         for c in rhs:
             if c == 'k':
                 code = code | 0x80
