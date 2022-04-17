@@ -1,0 +1,7 @@
+|100
+@main
+  #00
+  &loop
+    #01
+    ;&loop JMP2
+    ,&loop JMP
