@@ -1,0 +1,5 @@
+|100
+@loop
+#ff
+;JMP2
+BRK
