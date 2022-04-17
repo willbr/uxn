@@ -54,7 +54,7 @@ class Stack:
         self.reset()
 
     def reset(self):
-        self.stack = bytearray(256)
+        self.stack = bytearray(255)
         self.i = 0
         self.short_mode = False
         self.keep_mode  = False
@@ -62,7 +62,7 @@ class Stack:
     def pop(self):
         n = self.pop16() if self.short_mode else self.pop8()
         assert self.i >= 0
-        assert self.i <= 255
+        assert self.i <= 254
         return n
 
     def pop16(self):
@@ -109,7 +109,7 @@ class Stack:
         self.stack[self.i] = n
         self.i += 1
         # assert self.i >= 0
-        # assert self.i <= 255
+        # assert self.i <= 254
 
     def __repr__(self):
         if self.i > 0:
