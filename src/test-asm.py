@@ -67,11 +67,12 @@ def build_op_tests():
     for n, op in reverse_op_table.items():
         filename = f"op_{n:02x}_{op}.tal"
         file_path = test_folder.joinpath(filename)
+        op = op.upper()
         body = dedent(f"""
         |0100
         #beef #cafe {op}2 {op}
-        brk
-        """).strip().upper()
+        BRK
+        """).strip()
 
         with open(file_path, 'w') as f:
             f.write(body)
