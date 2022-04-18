@@ -1,5 +1,5 @@
 # Uxn
-src/tests/asm/bin/
+src/tests/*/bin/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
