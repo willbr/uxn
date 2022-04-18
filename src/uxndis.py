@@ -9,7 +9,10 @@ print = console.print
 
 install(show_locals=True)
 
-def disassemble(rom, offset=0x100, length=None):
+def disassemble(rom, offset=0x100, length=None, insert_zero_page=True):
+    if insert_zero_page:
+        rom = bytearray(0x100) + rom
+
     rom_iter = iter(rom[offset:])
     i = offset
 
@@ -67,6 +70,13 @@ def disassemble(rom, offset=0x100, length=None):
         i += len(data)
 
 
+def disassemble_file(filename):
+    with open(filename, 'rb') as f:
+        rom = bytearray(f.read())
+
+    disassemble(rom)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
 
@@ -74,8 +84,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    with open(args.filename, 'rb') as f:
-        rom = bytearray(0x100) + bytearray(f.read())
-
-    disassemble(rom)
+    disassemble_file(args.filename)
 
