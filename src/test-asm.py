@@ -6,6 +6,7 @@ from textwrap import dedent
 import unittest
 import os
 import talie
+import uxndis
 
 from rich.console import Console
 
@@ -45,6 +46,20 @@ def assemble_and_compare(test, tal_path):
 
     o1 = hexdump_file(p1)
     o2 = hexdump_file(p2)
+
+    if o1 != o2:
+        print(tal_path)
+        with open(tal_path, 'r') as f:
+            print(f.read())
+        print()
+
+        print(f1)
+        uxndis.disassemble_file(p1)
+        print()
+
+        print(f2)
+        uxndis.disassemble_file(p2)
+        print()
 
     test.assertEqual(o1, o2)
 
