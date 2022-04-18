@@ -2,7 +2,7 @@
 
 ## ops
 
-|-------|---------|-----------|---------------|
+|---------------------------------------------|
 |       | Stack   |           |               |
 |-------|---------|-----------|---------------|
 | 0x00  | brk/lit | Break     | a b c M[PC+1] |
@@ -32,7 +32,6 @@
 | 0x16  | deo    | Device In     | a b D[c8]      |
 | 0x17  | dei    | Device Out    | a {D[c8]=b}    |
 |       | Arithmetic |              |                   |
-|-------|------------|--------------|-------------------|
 | 0x18  | add        | Add          | a b+c             |
 | 0x19  | sub        | Subtract     | a b-c             |
 | 0x1a  | mul        | Multiply     | a b\*c            |
@@ -41,14 +40,15 @@
 | 0x1d  | ora        | Or           | a b\|c            |
 | 0x1e  | eor        | Exclusive Or | a b^c             |
 | 0x1f  | sft        | Shift        | a b\>\>c8l\<\<c8h |
+|-------------------------------------------------------|
 
 ## labels
 
 |type  |                |         |size     |
 |------|----------------|---------|---------|
 |.label|literal address |zero page|one byte |
-|;label|literal address |         |one short|
 |,label|relative address|         |one byte |
+|;label|literal address |         |one short|
 |:label|raw address     |         |one short|
 
     @label
