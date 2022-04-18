@@ -2,7 +2,6 @@
 
 ## ops
 
-|---------------------------------------------|
 |       | Stack   |           |               |
 |-------|---------|-----------|---------------|
 | 0x00  | brk/lit | Break     | a b c M[PC+1] |
@@ -40,16 +39,16 @@
 | 0x1d  | ora        | Or           | a b\|c            |
 | 0x1e  | eor        | Exclusive Or | a b^c             |
 | 0x1f  | sft        | Shift        | a b\>\>c8l\<\<c8h |
-|-------------------------------------------------------|
+
 
 ## labels
 
 |type  |                |         |size     |
 |------|----------------|---------|---------|
-|.label|literal address |zero page|one byte |
-|,label|relative address|         |one byte |
-|;label|literal address |         |one short|
-|:label|raw address     |         |one short|
+|`.label`|literal address |zero page|one byte |
+|`,label`|relative address|         |one byte |
+|`;label`|literal address |         |one short|
+|`:label`|raw address     |         |one short|
 
     @label
     &sub-label
@@ -63,18 +62,18 @@
 
 ## runes
 
-- % macro-define
-- | pad absolute
-- $ pad relative
-- @ label-define
-- & sublabel-define
-- ~ include
-- # literal hex
-- . literal addr zero-page
-- , literal addr relative
-- ; literal addr absolute
-- : raw addr absolute
-- ' raw char
-- " raw word
+- `%` macro-define
+- `|` pad absolute
+- `$` pad relative
+- `@` label-define
+- `&` sublabel-define
+- `~` include
+- `#` literal hex
+- `.` literal addr zero-page
+- `,` literal addr relative
+- `;` literal addr absolute
+- `:` raw addr absolute
+- `'` raw char
+- `"` raw word
 
 
