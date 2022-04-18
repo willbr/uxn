@@ -67,7 +67,7 @@ class TestTalie(unittest.TestCase):
         self.maxDiff = None
         os.chdir(test_folder)
         os.chdir(emu_folder)
-        for filename in cur_dir.glob("*.tal"):
+        for filename in cur_dir.glob("00_err*.tal"):
             # print(filename)
             assemble_and_compare(self, filename)
 

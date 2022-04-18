@@ -7,11 +7,11 @@
 	@zeropage &byte $1 &short $2
 
 |0100
+
+BRK
+	( JCN )
+	#23 #01 ,&reljcn-y JCN INC &reljcn-y
 BRK
 
-@print-str ( str* -- )
+@res1
 
-	&while
-    ,&while JCN
-
-JMP2r
