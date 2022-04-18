@@ -1,0 +1,260 @@
+( a little script to test operators )
+
+|0000
+
+	@id $1
+	@sum $1
+	@zeropage &byte $1 &short $2
+
+|0100
+
+	( Stack )
+
+	( INC )
+	#0000 INC2 [ #0001 ] ;res2 JSR2
+	#0001 INC2 [ #0002 ] ;res2 JSR2
+	#ffff INC2 [ #0000 ] ;res2 JSR2
+	#00 INC [ #01 ] ;res1 JSR2
+	#01 INC [ #02 ] ;res1 JSR2
+	#ff INC [ #00 ] ;res1 JSR2
+	#03 INCk ADD [ #07 ] ;res1 JSR2
+	( POP )
+	#02 #03 POP [ #02 ] ;res1 JSR2
+	#02 POPk [ #02 ] ;res1 JSR2
+	( DUP )
+	#02 DUP ADD [ #04 ] ;res1 JSR2
+	( NIP )
+	#01 #02 #03 NIP ADD [ #04 ] ;res1 JSR2
+	#12 #34 NIPk ADD ADD [ #7a ] ;res1 JSR2
+	( SWP )
+	#02 #10 SWP DIV [ #08 ] ;res1 JSR2
+	#02 #10 SWPk ADD2 MUL [ #44 ] ;res1 JSR2
+	( OVR )
+	#02 #10 OVR DIV ADD [ #0a ] ;res1 JSR2
+	( ROT )
+	#02 #04 #10 ROT DIV ADD [ #0c ] ;res1 JSR2
+
+	( Logic )
+
+	( EQU )
+	#0000 #0000 EQU2 [ #01 ] ;res1 JSR2
+	#0001 #0001 EQU2 [ #01 ] ;res1 JSR2
+	#0000 #0001 EQU2 [ #00 ] ;res1 JSR2
+	#0001 #0000 EQU2 [ #00 ] ;res1 JSR2
+	#00 #00 EQU [ #01 ] ;res1 JSR2
+	#01 #01 EQU [ #01 ] ;res1 JSR2
+	#00 #01 EQU [ #00 ] ;res1 JSR2
+	#01 #00 EQU [ #00 ] ;res1 JSR2
+	( NEQ )
+	#0000 #0000 NEQ2 [ #00 ] ;res1 JSR2
+	#0001 #0001 NEQ2 [ #00 ] ;res1 JSR2
+	#0000 #0001 NEQ2 [ #01 ] ;res1 JSR2
+	#0001 #0000 NEQ2 [ #01 ] ;res1 JSR2
+	#00 #00 NEQ [ #00 ] ;res1 JSR2
+	#01 #01 NEQ [ #00 ] ;res1 JSR2
+	#00 #01 NEQ [ #01 ] ;res1 JSR2
+	#01 #00 NEQ [ #01 ] ;res1 JSR2
+	( GTH )
+	#0002 #0001 GTH2 [ #01 ] ;res1 JSR2
+	#0000 #ffff GTH2 [ #00 ] ;res1 JSR2
+	#ffff #0000 GTH2 [ #01 ] ;res1 JSR2
+	#0001 #ffff GTH2 [ #00 ] ;res1 JSR2
+	#ffff #0001 GTH2 [ #01 ] ;res1 JSR2
+	#02 #01 GTH [ #01 ] ;res1 JSR2
+	#00 #ff GTH [ #00 ] ;res1 JSR2
+	#ff #00 GTH [ #01 ] ;res1 JSR2
+	#01 #ff GTH [ #00 ] ;res1 JSR2
+	#ff #01 GTH [ #01 ] ;res1 JSR2
+	( LTH )
+	#0002 #0001 LTH2 [ #00 ] ;res1 JSR2
+	#0000 #ffff LTH2 [ #01 ] ;res1 JSR2
+	#ffff #0000 LTH2 [ #00 ] ;res1 JSR2
+	#0001 #ffff LTH2 [ #01 ] ;res1 JSR2
+	#ffff #0001 LTH2 [ #00 ] ;res1 JSR2
+	#02 #01 LTH [ #00 ] ;res1 JSR2
+	#00 #ff LTH [ #01 ] ;res1 JSR2
+	#ff #00 LTH [ #00 ] ;res1 JSR2
+	#01 #ff LTH [ #01 ] ;res1 JSR2
+	#ff #01 LTH [ #00 ] ;res1 JSR2
+
+	( Arithmetic )
+
+	( ADD )
+	#0000 #0000 ADD2 [ #0000 ] ;res2 JSR2
+	#ffff #0000 ADD2 [ #ffff ] ;res2 JSR2
+	#ffff #0001 ADD2 [ #0000 ] ;res2 JSR2
+	#0001 #ffff ADD2 [ #0000 ] ;res2 JSR2
+	#ffff #ffff ADD2 [ #fffe ] ;res2 JSR2
+	#fffe #ffff ADD2 [ #fffd ] ;res2 JSR2
+	#ff #00 ADD [ #ff ] ;res1 JSR2
+	#ff #01 ADD [ #00 ] ;res1 JSR2
+	#01 #ff ADD [ #00 ] ;res1 JSR2
+	#ff #ff ADD [ #fe ] ;res1 JSR2
+	#fe #ff ADD [ #fd ] ;res1 JSR2
+	#12 #34 ADDk ADD ADD [ #8c ] ;res1 JSR2
+	#1234 #5678 ADD2k ADD2 ADD2 [ #d158 ] ;res2 JSR2
+	( SUB )
+	#1337 #ae40 SUB2 [ #64f7 ] ;res2 JSR2
+	#ae40 #1337 SUB2 [ #9b09 ] ;res2 JSR2
+	#ffff #0000 SUB2 [ #ffff ] ;res2 JSR2
+	#ffff #0001 SUB2 [ #fffe ] ;res2 JSR2
+	#0001 #ffff SUB2 [ #0002 ] ;res2 JSR2
+	#ffff #ffff SUB2 [ #0000 ] ;res2 JSR2
+	#fffe #ffff SUB2 [ #ffff ] ;res2 JSR2
+	#ff #00 SUB [ #ff ] ;res1 JSR2
+	#ff #01 SUB [ #fe ] ;res1 JSR2
+	#01 #ff SUB [ #02 ] ;res1 JSR2
+	#ff #ff SUB [ #00 ] ;res1 JSR2
+	#fe #ff SUB [ #ff ] ;res1 JSR2
+	#12 #34 SUBk SUB SUB [ #bc ] ;res1 JSR2
+	#1234 #5678 SUB2k SUB2 SUB2 [ #7778 ] ;res2 JSR2
+	( MUL )
+	#00 #01 MUL [ #00 ] ;res1 JSR2
+	#3f #e7 MUL [ #d9 ] ;res1 JSR2
+	#37 #3f MUL [ #89 ] ;res1 JSR2
+	#10 #02 MUL [ #20 ] ;res1 JSR2
+	#ff #00 MUL [ #00 ] ;res1 JSR2
+	#ff #02 MUL [ #fe ] ;res1 JSR2
+	#12 #34 MULk MUL MUL [ #40 ] ;res1 JSR2
+	#1234 #5678 MUL2k MUL2 MUL2 [ #2400 ] ;res2 JSR2
+	( DIV )
+	#10 #02 DIV [ #08 ] ;res1 JSR2
+	#1000 #0040 DIV2 [ #0040 ] ;res2 JSR2
+	( AND )
+	#fc #3f AND [ #3c ] ;res1 JSR2
+	#f0 #0f AND [ #00 ] ;res1 JSR2
+	#ff #3c AND [ #3c ] ;res1 JSR2
+	( ORA )
+	#0f #f0 ORA [ #ff ] ;res1 JSR2
+	( EOR )
+	#00 #00 EOR [ #00 ] ;res1 JSR2
+	#ff #00 EOR [ #ff ] ;res1 JSR2
+	#aa #55 EOR [ #ff ] ;res1 JSR2
+	#ff #ff EOR [ #00 ] ;res1 JSR2
+	#ffff #ff00 EOR2 [ #00ff ] ;res2 JSR2
+	#aaaa #5555 EOR2 [ #ffff ] ;res2 JSR2
+	( SFT )
+	#ff #00 SFT [ #ff ] ;res1 JSR2
+	#ff #01 SFT [ #7f ] ;res1 JSR2
+	#ff #07 SFT [ #01 ] ;res1 JSR2
+	#ff #08 SFT [ #00 ] ;res1 JSR2
+	#ff #09 SFT [ #00 ] ;res1 JSR2
+	#ff #0e SFT [ #00 ] ;res1 JSR2
+	#ff #0f SFT [ #00 ] ;res1 JSR2
+	#ffff #00 SFT2 [ #ffff ] ;res2 JSR2
+	#ffff #01 SFT2 [ #7fff ] ;res2 JSR2
+	#ffff #02 SFT2 [ #3fff ] ;res2 JSR2
+	#ffff #07 SFT2 [ #01ff ] ;res2 JSR2
+	#ffff #08 SFT2 [ #00ff ] ;res2 JSR2
+	#ffff #09 SFT2 [ #007f ] ;res2 JSR2
+	#ffff #0a SFT2 [ #003f ] ;res2 JSR2
+	#ffff #0e SFT2 [ #0003 ] ;res2 JSR2
+	#ffff #0f SFT2 [ #0001 ] ;res2 JSR2
+	#ff #10 SFT [ #fe ] ;res1 JSR2
+	#ff #70 SFT [ #80 ] ;res1 JSR2
+	#ff #80 SFT [ #00 ] ;res1 JSR2
+	#ff #90 SFT [ #00 ] ;res1 JSR2
+	#ff #e0 SFT [ #00 ] ;res1 JSR2
+	#ff #f0 SFT [ #00 ] ;res1 JSR2
+	#ffff #10 SFT2 [ #fffe ] ;res2 JSR2
+	#ffff #20 SFT2 [ #fffc ] ;res2 JSR2
+	#ffff #70 SFT2 [ #ff80 ] ;res2 JSR2
+	#ffff #80 SFT2 [ #ff00 ] ;res2 JSR2
+	#ffff #90 SFT2 [ #fe00 ] ;res2 JSR2
+	#ffff #a0 SFT2 [ #fc00 ] ;res2 JSR2
+	#ffff #e0 SFT2 [ #c000 ] ;res2 JSR2
+	#ffff #f0 SFT2 [ #8000 ] ;res2 JSR2
+	#ff #12 SFT [ #7e ] ;res1 JSR2
+	#ff #77 SFT [ #80 ] ;res1 JSR2
+	#ff #11 SFT [ #fe ] ;res1 JSR2
+	#ff #3f SFT [ #00 ] ;res1 JSR2
+	#ff #ff SFT [ #00 ] ;res1 JSR2
+	#ffff #11 SFT2 [ #fffe ] ;res2 JSR2
+	#ffff #12 SFT2 [ #7ffe ] ;res2 JSR2
+	#ffff #21 SFT2 [ #fffc ] ;res2 JSR2
+	#ffff #7e SFT2 [ #0180 ] ;res2 JSR2
+	#ffff #83 SFT2 [ #ff00 ] ;res2 JSR2
+	#ffff #92 SFT2 [ #fe00 ] ;res2 JSR2
+	#ffff #2a SFT2 [ #00fc ] ;res2 JSR2
+	#ffff #e3 SFT2 [ #c000 ] ;res2 JSR2
+
+	( Memory )
+
+	( STZ/LDZ )
+	#ab .zeropage/byte STZ .zeropage/byte LDZ [ #ab ] ;res1 JSR2
+	#1234 .zeropage/short STZ2 .zeropage/short LDZ2 [ #1234 ] ;res2 JSR2
+	( STR/LDR )
+	[ LIT &before1 $1 ] POP
+	[ LIT2 &before2 $2 ] POP2
+	#22 ,&before1 STR ,&before1 LDR [ #22 ] ;res1 JSR2
+	#1234 ,&before2 STR2 ,&before2 LDR2 [ #1234 ] ;res2 JSR2
+	#ef ,&after1 STR ,&after1 LDR [ #ef ] ;res1 JSR2
+	#5678 ,&after2 STR2 ,&after2 LDR2 [ #5678 ] ;res2 JSR2
+	[ LIT &after1 $1 ] POP
+	[ LIT2 &after2 $2 ] POP2
+	( STA/LDA )
+	#34 ;absolute/byte STA ;absolute/byte LDA [ #34 ] ;res1 JSR2
+	#1234 ;absolute/short STA2 ;absolute/short LDA2 [ #1234 ] ;res2 JSR2
+	( DEO/DEI )
+	#01 #ff DEO #ff DEI [ #01 ] ;res1 JSR2
+	#1234 #fe DEO2 #fe DEI2 [ #1234 ] ;res2 JSR2
+
+	( JMP )
+	#12 #34 ,&reljmp JMP SWP &reljmp POP [ #12 ] ;res1 JSR2
+	#56 #78 ;&absjmp JMP2 SWP &absjmp POP [ #56 ] ;res1 JSR2
+	( JCN )
+	#23 #01 ,&reljcn-y JCN INC &reljcn-y [ #23 ] ;res1 JSR2
+	#23 #01 ;&absjcn-y JCN2 INC &absjcn-y [ #23 ] ;res1 JSR2
+	#23 #00 ,&reljcn-n JCN INC &reljcn-n [ #24 ] ;res1 JSR2
+	#23 #00 ;&absjcn-n JCN2 INC &absjcn-n [ #24 ] ;res1 JSR2
+	( STH )
+	#22 STH INCkr ADDr STHr [ #45 ] ;res1 JSR2
+
+	#0a18 DEO #0a18 DEO
+
+	.sum LDZ ;print/byte JSR2 LIT '/ #18 DEO .id LDZ ;print/byte JSR2 #0a18 DEO
+
+	#010f DEO
+
+BRK
+
+@res1 ( a b -- )
+
+	EQU ,res JMP
+
+@res2 ( a* b* -- )
+
+	EQU2
+
+@res ( pass -- )
+
+	.sum LDZ OVR ADD .sum STZ
+	.id LDZ
+		DUP #07 AND ,&no-lb JCN #0a18 DEO &no-lb
+		INCk .id STZ
+		,print/byte JSR
+	#2018 DEO
+	#00 SWP #10 SFT ;msg ADD2 LDA2 ,print-str JSR
+	#2018 DEO
+
+JMP2r
+
+@print ( short* -- )
+
+	SWP ,&byte JSR
+	&byte ( byte -- ) DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+
+JMP2r
+
+@print-str ( str* -- )
+
+	&while
+		LDAk #18 DEO
+		INC2 LDAk ,&while JCN
+	POP2
+
+JMP2r
+
+@msg :&fail :&pass &pass "pass $1 &fail "fail $1
+@absolute &byte $1 &short $2
