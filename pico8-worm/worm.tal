@@ -8,6 +8,7 @@
 %left  { #40 }
 %right { #80 }
 
+%HALT { #010f DEO }
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
@@ -28,9 +29,18 @@
     #020f .system/b DEO2
 
     ;frame .screen/vector DEO2
+    ;on-key .controller/vector DEO2
 
     #0040 #0040 #00 ;set-xy JSR2
 
+BRK
+
+
+@on-key
+.controller/key DEI
+#1b NEQ ,&end JCN
+HALT
+&end
 BRK
 
 
