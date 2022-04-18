@@ -5,6 +5,7 @@ from binascii import hexlify
 from textwrap import dedent
 import unittest
 import os
+import talie
 
 from rich.console import Console
 
@@ -28,7 +29,7 @@ def assemble_and_compare(test, tal_path):
     assert tal_path.exists()
 
     if not bin_folder.exists():
-        bin_folder.mkdirs()
+        bin_folder.mkdir()
 
     f1 = f"{tal_path.stem}_talie.rom"
     p1 = bin_folder.joinpath(f1)
@@ -40,7 +41,7 @@ def assemble_and_compare(test, tal_path):
     # print(f"{p2=}")
 
     uxnasm(tal_path.name, p2)
-    talie(tal_path.name, p1)
+    talie_asm(tal_path.name, p1)
 
     o1 = hexdump_file(p1)
     o2 = hexdump_file(p2)
@@ -81,28 +82,8 @@ def hexdump_file(filename):
     return '\n'.join(lines)
 
 
-def talie(in_path, out_path):
-    p = Popen(["python", "../../../talie.py", in_path, out_path], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    prog = ""
-    # out, err = [x.decode() for x in p.communicate(prog.encode())]
-    out, err = p.communicate(prog.encode('ascii'))
-    out = out.decode()
-    err = err.decode(errors='backslashreplace')
-    # out, err = [x.decode() for x in p.communicate(prog.encode())]
-
-    # print(p.returncode)
-    # print("Out:", out)
-    # print("Err:", err)
-
-    if p.returncode:
-        msg = dedent(f"""
-        Out:
-        {out}
-        Err:
-        {err}
-        """).strip()
-        raise ValueError(msg)
-
+def talie_asm(in_path, out_path):
+    rom = talie.assemble_file(in_path, out_path)
 
 def uxnasm(in_path, out_path):
     p = Popen(["uxnasm", in_path, out_path], stdin=PIPE, stdout=PIPE, stderr=PIPE)

@@ -632,6 +632,19 @@ def pprint_tokens(l):
     print(''.join(a))
 
 
+def assemble_file(in_file, out_file):
+    with open(in_file) as f:
+        data = f.read()
+
+    rom = UxnRom()
+    assemble(rom, data)
+    rom.resolve()
+
+    rom.write_file(out_file)
+
+    return rom
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="uxn tool")
 
@@ -641,15 +654,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    with open(args.input) as f:
-        data = f.read()
-
-    rom = UxnRom()
-    assemble(rom, data)
-    rom.resolve()
+    assemble_file(args.input, args.output)
 
     if args.print_labels:
         print(rom.labels)
 
-    rom.write_file(args.output)
 
