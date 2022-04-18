@@ -10,6 +10,9 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	ignore := rem
 	hex := python ..\hex.py
 #	hex := gc | format-hex
+	uxnasm := c:\tools\uxn\uxnasm.exe
+	uxncli := c:\tools\uxn\uxncli.exe
+	uxnemu := c:\tools\uxn\uxnemu.exe
 else
     detected_OS := $(shell uname)  # same as "uname -s"
 	PATH := $(PATH):./bin/
@@ -25,10 +28,11 @@ endif
 wbuild:
 	watchexec -cr --ignore "*.rom" "make build"
 
-build: worm.talie
+build: worm.tal
 	$(cat) $<
-	python ..\talie.py $< out.rom
-	python ..\uxndis.py out.rom
+#	python ..\src\talie.py $< out.rom
+	$(uxnasm) $< out.rom
+#	python ..\src\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
 	c:\tools\uxn\uxnemu.exe .\out.rom
