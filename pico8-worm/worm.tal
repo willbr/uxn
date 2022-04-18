@@ -108,11 +108,29 @@ JMP2r
 
 @render
   #00 ( counter )
-  &loop
+  &loop1
+    DUP ;clear-sprite JSR2
+    INC
+    DUP #14 NEQ ,&loop1 JCN
+  POP
+
+  #00 ( counter )
+  &loop2
     DUP ;draw-sprite JSR2
     INC
-    DUP #14 NEQ ,&loop JCN
+    DUP #14 NEQ ,&loop2 JCN
   POP
+JMP2r
+
+
+@clear-sprite
+    ;get-xy JSR2
+    from-fixed-point
+    SWP2
+    from-fixed-point
+    SWP2
+
+    ;paint-clear JSR2
 JMP2r
 
 
@@ -148,6 +166,14 @@ JMP2r
     STH2k
     #0002 ADD2 STA2
     STH2r STA2
+JMP2r
+
+
+@paint-clear ( x y -- )
+    .screen/y DEO2
+    .screen/x DEO2
+    ;clear .screen/addr DEO2
+    #40 .screen/sprite DEO
 JMP2r
 
 
