@@ -12,6 +12,9 @@
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
+%to-fixed-point   { #40 SFT2 }
+%from-fixed-point { #04 SFT2 }
+
 |0000
 @a
 &x $2
@@ -19,10 +22,8 @@
 
 |0100
     ( 128 x 128 )
-    (
     #0080 .screen/width  DEO2
     #0080 .screen/height DEO2
-    )
 
     #01ff .system/r DEO2
     #0f0f .system/g DEO2
@@ -31,47 +32,97 @@
     ;frame .screen/vector DEO2
     ;on-key .controller/vector DEO2
 
-    #0040 #0040 #00 ;set-xy JSR2
+    #0040 to-fixed-point
+    #0040 to-fixed-point
+    #00 ;set-xy JSR2
 
-BRK
+  #00 ( counter )
+  &loop
+    STHk
 
+    #0040 to-fixed-point
+    #0040 to-fixed-point
+    STHr ;set-xy JSR2
 
-@on-key
-.controller/key DEI
-#1b NEQ ,&end JCN
-HALT
-&end
-BRK
-
-
-@frame
-    ( TODO clear )
-
-    ;check-buttons JSR2
+    INC
+    DUP #14 NEQ ,&loop JCN
+  POP
 
     (
         update array
         a[i].x=a[i].x*0.8+a[i-1].x*0.2 )
 
-    ;update JSR2
+BRK
 
+
+@on-key
+  .controller/key DEI
+  #1b NEQ ,&end JCN
+  HALT
+  &end
+BRK
+
+
+@frame
+    ;check-buttons JSR2
+    ;update JSR2
     ;render JSR2
 BRK
 
+@calc ( i -- )
+    (
+        update array
+        a[i].x=a[i].x*0.8+a[i-1].x*0.2 )
+  STHk
+  DEC
+  ;get-xy JSR2
+  #0002 MUL2 #000a DIV2
+  SWP2
+  #0002 MUL2 #000a DIV2
+  SWP2
+
+  STHrk
+  ;get-xy JSR2
+  #0008 MUL2 #000a DIV2
+  SWP2
+  #0008 MUL2 #000a DIV2
+  SWP2
+
+  ROT2 ADD2
+  ROT2 ROT2 ADD2
+  SWP2
+
+  STHr
+  ;set-xy JSR2
+JMP2r
+
 @update
+  #01 ( counter )
+  &loop
+    DUP ;calc JSR2
+    INC
+    DUP #14 NEQ ,&loop JCN
+  POP
 JMP2r
 
 
 @render
-    ( #00 ;draw-sprite JSR2 )
-
-    #00 ;draw-sprite JSR2
-    #01 ;draw-sprite JSR2
+  #00 ( counter )
+  &loop
+    DUP ;draw-sprite JSR2
+    INC
+    DUP #14 NEQ ,&loop JCN
+  POP
 JMP2r
 
 
 @draw-sprite
     ;get-xy JSR2
+    from-fixed-point
+    SWP2
+    from-fixed-point
+    SWP2
+
     ;paint-sprite JSR2
 JMP2r
 
@@ -111,18 +162,23 @@ JMP2r
 @check-buttons
     .controller/button DEI
 
+    #0001 to-fixed-point
+    STH2
+
     DUP up AND #00 EQU ,&test-down JCN
-      ;a/y LDA2 DEC2 ;a/y STA2
+      ;a/y LDA2 STH2rk SUB2 ;a/y STA2
     &test-down
     DUP down AND #00 EQU ,&test-left JCN
-      ;a/y LDA2 INC2 ;a/y STA2
+      ;a/y LDA2 STH2rk ADD2 ;a/y STA2
     &test-left
     DUP left AND #00 EQU ,&test-right JCN
-      ;a/x LDA2 DEC2 ;a/x STA2
+      ;a/x LDA2 STH2rk SUB2 ;a/x STA2
     &test-right
-    DUP right AND #00 EQU ,&test-end JCN
-      ;a/x LDA2 INC2 ;a/x STA2
+    right AND #00 EQU ,&test-end JCN
+      ;a/x LDA2 STH2rk ADD2 ;a/x STA2
     &test-end
+
+    POP2r
 
 JMP2r
 
