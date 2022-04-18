@@ -42,7 +42,7 @@ bin/test.rom : ../uxn5/etc/tests.tal
 test: bin/test.rom
 
 wtest-asm:
-	watchexec -crv --ignore "*.rom" --on-busy-update do-nothing "make test-asm"
+	watchexec -cr --ignore "*.rom" --on-busy-update do-nothing "make test-asm"
 
 test-asm:
 	python src/test-asm.py
