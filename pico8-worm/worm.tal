@@ -8,18 +8,20 @@
 %left  { #40 }
 %right { #80 }
 
+%DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
+
 |0000
 @a
 &x $2
 &y $2
-$1
-@tmp $2
 
 |0100
     ( 128 x 128 )
+    (
     #0080 .screen/width  DEO2
     #0080 .screen/height DEO2
+    )
 
     #01ff .system/r DEO2
     #0f0f .system/g DEO2
@@ -27,8 +29,8 @@ $1
 
     ;frame .screen/vector DEO2
 
-    #0040 ;a/x STA2
-    #0040 ;a/y STA2
+    #0040 #0040 #00 ;set-xy JSR2
+
 BRK
 
 
@@ -41,9 +43,22 @@ BRK
         update array
         a[i].x=a[i].x*0.8+a[i-1].x*0.2 )
 
+    ;update JSR2
+
+    ;render JSR2
+BRK
+
+@update
+JMP2r
+
+
+@render
+    ( #00 ;draw-sprite JSR2 )
+
     #00 ;draw-sprite JSR2
     #01 ;draw-sprite JSR2
-BRK
+JMP2r
+
 
 @draw-sprite
     ;get-xy JSR2
@@ -65,6 +80,15 @@ JMP2r
     STH2r #0002 ADD2
     LDA2
 JMP2r
+
+
+@set-xy ( x y i -- )
+    ;get-pointer JSR2
+    STH2k
+    #0002 ADD2 STA2
+    STH2r STA2
+JMP2r
+
 
 @paint-sprite ( x y -- )
     .screen/y DEO2
