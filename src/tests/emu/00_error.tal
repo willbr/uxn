@@ -1,0 +1,17 @@
+( a little script to test operators )
+
+|0000
+
+	@id $1
+	@sum $1
+	@zeropage &byte $1 &short $2
+
+|0100
+BRK
+
+@print-str ( str* -- )
+
+	&while
+    ,&while JCN
+
+JMP2r

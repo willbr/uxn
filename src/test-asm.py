@@ -12,17 +12,23 @@ console = Console(markup=False)
 python_print = print
 print = console.print
 
-src_folder = Path(__file__).parent
-test_folder = src_folder.joinpath("tests/asm")
+src_folder = Path(__file__).parent.absolute()
+test_folder = src_folder.joinpath("tests")
+os.chdir(test_folder)
+
+asm_folder = Path("asm")
+emu_folder = Path("emu")
 bin_folder = Path("bin")
 cur_dir = Path(".")
 
-os.chdir(test_folder)
 
 
 def assemble_and_compare(test, tal_path):
     print(f"{tal_path=}")
     assert tal_path.exists()
+
+    if not bin_folder.exists():
+        bin_folder.mkdirs()
 
     f1 = f"{tal_path.stem}_talie.rom"
     p1 = bin_folder.joinpath(f1)
@@ -44,12 +50,24 @@ def assemble_and_compare(test, tal_path):
 
 class TestTalie(unittest.TestCase):
     def test_ops(self):
+        os.chdir(test_folder)
+        os.chdir(asm_folder)
         for filename in cur_dir.glob("op_*.tal"):
             # print(filename)
             assemble_and_compare(self, filename)
 
     def test_syntax(self):
+        os.chdir(test_folder)
+        os.chdir(asm_folder)
         for filename in cur_dir.glob("syntax_*.tal"):
+            # print(filename)
+            assemble_and_compare(self, filename)
+
+    def test_emu(self):
+        self.maxDiff = None
+        os.chdir(test_folder)
+        os.chdir(emu_folder)
+        for filename in cur_dir.glob("*.tal"):
             # print(filename)
             assemble_and_compare(self, filename)
 
@@ -104,5 +122,5 @@ def uxnasm(in_path, out_path):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(failfast=True)
 
