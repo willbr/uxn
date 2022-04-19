@@ -54,6 +54,7 @@ FG 77,75,225
 
   #00 .x STZ
   #00 .y STZ
+  #2a .seed STZ
 BRK
 
 
@@ -65,27 +66,20 @@ BRK
 BRK
 
 
-@random
-(
-GB Code
-random:
-  ld a, [seed]
-  sla a
-  jp nc, .no_error
-  xor a, $1d
-.no_error:
-  ld [seed], a
+~random.tal
 
-  ret
-)
-
-  ( #01 )
-  #11
-JMP2r
 
 @on-frame
 	#11 .screen/auto DEO ( set 2w y addr auto )
   ;random JSR2
+  #01 AND
+  #00 EQU ,&backward JCN
+  &forward
+    #11
+    ,&random-end JMP
+  &backward
+    #31
+  &random-end
 	.screen/sprite DEO
 
   .x LDZ
