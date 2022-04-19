@@ -1,0 +1,126 @@
+(
+10 Print UXN
+port of: https://github.com/svendahlstrand/10-print-game-boy
+
+C64 colors
+BG 156,153,253
+FG 77,75,225
+
+Gameboy
+BG 141,145,26
+FG 69,91,68
+
+Random numbers?
+https://en.wikipedia.org/wiki/Middle-square_method
+
+)
+
+|00 @system  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 &debug $1 &state $1 ]
+|20 @screen  [ &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+|80 @controller [ &vector $2 &button $1 &key $1 ]
+
+%up    { #10 }
+%down  { #20 }
+%left  { #40 }
+%right { #80 }
+
+%HALT { #010f DEO }
+%DEC  { #01 SUB }
+%DEC2 { #0001 SUB2 }
+
+|0000
+@x $1 @y $1
+@seed $1
+
+|0100
+(
+C64 colors
+BG 156,153,253
+FG 77,75,225
+)
+  #a5ff .system/r DEO2
+  #a50f .system/g DEO2
+  #fe0f .system/b DEO2
+
+	#0140 .screen/width  DEO2
+	#00c8 .screen/height DEO2
+
+  ;on-frame .screen/vector DEO2
+  ;on-key .controller/vector DEO2
+
+	#0008 .screen/x DEO2 ( set x* position )
+	#0008 .screen/y DEO2 ( set y* position )
+	;sprite .screen/addr DEO2 ( set addr* )
+
+  #00 .x STZ
+  #00 .y STZ
+BRK
+
+
+@on-key
+  .controller/key DEI
+  #1b NEQ ,&end JCN
+  HALT
+  &end
+BRK
+
+
+@random
+(
+GB Code
+random:
+  ld a, [seed]
+  sla a
+  jp nc, .no_error
+  xor a, $1d
+.no_error:
+  ld [seed], a
+
+  ret
+)
+
+  ( #01 )
+  #11
+JMP2r
+
+@on-frame
+	#11 .screen/auto DEO ( set 2w y addr auto )
+  ;random JSR2
+	.screen/sprite DEO
+
+  .x LDZ
+  #01 ADD
+  DUP .x STZ
+  #26 NEQ ,&end JCN
+    #00 .x STZ
+    #0008 .screen/x DEO2
+    ;inc-row JSR2
+  &end
+
+BRK
+
+
+@inc-row
+  .y LDZ
+  STHk
+  #00 SWP
+  #0002 ADD2
+  #0008
+  MUL2
+  .screen/y DEO2
+
+  STHr
+  #01 ADD
+  DUP .y STZ
+  #16 NEQ ,&end JCN
+    #00 .y STZ
+  &end
+JMP2r
+
+
+@clear
+    0000 0000 0000 0000
+
+@sprite
+    c0e0 7038 1c0e 0703
+
