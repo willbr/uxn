@@ -1,0 +1,55 @@
+
+|00 @system  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 &debug $1 &state $1 ]
+|10 @console  [ &vector $2 &read $1 &pad $5 &write $1 &error $1 ]
+|20 @screen  [ &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+|80 @controller [ &vector $2 &button $1 &key $1 ]
+
+%EMIT { #18 DEO }
+%HALT { #010f DEO }
+%CR { #0a EMIT }
+%SEP { LIT ', EMIT #20 EMIT }
+%STEP { DUP ;print JSR2 CR }
+
+|0000
+@seed
+
+|0100
+  #2a .seed STZ
+
+  ;hello ;print-str JSR2
+  CR
+
+  #00
+    &loop
+    ;random JSR2
+    #01 AND
+    ;print JSR2 CR
+    INC DUP #1f NEQ ,&loop JCN
+
+  ;bye ;print-str JSR2
+  CR
+
+HALT
+
+~random.tal
+
+@print ( byte -- )
+
+	&byte ( byte -- ) DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+
+JMP2r
+
+
+@print-str ( str* -- )
+
+	&while
+		LDAk #18 DEO
+		INC2 LDAk ,&while JCN
+	POP2
+
+JMP2r
+
+@hello "hello 00
+@bye    "bye 00
+
