@@ -1,0 +1,21 @@
+@random
+(
+GB Code
+random:
+  ld a, [seed]
+  sla a
+  jp nc, .no_error
+  xor a, $1d
+.no_error:
+  ld [seed], a
+
+  ret
+)
+
+  .seed LDZ
+  DUP #10 SFT
+  SWP #80 AND ,&no-error JCN
+  #1d EOR 
+  &no-error
+  DUP .seed STZ
+JMP2r
