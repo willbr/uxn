@@ -90,7 +90,10 @@ Illustrated on the Motorola MC68HC11 by Frank Sergeant Copyright 1991 Frank Serg
         rect
         circle
         ovals
+        tri
+        textured tri
         camera
+        scaling
 
     math
         sin cos tan
@@ -109,6 +112,7 @@ Illustrated on the Motorola MC68HC11 by Frank Sergeant Copyright 1991 Frank Serg
 
     vi
     forth
+    forth-ide?
     basic
     python
     lisp
@@ -121,6 +125,7 @@ Illustrated on the Motorola MC68HC11 by Frank Sergeant Copyright 1991 Frank Serg
 # Make devices
 
     child Uxn
+    network connection
 
     make my own screen device?
         3D display?
