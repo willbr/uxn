@@ -1,0 +1,66 @@
+|00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2
+|10 @console &vector $2 &read $1 &pad $5 &write $1
+|20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
+|80 @Controller &vector $2 &button $1 &key $1
+|90 @Mouse &vector $2 &x $2 &y $2 &state $1 &wheel $1
+|a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
+
+%up    { #10 }
+%down  { #20 }
+%left  { #40 }
+%right { #80 }
+
+%HALT { #010f DEO }
+%DEC  { #01 SUB }
+%DEC2 { #0001 SUB2 }
+%EMIT { .console/write DEO }
+%CR { #0a EMIT }
+%SPACE { #20 EMIT }
+%STATE { #010e DEO }
+
+|0100
+  ;on-console .console/vector DEO2
+  LIT 'H EMIT
+  LIT 'e EMIT
+  LIT 'l EMIT
+  LIT 'l EMIT
+  LIT 'o EMIT
+  SPACE
+  LIT 'w EMIT
+  LIT 'o EMIT
+  LIT 'r EMIT
+  LIT 'l EMIT
+  LIT 'd EMIT
+  LIT '! EMIT
+  CR
+
+  STATE
+  BRK
+
+HALT
+
+@on-console
+  .console/read DEI
+  DUP
+  ;print JSR2
+  SPACE
+  EMIT
+  CR
+BRK
+
+@print ( byte -- )
+
+	&byte ( byte -- ) DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+
+JMP2r
+
+
+@print-str ( str* -- )
+
+	&while
+		LDAk #18 DEO
+		INC2 LDAk ,&while JCN
+	POP2
+
+JMP2r
