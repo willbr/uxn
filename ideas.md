@@ -59,3 +59,70 @@ Illustrated on the Motorola MC68HC11 by Frank Sergeant Copyright 1991 Frank Serg
     XC!   store byte
     XCALL call sub
 
+# Demos
+
+    seven segment display https://twitter.com/lexaloffle/status/1418077387711913986
+    dots3d.p8 https://twitter.com/lexaloffle/status/1343514251307012096
+    isometric map
+    mode7 mario kart
+    random sprites https://twitter.com/lexaloffle/status/1129071867610853376
+    skelly town https://twitter.com/lexaloffle/status/1159430133041655808
+
+# Games
+
+    Squidy
+    tixy
+    Racing game
+    Tetris
+    Pool
+    platformer
+    worms
+    3d maze
+
+# Library code
+
+
+    text
+        printf
+
+    drawing
+        line
+        rect
+        circle
+        ovals
+        camera
+
+    math
+        sin cos tan
+        hyplot
+        fixed point
+        SDF
+        random
+        raycasting
+
+    game
+        pico8 api
+        pygame api
+        love2d api
+
+# Apps
+
+    vi
+    forth
+    basic
+    python
+    lisp
+
+# Requests
+
+    extra palettes
+    scrolling layers
+
+# Make devices
+
+    child Uxn
+
+    make my own screen device?
+        3D display?
+        vector display?
+
