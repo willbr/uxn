@@ -2,14 +2,6 @@
 10 Print UXN
 port of: https://github.com/svendahlstrand/10-print-game-boy
 
-C64 colors
-BG 156,153,253
-FG 77,75,225
-
-Gameboy
-BG 141,145,26
-FG 69,91,68
-
 Random numbers?
 https://en.wikipedia.org/wiki/Middle-square_method
 
@@ -19,12 +11,14 @@ https://en.wikipedia.org/wiki/Middle-square_method
 |20 @screen  [ &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
 |80 @controller [ &vector $2 &button $1 &key $1 ]
 
+%rows { #0e }
+%cols { #12 }
 %up    { #10 }
 %down  { #20 }
 %left  { #40 }
 %right { #80 }
 
-%HALT { #010f DEO }
+%HALT { #01 .system/state DEO }
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
@@ -33,17 +27,8 @@ https://en.wikipedia.org/wiki/Middle-square_method
 @seed $1
 
 |0100
-(
-C64 colors
-BG 156,153,253
-FG 77,75,225
-)
-  #a5ff .system/r DEO2
-  #a50f .system/g DEO2
-  #fe0f .system/b DEO2
-
-	#0140 .screen/width  DEO2
-	#00c8 .screen/height DEO2
+  ;init-gameboy JSR2
+  ( ;init-c64 JSR2 )
 
   ;on-frame .screen/vector DEO2
   ;on-key .controller/vector DEO2
@@ -56,6 +41,37 @@ FG 77,75,225
   #00 .y STZ
   #2a .seed STZ
 BRK
+
+
+@init-gameboy
+(
+Gameboy
+BG 141,145,26
+FG 69,91,68
+)
+  #84ff .system/r DEO2
+  #950f .system/g DEO2
+  #140f .system/b DEO2
+
+  ( 160x144 )
+	#00a0 .screen/width  DEO2
+	#0090 .screen/height DEO2
+JMP2r
+
+
+@init-c64
+(
+C64 colors
+BG 156,153,253
+FG 77,75,225
+)
+  #a5ff .system/r DEO2
+  #a50f .system/g DEO2
+  #fe0f .system/b DEO2
+
+	#0140 .screen/width  DEO2
+	#00c8 .screen/height DEO2
+JMP2r
 
 
 @on-key
@@ -85,7 +101,7 @@ BRK
   .x LDZ
   #01 ADD
   DUP .x STZ
-  #26 NEQ ,&end JCN
+  cols NEQ ,&end JCN
     #00 .x STZ
     #0008 .screen/x DEO2
     ;inc-row JSR2
@@ -106,7 +122,7 @@ BRK
   STHr
   #01 ADD
   DUP .y STZ
-  #16 NEQ ,&end JCN
+  rows NEQ ,&end JCN
     #00 .y STZ
   &end
 JMP2r
