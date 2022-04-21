@@ -131,3 +131,19 @@ Illustrated on the Motorola MC68HC11 by Frank Sergeant Copyright 1991 Frank Serg
         3D display?
         vector display?
 
+# uxngb classic & color
+
+gameboy only has 16KiB of RAM, unless you have paged memory
+
+    RAM reduced from 64KiB to 4KB?
+    working stack
+        data 254 btes
+        error 1 byte
+        pointer 1 byte
+    working stack
+        data 254 btes
+        error 1 byte
+        pointer 1 byte
+    IO
+        data 256 bytes
+
