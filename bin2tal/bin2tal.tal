@@ -29,6 +29,8 @@ BRK
 
 
 @on-console
+  .name-ptr LDZ2 ;name/end EQU2 ,&error JCN
+
   .Console/read DEI
   DUP
   #0a EQU ,&eol JCN
@@ -42,7 +44,14 @@ BRK
     ;read-file JSR2
     HALT
   &end
+  BRK
+  &error
+  ;err.filename-too-long ;print-str JSR2 CR
+  HALT
 BRK
+
+@err.filename-too-long
+"too 20 "long 00
 
 
 @read-file
