@@ -1,5 +1,5 @@
-|00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2
-|10 @console &vector $2 &read $1 &pad $5 &write $1
+|00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2 &debug $1 &state $1
+|10 @Console &vector $2 &read $1 &pad $5 &write $1
 |20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
 |80 @Controller &vector $2 &button $1 &key $1
 |90 @Mouse &vector $2 &x $2 &y $2 &state $1 &wheel $1
@@ -10,57 +10,143 @@
 %left  { #40 }
 %right { #80 }
 
-%HALT { #010f DEO }
-%DEC  { #01 SUB }
+%HALT { #01 .System/state DEO }
+%EMIT { .Console/write DEO }
 %DEC2 { #0001 SUB2 }
-%EMIT { .console/write DEO }
 %CR { #0a EMIT }
 %SPACE { #20 EMIT }
-%STATE { #010e DEO }
+%DEBUG { CR #01 .System/debug DEO }
+%buffer.size { ;buffer/end ;buffer SUB2 }
+
+|0000
+@name-ptr $2
+@sep $1
 
 |0100
-  ;on-console .console/vector DEO2
-  LIT 'H EMIT
-  LIT 'e EMIT
-  LIT 'l EMIT
-  LIT 'l EMIT
-  LIT 'o EMIT
-  SPACE
-  LIT 'w EMIT
-  LIT 'o EMIT
-  LIT 'r EMIT
-  LIT 'l EMIT
-  LIT 'd EMIT
-  LIT '! EMIT
-  CR
-
-  STATE
-  BRK
-
-HALT
-
-@on-console
-  .console/read DEI
-  DUP
-  ;print JSR2
-  SPACE
-  EMIT
-  CR
+  ;on-console .Console/vector DEO2
+  ;name ;name-ptr STA2
 BRK
 
-@print ( byte -- )
 
-	&byte ( byte -- ) DUP #04 SFT ,&char JSR
+@on-console
+  .Console/read DEI
+  DUP
+  #0a EQU ,&eol JCN
+    ;name-ptr ;set-byte JSR2
+  ,&end JMP
+  &eol
+    POP
+    #00 ;name-ptr ;set-byte JSR2
+    ( ;name ;print-str JSR2 CR )
+
+    ;read-file JSR2
+    HALT
+  &end
+BRK
+
+
+@read-file
+    ;name .File/name DEO2
+    buffer.size .File/length DEO2
+    &loop
+    ;buffer .File/read DEO2
+
+    (
+    .File/length DEI2
+    LIT 'l EMIT
+    ;print-short JSR2 CR
+    )
+
+    .File/success DEI2
+    (
+    DUP2
+    LIT 's EMIT
+    ;print-short JSR2 CR
+    )
+
+    DUP2 #0000 EQU2 ,&zero JCN
+      ( LIT 'a EMIT CR )
+      ;buffer
+       ;dump JSR2
+    ,&loop JMP
+
+    &zero
+      POP2
+      ( LIT 'e EMIT CR )
+    &end
+JMP2r
+
+
+@dump ( nn addr -- )
+  SWP2
+  #00 .sep STZ
+  &loop
+    ;print-sep JSR2
+
+    DUP2 #0000 EQU2 ,&end JCN
+
+    SWP2
+    LDAk ;print-byte JSR2
+
+    INC2
+    SWP2
+    DEC2
+
+  ,&loop JMP
+  &end
+  POP2 POP2
+  CR
+JMP2r
+
+
+@print-sep ( -- )
+  .sep LDZ
+  DUP #02 EQU ,&space JCN
+    INC .sep STZ
+  ,&end JMP
+  &space
+    #20 EMIT
+    POP #01 .sep STZ
+  &end
+JMP2r
+
+
+@set-byte ( size addr -- )
+  STH2k
+  LDA2 STAk
+  STH2r
+  SWP2 INC2 SWP2
+  STA2
+  POP
+JMP2r
+
+
+@print-short ( short -- )
+  SWP
+  ,print-byte JSR
+  ,print-byte JSR
+JMP2r
+
+
+@print-byte ( byte -- )
+	DUP #04 SFT ,&char JSR
 	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
-
 JMP2r
 
 
 @print-str ( str* -- )
-
 	&while
 		LDAk #18 DEO
 		INC2 LDAk ,&while JCN
 	POP2
-
 JMP2r
+
+
+@name
+$ff
+&end
+
+@buffer
+$10
+&end
+
