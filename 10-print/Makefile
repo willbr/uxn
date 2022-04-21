@@ -15,7 +15,7 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	uxnemu := c:\tools\uxn\uxnemu.exe
 else
     detected_OS := $(shell uname)  # same as "uname -s"
-	PATH := $(PATH):./bin/
+	PATH := $(PATH):./bin/:/home/wjbr/src/uxnemu/bin/
 	mkdir := mkdir
 	make := make
 	rm := rm
@@ -23,6 +23,9 @@ else
 	EXE :=
 	ignore := echo ignore
 	hex := hex -C
+	uxnasm := uxnasm
+	uxncli := uxncli
+	uxnemu := uxnemu
 endif
 
 wbuild:
@@ -35,7 +38,7 @@ build-test: test-random.tal
 #	python ..\src\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
-	c:\tools\uxn\uxncli.exe .\out.rom
+#	$(uxncli) .\out.rom
 
 build: main.tal
 	$(cat) $<
@@ -44,5 +47,5 @@ build: main.tal
 #	python ..\src\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
-	c:\tools\uxn\uxnemu.exe .\out.rom
+	$(uxnemu) out.rom
 
