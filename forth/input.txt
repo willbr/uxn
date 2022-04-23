@@ -1,1 +1,5 @@
-42 EMIT
+three
+four
+one
+a
+
