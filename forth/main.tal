@@ -47,6 +47,7 @@ BRK
 BRK
 
 &newline
+  #00 .in LDZ2 STA
   ;tib ;print-str JSR2
   CR
 
@@ -83,6 +84,6 @@ JMP2r
 
 
 @tib
-$04
+$ff
 &end
 
