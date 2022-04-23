@@ -18,6 +18,7 @@
 %C_9 { #39 }
 %C_: { #3a }
 %C_a { #61 }
+%C_f { #66 }
 %C_{ { #7b }
 
 %K_ESC { #1b }
@@ -30,7 +31,7 @@
 @in $2
 @here $2
 @dictptr $2
-@base $1
+@base $2
 
 
 |0100
@@ -39,7 +40,7 @@
 
   ;tib .in STZ2
   ;memory .here STZ2
-  #10 .base STZ
+  #0010 .base STZ2
 
   ;prompt ;print-str JSR2
 BRK
@@ -131,9 +132,17 @@ JMP2r
 
   &number
   ;number JSR2
+  ,&error JCN
+
+  ;print-short JSR2
+  CR
 
 &end
 JMP2r
+
+&error
+DEBUG
+HALT
 
 @lookup ( *str -- &dictnode )
   POP2
@@ -144,41 +153,49 @@ JMP2r
 @number ( *str -- u16 success )
 ( #30 to #39 is ascii 0 - 9
   #61 to #66 is ascii a - f )
-DEBUG
+
+  #0000 STH2
+
+  ( LDAk LDAk #2f GTH SWP #3a LTH AND POP )
+  ( LDAk LDAk #60 GTH SWP #67 LTH )
+  ( LDAk DUP #60 GTH SWP #67 LTH AND )
 &loop
   LDAk null EQU ,&end JCN
-  LDAk EMIT space EMIT LDAk ;print-byte JSR2 CR
-  LDAk C_0 LTH ,&error JCN
-  LDAk C_: LTH ,&numeral JCN
-  LDAk C_a LTH ,&error JCN
-  LDAk C_{ LTH ,&hex JCN
+
+  .base LDZ2 STH2 MUL2r
+
+  ( LDAk EMIT space EMIT LDAk ;print-byte JSR2 CR )
+
+  LDAk DUP #2f GTH SWP #3a LTH AND ,&numeral JCN
+  LDAk DUP #60 GTH SWP #67 LTH AND ,&hex JCN
+  ,&error JMP
 
 &next
   INC2
   ,&loop JMP
 
 &numeral
-  LIT 'n EMIT
-  space EMIT
-  LDA EMIT
-  CR
-  DEBUG
-
+  ( LIT 'n EMIT )
+  LDAk C_0 SUB 
+  #00 SWP STH2 ADD2r
   ,&next JMP
 
 &hex
-  LIT 'h EMIT
-  space EMIT
-  LDA EMIT
-  CR
+  ( LIT 'h EMIT )
+  LDAk #57 SUB
+  #00 SWP STH2 ADD2r
   ,&next JMP
 
 &error
-  ;Error/invalid-char ;println JSR2
+  ;Error/invalid-char ;print-str JSR2
+  LDAk EMIT
+  CR
   HALT
 
 &end
-  CR
+POP2
+STH2r
+#00
 JMP2r
 
 
@@ -223,7 +240,7 @@ JMP2r
 
 
 @Error
-&invalid-char "invalid 20 "char 00
+&invalid-char "invalid 20 "char: 20 00
 &todo "todo 00
 &tib-overflow "tib 20 "overflow 00
 
@@ -232,13 +249,13 @@ JMP2r
 $ff
 &end
 
-@st
+@Wst
 $fd
 &end
 &err $1
 &ptr $1
 
-@rst
+@Rst
 $fd
 &end
 &err $1
