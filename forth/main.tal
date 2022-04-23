@@ -14,6 +14,12 @@
 %CR { #0a EMIT }
 %SPACE { #20 EMIT }
 
+%C_0 { #30 }
+%C_9 { #39 }
+%C_: { #3a }
+%C_a { #61 }
+%C_{ { #7b }
+
 %K_ESC { #1b }
 
 %null { #00 }
@@ -22,18 +28,24 @@
 
 |0000
 @in $2
+@here $2
+@dictptr $2
+@base $1
 
 
 |0100
   ;on-key .Controller/vector DEO2
   ;on-console .Console/vector DEO2
+
   ;tib .in STZ2
+  ;memory .here STZ2
+  #10 .base STZ
 
   ;prompt ;print-str JSR2
 BRK
 
 
-@on-key
+@on-key ( callback )
   .Controller/key DEI
   STHk
   K_ESC NEQ ,&end JCN
@@ -42,7 +54,7 @@ BRK
 BRK
 
 
-@on-console
+@on-console ( callback )
   .in LDZ2 ;tib/end EQU2 ,&overflow JCN
 
   .Console/read DEI
@@ -51,13 +63,15 @@ BRK
   .in ;inc-zptr JSR2
 BRK
 
-&newline
+&newline ( newline -- )
   POP
   #00 .in LDZ2 STA
-  ;eval JSR2
+
+  ;tib ;interpret JSR2
+  LIT 'k LIT 'o EMIT EMIT CR
 
   ;tib .in STZ2
-  ;prompt ;print-str JSR2
+  ( ;prompt ;print-str JSR2 )
 BRK
 
 &overflow
@@ -73,10 +87,10 @@ BRK
 JMP2r
 
 
-@eval
-  ;tib ;print-str JSR2 CR
-  ;tib .in STZ2
-  ;tib ;&word STA2
+@interpret ( *str -- )
+  STH2k ;print-str JSR2 CR
+  STH2rk .in STZ2
+  STH2r ;&word STA2
 
   &loop
   .in LDZ2 LDA
@@ -84,7 +98,7 @@ JMP2r
   DUP space EQU ,&space JCN
   DUP null EQU ,&null JCN
 
-&other
+  ( everything else )
   POP
   .in ;inc-zptr JSR2
   ,&loop JMP
@@ -94,16 +108,85 @@ JMP2r
   null .in LDZ2 STA
   .in ;inc-zptr JSR2
 
-  ;&word LDA2 ;print-str JSR2 CR
+  ;&word ;eval-word JSR2
   .in LDZ2 ;&word STA2
 
   ,&loop JMP
 
 &null
   POP
-  ;&word LDA2 ;print-str JSR2 CR
+  ;&word LDA2 ;eval-word JSR2
 JMP2r
 &word $2
+
+
+@eval-word ( *str -- )
+  DUP2 LIT 'W EMIT space EMIT ;print-str JSR2 CR
+  DUP2 ;lookup JSR2
+
+  #0000 EQU2 ,&number JCN
+
+  ;execute JSR2
+  ,&end JMP
+
+  &number
+  ;number JSR2
+
+&end
+JMP2r
+
+@lookup ( *str -- &dictnode )
+  POP2
+  .dictptr LDZ2
+JMP2r
+
+
+@number ( *str -- u16 success )
+( #30 to #39 is ascii 0 - 9
+  #61 to #66 is ascii a - f )
+DEBUG
+&loop
+  LDAk null EQU ,&end JCN
+  LDAk EMIT space EMIT LDAk ;print-byte JSR2 CR
+  LDAk C_0 LTH ,&error JCN
+  LDAk C_: LTH ,&numeral JCN
+  LDAk C_a LTH ,&error JCN
+  LDAk C_{ LTH ,&hex JCN
+
+&next
+  INC2
+  ,&loop JMP
+
+&numeral
+  LIT 'n EMIT
+  space EMIT
+  LDA EMIT
+  CR
+  DEBUG
+
+  ,&next JMP
+
+&hex
+  LIT 'h EMIT
+  space EMIT
+  LDA EMIT
+  CR
+  ,&next JMP
+
+&error
+  ;Error/invalid-char ;println JSR2
+  HALT
+
+&end
+  CR
+JMP2r
+
+
+@execute ( &dictnode -- )
+  ;Error/todo ;println JSR2
+  DEBUG
+  HALT
+JMP2r
 
 
 @print-byte ( byte -- )
@@ -112,11 +195,26 @@ JMP2r
 JMP2r
 
 
+@print-short ( short -- )
+  SWP
+  ;print-byte JSR2
+  ;print-byte JSR2
+JMP2r
+
+
 @print-str ( str* -- )
+  ( doesnt work with empty strings
+    need to check for null before first emit )
 	&while
 		LDAk EMIT
 		INC2 LDAk ,&while JCN
 	POP2
+JMP2r
+
+
+@println ( *str -- )
+  ,print-str JSR
+  CR
 JMP2r
 
 
@@ -125,6 +223,8 @@ JMP2r
 
 
 @Error
+&invalid-char "invalid 20 "char 00
+&todo "todo 00
 &tib-overflow "tib 20 "overflow 00
 
 
@@ -132,3 +232,16 @@ JMP2r
 $ff
 &end
 
+@st
+$fd
+&end
+&err $1
+&ptr $1
+
+@rst
+$fd
+&end
+&err $1
+&ptr $1
+
+@memory
