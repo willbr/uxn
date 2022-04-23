@@ -10,8 +10,9 @@
 %EMIT { .Console/write DEO }
 
 %DEC2 { #0001 SUB2 }
+%NOT  { #00 EQU }
 %NOT2 { #0000 EQU2 }
-%GEQ2 { LTH2 NOT2 }
+%GEQ2 { LTH2 NOT }
 
 %CR { #0a EMIT }
 %SPACE { #20 EMIT }
@@ -125,7 +126,7 @@ JMP2r
 
 
 @eval-word ( *str -- )
-  DUP2 LIT 'W EMIT space EMIT ;print-str JSR2 CR
+  ( DUP2 LIT 'W EMIT space EMIT ;print-str JSR2 CR )
   DUP2 ;lookup JSR2
 
   #0000 EQU2 ,&number JCN
@@ -145,7 +146,6 @@ JMP2r
 
 &error
   ;&name ;println JSR2
-  DEBUG
   HALT
 JMP2r
 &name "eval-word 00
@@ -176,9 +176,8 @@ JMP2r
 &fail
   POP2
   POP2r
-  LIT 'e EMIT CR
+  ( LIT 'e EMIT CR )
   #0000
-  DEBUG
 JMP2r
 
 
@@ -191,7 +190,9 @@ JMP2r
   #0002 ADD2 ( skip length byte and null byte )
 JMP2r
 
+
 @push ( u16 -- )
+  ( DUP2 ;print-short JSR2 CR )
   ( calculate tos )
   ;Wst
   #00 ;Wst/ptr LDA
