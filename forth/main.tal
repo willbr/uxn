@@ -1,0 +1,88 @@
+|00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2 &debug $1 &state $1
+|10 @Console &vector $2 &read $1 &pad $5 &write $1
+|20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
+|80 @Controller &vector $2 &button $1 &key $1
+|90 @Mouse &vector $2 &x $2 &y $2 &state $1 &wheel $1
+|a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
+
+%HALT { #01 .System/state DEO }
+%EMIT { .Console/write DEO }
+%DEC2 { #0001 SUB2 }
+%CR { #0a EMIT }
+%SPACE { #20 EMIT }
+%DEBUG { CR #01 .System/debug DEO }
+%K_ESC { #1b }
+
+%newline { #0a }
+
+|0000
+@in $2
+
+
+|0100
+  ;on-key .Controller/vector DEO2
+  ;on-console .Console/vector DEO2
+  ;tib .in STZ2
+
+  ;prompt ;print-str JSR2
+BRK
+
+
+@on-key
+  .Controller/key DEI
+  STHk
+  K_ESC NEQ ,&end JCN
+    HALT
+  &end
+BRK
+
+
+@on-console
+  .in LDZ2 ;tib/end EQU2 ,&overflow JCN
+
+  .Console/read DEI
+  DUP newline EQU ,&newline JCN
+  .in LDZ2 STA
+  .in LDZ2 INC .in STZ2
+BRK
+
+&newline
+  ;tib ;print-str JSR2
+  CR
+
+  ;tib .in STZ2
+  ;prompt ;print-str JSR2
+BRK
+
+&overflow
+    ;Error/tib-overflow ;print-str JSR2
+    HALT
+BRK
+
+
+@print-byte ( byte -- )
+	DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+JMP2r
+
+
+@print-str ( str* -- )
+	&while
+		LDAk EMIT
+		INC2 LDAk ,&while JCN
+	POP2
+JMP2r
+
+
+@prompt
+"> 20 00
+
+
+@Error
+&tib-overflow "tib 20 "overflow 00
+
+
+@tib
+$04
+&end
+
