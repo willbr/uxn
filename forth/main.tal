@@ -89,9 +89,9 @@ JMP2r
 
 
 @interpret ( *str -- )
-  STH2k ;print-str JSR2 CR
-  STH2rk .in STZ2
-  STH2r ;&word STA2
+  DUP2 ;print-str JSR2 CR
+  DUP2 .in STZ2
+  ;&word STA2
 
   &loop
   .in LDZ2 LDA
@@ -109,7 +109,7 @@ JMP2r
   null .in LDZ2 STA
   .in ;inc-zptr JSR2
 
-  ;&word ;eval-word JSR2
+  ;&word LDA2 ;eval-word JSR2
   .in LDZ2 ;&word STA2
 
   ,&loop JMP
