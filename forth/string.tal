@@ -1,0 +1,111 @@
+@number ( *str -- u16 success )
+( #30 to #39 is ascii 0 - 9
+  #61 to #66 is ascii a - f )
+
+  #0000 STH2
+
+  ( LDAk LDAk #2f GTH SWP #3a LTH AND POP )
+  ( LDAk LDAk #60 GTH SWP #67 LTH )
+  ( LDAk DUP #60 GTH SWP #67 LTH AND )
+&loop
+  LDAk null EQU ,&end JCN
+
+  .base LDZ2 STH2 MUL2r
+
+  ( LDAk EMIT space EMIT LDAk ;print-byte JSR2 CR )
+
+  LDAk DUP #2f GTH SWP #3a LTH AND ,&numeral JCN
+  LDAk DUP #60 GTH SWP #67 LTH AND ,&hex JCN
+  ,&error JMP
+
+&next
+  INC2
+  ,&loop JMP
+
+&numeral
+  ( LIT 'n EMIT )
+  LDAk C_0 SUB 
+  #00 SWP STH2 ADD2r
+  ,&next JMP
+
+&hex
+  ( LIT 'h EMIT )
+  LDAk #57 SUB
+  #00 SWP STH2 ADD2r
+  ,&next JMP
+
+&error
+  ;Error/invalid-char ;print-str JSR2
+  LDAk EMIT
+  CR
+  HALT
+
+&end
+  POP2
+  STH2r
+  #00
+JMP2r
+
+
+@string-equal ( *str1 *str2 -- u8 )
+  STH2
+
+&loop
+  LDAk
+  STH2rk LDA
+
+  ( DUP2 ;print-short JSR2 CR )
+
+  NEQk ,&fail JCN
+  #00 EQU SWP #00 EQU
+  AND ,&match JCN
+
+&next
+  INC2
+  INC2r
+  ,&loop JMP
+
+
+&match
+  POP2  ( *str1 )
+  POP2r ( *str2 )
+  #01
+JMP2r
+
+&fail
+  POP2  ( c1 c2 )
+  POP2  ( *str1 )
+  POP2r ( *str2 )
+  #00
+JMP2r
+
+
+@print-byte ( byte -- )
+	DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+JMP2r
+
+
+@print-short ( short -- )
+  SWP
+  ;print-byte JSR2
+  ;print-byte JSR2
+JMP2r
+
+
+@print-str ( str* -- )
+  ( doesnt work with empty strings
+    need to check for null before first emit )
+	&while
+		LDAk EMIT
+		INC2 LDAk ,&while JCN
+	POP2
+JMP2r
+
+
+@println ( *str -- )
+  ,print-str JSR
+  CR
+JMP2r
+
+

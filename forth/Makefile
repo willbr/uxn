@@ -31,15 +31,6 @@ endif
 wbuild:
 	watchexec -cr --ignore "*.rom" "make build"
 
-build-test: test-random.tal
-	$(cat) $<
-#	python ..\src\talie.py $< out.rom
-	$(uxnasm) $< out.rom
-#	python ..\src\uxndis.py out.rom
-#	python ..\uxnemu.py --trace out.rom
-#	python ..\uxnemu.py out.rom
-#	$(uxncli) .\out.rom
-
 build: main.tal input.txt
 	$(cat) $<
 #	python ..\src\talie.py $< out.rom
@@ -48,4 +39,12 @@ build: main.tal input.txt
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
 	$(cat) input.txt | $(uxncli) out.rom
+
+wbuild-test:
+	watchexec -cr --ignore "*.rom" "make build-test"
+
+build-test: test.tal
+	$(cat) $<
+	$(uxnasm) $< out.rom
+	$(uxncli) out.rom
 

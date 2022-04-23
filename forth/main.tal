@@ -10,6 +10,8 @@
 %EMIT { .Console/write DEO }
 
 %DEC2 { #0001 SUB2 }
+%NOT2 { #0000 EQU2 }
+%GEQ2 { LTH2 NOT2 }
 
 %CR { #0a EMIT }
 %SPACE { #20 EMIT }
@@ -41,6 +43,7 @@
   ;tib .in STZ2
   ;memory .here STZ2
   #0010 .base STZ2
+  ;Builtin-emit .dictptr STZ2
 
   ;prompt ;print-str JSR2
 BRK
@@ -56,7 +59,7 @@ BRK
 
 
 @on-console ( callback )
-  .in LDZ2 ;tib/end EQU2 ,&overflow JCN
+  .in LDZ2 ;tib/end EQU2 ,&tib-overflow JCN
 
   .Console/read DEI
   DUP newline EQU ,&newline JCN
@@ -75,7 +78,7 @@ BRK
   ( ;prompt ;print-str JSR2 )
 BRK
 
-&overflow
+&tib-overflow
     ;Error/tib-overflow ;print-str JSR2
     HALT
 BRK
@@ -134,106 +137,105 @@ JMP2r
   ;number JSR2
   ,&error JCN
 
-  ;print-short JSR2
-  CR
+  ( DUP ;print-short JSR2 CR )
+  ;push JSR2
 
 &end
 JMP2r
 
 &error
-DEBUG
-HALT
+  ;&name ;println JSR2
+  DEBUG
+  HALT
+JMP2r
+&name "eval-word 00
+
 
 @lookup ( *str -- &dictnode )
-  POP2
+  STH2
   .dictptr LDZ2
-JMP2r
+
+&loop ( *dictnode )
+  DUP2 #0000 EQU2 ,&fail JCN
+
+  DUP2 ;dict-name JSR2
+  STH2rk
+  ;string-equal JSR2 ,&match JCN
+
+  ;dict-link JSR2
+  LDA2
 
 
-@number ( *str -- u16 success )
-( #30 to #39 is ascii 0 - 9
-  #61 to #66 is ascii a - f )
-
-  #0000 STH2
-
-  ( LDAk LDAk #2f GTH SWP #3a LTH AND POP )
-  ( LDAk LDAk #60 GTH SWP #67 LTH )
-  ( LDAk DUP #60 GTH SWP #67 LTH AND )
-&loop
-  LDAk null EQU ,&end JCN
-
-  .base LDZ2 STH2 MUL2r
-
-  ( LDAk EMIT space EMIT LDAk ;print-byte JSR2 CR )
-
-  LDAk DUP #2f GTH SWP #3a LTH AND ,&numeral JCN
-  LDAk DUP #60 GTH SWP #67 LTH AND ,&hex JCN
-  ,&error JMP
-
-&next
-  INC2
   ,&loop JMP
 
-&numeral
-  ( LIT 'n EMIT )
-  LDAk C_0 SUB 
-  #00 SWP STH2 ADD2r
-  ,&next JMP
-
-&hex
-  ( LIT 'h EMIT )
-  LDAk #57 SUB
-  #00 SWP STH2 ADD2r
-  ,&next JMP
-
-&error
-  ;Error/invalid-char ;print-str JSR2
-  LDAk EMIT
-  CR
+&match
+  LIT 'm EMIT CR
   HALT
+JMP2r
 
-&end
-POP2
-STH2r
-#00
+&fail
+  POP2
+  POP2r
+  LIT 'e EMIT CR
+  #0000
+  DEBUG
 JMP2r
 
 
-@execute ( &dictnode -- )
-  ;Error/todo ;println JSR2
+@dict-name ( *dict -- *name )
+  INC2
+JMP2r
+
+@dict-link ( *dict -- *link )
+  LDAk #00 SWP ADD2 ( skip strlen )
+  #0002 ADD2 ( skip length byte and null byte )
+JMP2r
+
+@push ( u16 -- )
+  ( calculate tos )
+  ;Wst
+  #00 ;Wst/ptr LDA
+  ADD2
+
+  DUP2 ;Wst/end GEQ2 ,&stack-overflow JCN
+  
+  STA2
+
+  ;Wst/ptr LDA INC ;Wst/ptr STA
+
+JMP2r
+
+&stack-overflow
+  ;Error/stack-overflow ;println JSR2
   DEBUG
   HALT
 JMP2r
 
 
-@print-byte ( byte -- )
-	DUP #04 SFT ,&char JSR
-	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+@execute ( &dictnode -- )
+  ;&name ;println JSR2
+  ;Error/todo ;println JSR2
+  HALT
 JMP2r
+&name "execute 00
 
 
-@print-short ( short -- )
-  SWP
-  ;print-byte JSR2
-  ;print-byte JSR2
+@emit ( -- )
+  ;&name ;println JSR2
+  ;Error/todo ;println JSR2
+  HALT
 JMP2r
+&name "emit 00
 
 
-@print-str ( str* -- )
-  ( doesnt work with empty strings
-    need to check for null before first emit )
-	&while
-		LDAk EMIT
-		INC2 LDAk ,&while JCN
-	POP2
+@exit ( -- )
+  ;&name ;println JSR2
+  ;Error/todo ;println JSR2
+  HALT
 JMP2r
+&name "exit 00
 
-
-@println ( *str -- )
-  ,print-str JSR
-  CR
-JMP2r
-
+~string.tal
 
 @prompt
 "> 20 00
@@ -243,6 +245,7 @@ JMP2r
 &invalid-char "invalid 20 "char: 20 00
 &todo "todo 00
 &tib-overflow "tib 20 "overflow 00
+&stack-overflow "stack 20 "overflow 00
 
 
 @tib
@@ -260,5 +263,17 @@ $fd
 &end
 &err $1
 &ptr $1
+
+@Builtin-emit
+&name-length 04
+&name "emit 00
+&link :Builtin-exit
+&code ;emit
+
+@Builtin-exit
+&name-length 04
+&name "exit 00
+&link 0000
+&code ;exit
 
 @memory
