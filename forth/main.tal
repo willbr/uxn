@@ -76,7 +76,7 @@ BRK
   LIT 'k LIT 'o EMIT EMIT CR
 
   ;tib .in STZ2
-  ( ;prompt ;print-str JSR2 )
+  ;prompt ;print-str JSR2
 BRK
 
 &tib-overflow
@@ -93,11 +93,12 @@ JMP2r
 
 
 @interpret ( *str -- )
-  DUP2 ;print-str JSR2 CR
+  ( LIT 'i EMIT space EMIT )
+  ( DUP2 ;print-str JSR2 CR )
   DUP2 .in STZ2
   ;&word STA2
 
-  &loop
+&loop
   .in LDZ2 LDA
 
   DUP space EQU ,&space JCN
@@ -120,6 +121,11 @@ JMP2r
 
 &null
   POP
+  (
+  ;&word ;print-short JSR2 CR
+  ;&word LDA2 ;print-short JSR2 CR
+  ;&word LDA2 ;println JSR2
+  )
   ;&word LDA2 ;eval-word JSR2
 JMP2r
 &word $2
@@ -129,12 +135,13 @@ JMP2r
   ( DUP2 LIT 'W EMIT space EMIT ;print-str JSR2 CR )
   DUP2 ;lookup JSR2
 
-  #0000 EQU2 ,&number JCN
+  DUP2 #0000 EQU2 ,&number JCN
 
   ;execute JSR2
   ,&end JMP
 
-  &number
+&number
+  POP2
   ;number JSR2
   ,&error JCN
 
@@ -156,28 +163,19 @@ JMP2r
   .dictptr LDZ2
 
 &loop ( *dictnode )
-  DUP2 #0000 EQU2 ,&fail JCN
+  DUP2 #0000 EQU2 ,&end JCN
 
   DUP2 ;dict-name JSR2
   STH2rk
-  ;string-equal JSR2 ,&match JCN
+  ;string-equal JSR2 ,&end JCN
 
   ;dict-link JSR2
   LDA2
 
-
   ,&loop JMP
 
-&match
-  LIT 'm EMIT CR
-  HALT
-JMP2r
-
-&fail
-  POP2
+&end
   POP2r
-  ( LIT 'e EMIT CR )
-  #0000
 JMP2r
 
 
@@ -188,6 +186,11 @@ JMP2r
 @dict-link ( *dict -- *link )
   LDAk #00 SWP ADD2 ( skip strlen )
   #0002 ADD2 ( skip length byte and null byte )
+JMP2r
+
+@dict-code ( *dict -- *link )
+  LDAk #00 SWP ADD2 ( skip strlen )
+  #0004 ADD2 ( skip length byte, null byte and link field )
 JMP2r
 
 
@@ -203,30 +206,66 @@ JMP2r
   STA2
 
   ;Wst/ptr LDA INC ;Wst/ptr STA
-
 JMP2r
 
 &stack-overflow
   ;Error/stack-overflow ;println JSR2
-  DEBUG
+  HALT
+JMP2r
+
+
+@pop ( -- u16 )
+  ;Wst/ptr LDA #01 SUB ;Wst/ptr STA
+
+  ( calculate tos )
+  ;Wst
+  #00 ;Wst/ptr LDA
+  ADD2
+
+  DUP2 ;Wst LTH2 ,&stack-underflow JCN
+  
+  LDA2
+JMP2r
+
+&stack-underflow
+  ;Error/stack-underflow ;println JSR2
   HALT
 JMP2r
 
 
 @execute ( &dictnode -- )
-  ;&name ;println JSR2
-  ;Error/todo ;println JSR2
-  HALT
+  ;dict-code JSR2
+  LDA2 JSR2
 JMP2r
 &name "execute 00
 
 
-@emit ( -- )
+@dot ( -- )
   ;&name ;println JSR2
   ;Error/todo ;println JSR2
   HALT
 JMP2r
+&name "dot 00
+
+
+@emit ( -- )
+  ;pop JSR2
+  ( DUP2 ;print-short JSR2 CR )
+  ( DUP2 #0020 LTH2 ,&error JCN )
+  DUP2 #007e GTH2 ,&error JCN
+
+  EMIT
+  POP
+
+JMP2r
+
+&error
+  ;print-short JSR2 space EMIT
+  ;&not-ascii ;println JSR2
+  HALT
+JMP2r
 &name "emit 00
+&not-ascii "not-ascii 00
 
 
 @exit ( -- )
@@ -247,6 +286,7 @@ JMP2r
 &todo "todo 00
 &tib-overflow "tib 20 "overflow 00
 &stack-overflow "stack 20 "overflow 00
+&stack-underflow "stack 20 "underflow 00
 
 
 @tib
@@ -269,12 +309,18 @@ $fd
 &name-length 04
 &name "emit 00
 &link :Builtin-exit
-&code ;emit
+&code :emit
 
 @Builtin-exit
 &name-length 04
 &name "exit 00
+&link :Builtin-dot
+&code :exit
+
+@Builtin-dot
+&name-length 01
+&name ". 00
 &link 0000
-&code ;exit
+&code :dot
 
 @memory

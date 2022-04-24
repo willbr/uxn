@@ -2,11 +2,10 @@
 ( #30 to #39 is ascii 0 - 9
   #61 to #66 is ascii a - f )
 
+  ( DUP2 ;println JSR2 )
+
   #0000 STH2
 
-  ( LDAk LDAk #2f GTH SWP #3a LTH AND POP )
-  ( LDAk LDAk #60 GTH SWP #67 LTH )
-  ( LDAk DUP #60 GTH SWP #67 LTH AND )
 &loop
   LDAk null EQU ,&end JCN
 
