@@ -197,8 +197,32 @@ JMP2r
 @add ( -- )
   ;pop JSR2
   ;pop JSR2
-DEBUG
   ADD2
+  ;push JSR2
+JMP2r
+
+
+@minus ( -- )
+  ;pop JSR2
+  ;pop JSR2
+  SWP2
+  SUB2
+  ;push JSR2
+JMP2r
+
+@mult ( -- )
+  ;pop JSR2
+  ;pop JSR2
+  MUL2
+  ;push JSR2
+JMP2r
+
+
+@div ( -- )
+  ;pop JSR2
+  ;pop JSR2
+  SWP2
+  DIV2
   ;push JSR2
 JMP2r
 
@@ -301,8 +325,26 @@ $fd
 @Builtin-add
 &name-length 01
 &name "+ 00
-&link :Builtin-dup
+&link :Builtin-minus
 &code :add
+
+@Builtin-minus
+&name-length 01
+&name "- 00
+&link :Builtin-mult
+&code :minus
+
+@Builtin-mult
+&name-length 01
+&name "* 00
+&link :Builtin-div
+&code :mult
+
+@Builtin-div
+&name-length 01
+&name "/ 00
+&link :Builtin-dup
+&code :div
 
 @Builtin-dup
 &name-length 03
