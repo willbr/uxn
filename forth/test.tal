@@ -48,6 +48,14 @@
   ;hello ;hello ;string-equal JSR2
   ;assert-equal-u8 JSR2
 
+  #00
+  ;null ;bye ;string-equal JSR2
+  ;assert-equal-u8 JSR2
+
+  #01
+  ;null ;null ;string-equal JSR2
+  ;assert-equal-u8 JSR2
+
   ;bye ;println JSR2
 BRK
 
@@ -98,10 +106,12 @@ JMP2r
 &data 1b "[31m 00
 
 
+@null 00
 @hello "hello 00
 @bye "bye 00
 @pass "pass 00
 @fail "fail 00
+
 
 ~string.tal
 @Error/invalid-char "invalid-char 00
