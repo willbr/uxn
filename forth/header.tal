@@ -1,0 +1,31 @@
+|00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2 &debug $1 &state $1
+|10 @Console &vector $2 &read $1 &pad $5 &write $1
+|20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
+|80 @Controller &vector $2 &button $1 &key $1
+|90 @Mouse &vector $2 &x $2 &y $2 &state $1 &wheel $1
+|a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
+
+%DEBUG { CR #01 .System/debug DEO }
+%HALT { #01 .System/state DEO }
+%EMIT { .Console/write DEO }
+
+%DEC2 { #0001 SUB2 }
+%NOT  { #00 EQU }
+%NOT2 { #0000 EQU2 }
+%GEQ2 { LTH2 NOT }
+
+%CR { #0a EMIT }
+%SPACE { #20 EMIT }
+
+%C_0 { #30 }
+%C_9 { #39 }
+%C_: { #3a }
+%C_a { #61 }
+%C_f { #66 }
+%C_{ { #7b }
+
+%K_ESC { #1b }
+
+%null { #00 }
+%newline { #0a }
+%space { #20 }
