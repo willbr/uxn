@@ -158,14 +158,15 @@ JMP2r
 
 
 @pop ( -- u16 )
-  ;Wst/ptr LDA #02 SUB ;Wst/ptr STA
-
   ( calculate tos )
   ;tos JSR2
 
-  DUP2 ;Wst LTH2 ,&stack-underflow JCN
-  
+  DUP2 ;Wst EQU2 ,&stack-underflow JCN
+
+  #0002 SUB2
   LDA2
+
+  ;Wst/ptr LDA #02 SUB ;Wst/ptr STA
 JMP2r
 
 &stack-underflow
