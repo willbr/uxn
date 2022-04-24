@@ -1,1 +1,1 @@
-2a emit 2a emit 0a emit
+beef cafe .s

@@ -59,7 +59,7 @@ JMP2r
   #00 EQU SWP #00 EQU
   AND ,&match JCN
 
-&next
+  ( next )
   INC2
   INC2r
   ,&loop JMP

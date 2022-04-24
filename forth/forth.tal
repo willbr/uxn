@@ -176,15 +176,28 @@ JMP2r
   ;dict-code JSR2
   LDA2 JSR2
 JMP2r
-&name "execute 00
 
+
+@dup ( -- )
+  ;pop JSR2
+  DUP2
+  ;push JSR2
+  ;push JSR2
+JMP2r
 
 @dot ( -- )
-  ;&name ;println JSR2
-  ;Error/todo ;println JSR2
-  HALT
+  ;pop JSR2
+  ;print-short JSR2
 JMP2r
-&name "dot 00
+
+
+@add ( -- )
+  ;pop JSR2
+  ;pop JSR2
+DEBUG
+  ADD2
+  ;push JSR2
+JMP2r
 
 
 @emit ( -- )
@@ -203,7 +216,6 @@ JMP2r
   ;&not-ascii ;println JSR2
   HALT
 JMP2r
-&name "emit 00
 &not-ascii "not-ascii 00
 
 
@@ -213,6 +225,27 @@ JMP2r
   HALT
 JMP2r
 &name "exit 00
+
+
+@print-stack ( -- )
+  ( calculate tos )
+  ;Wst
+  #00 ;Wst/ptr LDA
+  ADD2
+  STH2
+  ;Wst
+
+&loop
+  DUP2 STH2rk EQU2 ,&end JCN
+  LDA2k ;print-short JSR2 CR
+  INC2
+  ,&loop JMP
+
+&end
+  POP2
+  POP2r
+JMP2r
+&sep $1
 
 ~string.tal
 
@@ -259,7 +292,25 @@ $fd
 @Builtin-dot
 &name-length 01
 &name ". 00
-&link 0000
+&link :Builtin-add
 &code :dot
+
+@Builtin-add
+&name-length 01
+&name "+ 00
+&link :Builtin-dup
+&code :add
+
+@Builtin-dup
+&name-length 03
+&name "dup 00
+&link :Builtin-print-stack
+&code :dup
+
+@Builtin-print-stack
+&name-length 02
+&name ".s 00
+&link 0000
+&code :print-stack
 
 @memory
