@@ -12,11 +12,13 @@ BRK
   #00 .in LDZ2 STA
 
   ;tib ;interpret JSR2
-  LIT 'k LIT 'o EMIT EMIT CR
+  ;&done ;println JSR2
 
   ;tib .in STZ2
   ;prompt ;print-str JSR2
 BRK
+&done
+20 "ok 00
 
 &tib-overflow
     ;Error/tib-overflow ;print-str JSR2
