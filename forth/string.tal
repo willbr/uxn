@@ -92,12 +92,13 @@ JMP2r
 JMP2r
 
 
-@print-str ( str* -- )
-  ( doesnt work with empty strings
-    need to check for null before first emit )
+@print-str ( *str -- )
+  ,&cond JMP
 	&while
 		LDAk EMIT
-		INC2 LDAk ,&while JCN
+		INC2
+    &cond
+    LDAk ,&while JCN
 	POP2
 JMP2r
 
