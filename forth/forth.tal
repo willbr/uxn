@@ -1,0 +1,265 @@
+@do-char ( callback )
+  .in LDZ2 ;tib/end EQU2 ,&tib-overflow JCN
+
+  .Console/read DEI
+  DUP newline EQU ,&newline JCN
+  .in LDZ2 STA
+  .in ;inc-zptr JSR2
+BRK
+
+&newline ( newline -- )
+  POP
+  #00 .in LDZ2 STA
+
+  ;tib ;interpret JSR2
+  LIT 'k LIT 'o EMIT EMIT CR
+
+  ;tib .in STZ2
+  ;prompt ;print-str JSR2
+BRK
+
+&tib-overflow
+    ;Error/tib-overflow ;print-str JSR2
+    HALT
+BRK
+
+
+@inc-zptr ( zaddr -- )
+  STHk LDZ2
+  INC
+  STHr STZ2
+JMP2r
+
+
+@interpret ( *str -- )
+  ( LIT 'i EMIT space EMIT )
+  ( DUP2 ;print-str JSR2 CR )
+  DUP2 .in STZ2
+  ;&word STA2
+
+&loop
+  .in LDZ2 LDA
+
+  DUP space EQU ,&space JCN
+  DUP null EQU ,&null JCN
+
+  ( everything else )
+  POP
+  .in ;inc-zptr JSR2
+  ,&loop JMP
+
+&space
+  POP
+  null .in LDZ2 STA
+  .in ;inc-zptr JSR2
+
+  ;&word LDA2 ;eval-word JSR2
+  .in LDZ2 ;&word STA2
+
+  ,&loop JMP
+
+&null
+  POP
+  (
+  ;&word ;print-short JSR2 CR
+  ;&word LDA2 ;print-short JSR2 CR
+  ;&word LDA2 ;println JSR2
+  )
+  ;&word LDA2 ;eval-word JSR2
+JMP2r
+&word $2
+
+
+@eval-word ( *str -- )
+  ( DUP2 LIT 'W EMIT space EMIT ;print-str JSR2 CR )
+  DUP2 ;lookup JSR2
+
+  DUP2 #0000 EQU2 ,&number JCN
+
+  ;execute JSR2
+  ,&end JMP
+
+&number
+  POP2
+  ;number JSR2
+  ,&error JCN
+
+  ( DUP ;print-short JSR2 CR )
+  ;push JSR2
+
+&end
+JMP2r
+
+&error
+  ;&name ;println JSR2
+  HALT
+JMP2r
+&name "eval-word 00
+
+
+@lookup ( *str -- &dictnode )
+  STH2
+  .dictptr LDZ2
+
+&loop ( *dictnode )
+  DUP2 #0000 EQU2 ,&end JCN
+
+  DUP2 ;dict-name JSR2
+  STH2rk
+  ;string-equal JSR2 ,&end JCN
+
+  ;dict-link JSR2
+  LDA2
+
+  ,&loop JMP
+
+&end
+  POP2r
+JMP2r
+
+
+@dict-name ( *dict -- *name )
+  INC2
+JMP2r
+
+@dict-link ( *dict -- *link )
+  LDAk #00 SWP ADD2 ( skip strlen )
+  #0002 ADD2 ( skip length byte and null byte )
+JMP2r
+
+@dict-code ( *dict -- *link )
+  LDAk #00 SWP ADD2 ( skip strlen )
+  #0004 ADD2 ( skip length byte, null byte and link field )
+JMP2r
+
+
+@push ( u16 -- )
+  ( DUP2 ;print-short JSR2 CR )
+  ( calculate tos )
+  ;Wst
+  #00 ;Wst/ptr LDA
+  ADD2
+
+  DUP2 ;Wst/end GEQ2 ,&stack-overflow JCN
+  
+  STA2
+
+  ;Wst/ptr LDA INC ;Wst/ptr STA
+JMP2r
+
+&stack-overflow
+  ;Error/stack-overflow ;println JSR2
+  HALT
+JMP2r
+
+
+@pop ( -- u16 )
+  ;Wst/ptr LDA #01 SUB ;Wst/ptr STA
+
+  ( calculate tos )
+  ;Wst
+  #00 ;Wst/ptr LDA
+  ADD2
+
+  DUP2 ;Wst LTH2 ,&stack-underflow JCN
+  
+  LDA2
+JMP2r
+
+&stack-underflow
+  ;Error/stack-underflow ;println JSR2
+  HALT
+JMP2r
+
+
+@execute ( &dictnode -- )
+  ;dict-code JSR2
+  LDA2 JSR2
+JMP2r
+&name "execute 00
+
+
+@dot ( -- )
+  ;&name ;println JSR2
+  ;Error/todo ;println JSR2
+  HALT
+JMP2r
+&name "dot 00
+
+
+@emit ( -- )
+  ;pop JSR2
+  ( DUP2 ;print-short JSR2 CR )
+  ( DUP2 #0020 LTH2 ,&error JCN )
+  DUP2 #007e GTH2 ,&error JCN
+
+  EMIT
+  POP
+
+JMP2r
+
+&error
+  ;print-short JSR2 space EMIT
+  ;&not-ascii ;println JSR2
+  HALT
+JMP2r
+&name "emit 00
+&not-ascii "not-ascii 00
+
+
+@exit ( -- )
+  ;&name ;println JSR2
+  ;Error/todo ;println JSR2
+  HALT
+JMP2r
+&name "exit 00
+
+~string.tal
+
+@prompt
+"> 20 00
+
+
+@Error
+&invalid-char "invalid 20 "char: 20 00
+&todo "todo 00
+&tib-overflow "tib 20 "overflow 00
+&stack-overflow "stack 20 "overflow 00
+&stack-underflow "stack 20 "underflow 00
+
+
+@tib
+$ff
+&end
+
+@Wst
+$fd
+&end
+&err $1
+&ptr $1
+
+@Rst
+$fd
+&end
+&err $1
+&ptr $1
+
+@Builtin-emit
+&name-length 04
+&name "emit 00
+&link :Builtin-exit
+&code :emit
+
+@Builtin-exit
+&name-length 04
+&name "exit 00
+&link :Builtin-dot
+&code :exit
+
+@Builtin-dot
+&name-length 01
+&name ". 00
+&link 0000
+&code :dot
+
+@memory
