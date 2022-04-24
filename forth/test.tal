@@ -28,6 +28,7 @@
 %null { #00 }
 %newline { #0a }
 %space { #20 }
+%escape { #1b }
 
 |0000
 @in $2
@@ -38,17 +39,69 @@
 
 |0100
   ;hello ;println JSR2
-  ;bye ;println JSR2
 
+  #00
   ;hello ;bye ;string-equal JSR2
-  DUP ;print-byte JSR2 CR
+  ;assert-equal-u8 JSR2
 
+  #01
   ;hello ;hello ;string-equal JSR2
-  DUP ;print-byte JSR2 CR
+  ;assert-equal-u8 JSR2
+
+  ;bye ;println JSR2
 BRK
+
+@assert-equal-u8 ( u8 u8 -- )
+  DUP2
+  ;print-byte JSR2
+  space EMIT
+  ;print-byte JSR2
+  space EMIT
+
+  ;highlight-result JSR2
+  CR
+
+JMP2r
+
+
+@highlight-result ( u8 -- )
+  NEQ ,&fail JCN
+&pass
+  ;text-green JSR2
+  ;pass ;print-str JSR2
+  ,&end JMP
+
+&fail
+  ;text-red JSR2
+  ;fail ;print-str JSR2
+
+&end
+  ;text-reset JSR2
+JMP2r
+
+
+@text-reset ( -- )
+  ;&data ;print-str JSR2
+JMP2r
+&data 1b "[0m 00
+
+
+@text-green ( -- )
+  ;&data ;print-str JSR2
+JMP2r
+&data 1b "[32m 00
+
+
+@text-red ( -- )
+  ;&data ;print-str JSR2
+JMP2r
+&data 1b "[31m 00
+
 
 @hello "hello 00
 @bye "bye 00
+@pass "pass 00
+@fail "fail 00
 
 ~string.tal
 @Error/invalid-char "invalid-char 00
