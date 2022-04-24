@@ -1,1 +1,1 @@
-beef cafe .s . 0a emit
+10 2 / . 0a emit
