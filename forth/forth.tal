@@ -1,3 +1,52 @@
+(
+  TODO
+  @  peek16
+  c@ peek8
+  !  poke16
+  c! poke8
+  comma
+    push here
+    poke16
+    here += 2
+  commaByte
+    push here
+    poke8
+    here += 1
+  word
+    len = readword
+      push 1
+      push len
+  find
+    pop len
+    pop addr
+    ret = findword
+    push ret
+
+  getcfa
+  cfa
+  exit
+  lit
+  docol
+  word
+  find
+
+  docreate
+    word
+    create-word
+
+  colon
+    docreate
+    push docol
+    comma
+    hide
+    state = 1
+  semicolon
+    push doexit
+    comma
+    hida
+    state = 0
+  tick
+)
 
 
 @forth-init
