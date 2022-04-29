@@ -4,6 +4,8 @@
 
   ( DUP2 ;println JSR2 )
 
+  INC2 ( skip length )
+
   #0000 STH2
 
 &loop
@@ -47,6 +49,19 @@ JMP2r
 
 
 @string-equal ( *str1 *str2 -- u8 )
+(
+  LDAk ;print-byte JSR2
+  space EMIT
+  DUP2 ;print-str JSR2
+  space EMIT
+  LIT '= EMIT
+  space EMIT
+  OVR2
+  LDAk ;print-byte JSR2
+  space EMIT
+  ;print-str JSR2
+  CR
+  )
   STH2
 
 &loop
@@ -93,6 +108,7 @@ JMP2r
 
 
 @print-str ( *str -- )
+  INC2
   ,&cond JMP
 	&while
 		LDAk EMIT
