@@ -73,7 +73,7 @@ JMP2r
   POP
   #00 .in LDZ2 STA
 
-  ;tib ;interpret JSR2
+  ;interpret JSR2
   ;&done ;println JSR2
 
   ;tib .in STZ2
@@ -95,17 +95,14 @@ BRK
 JMP2r
 
 
-@interpret ( *str -- )
-  ( LIT 'i EMIT space EMIT )
-  ( DUP2 ;print-str JSR2 CR )
-  DUP2 .in STZ2
-  ;&word STA2
+@read-word ( -- *word )
+  .in LDZ2 ;word STA2
 
 &loop
   .in LDZ2 LDA
 
   DUP space EQU ,&space JCN
-  DUP null EQU ,&null JCN
+  DUP null  EQU ,&null  JCN
 
   ( everything else )
   POP
@@ -116,32 +113,26 @@ JMP2r
   POP
   null .in LDZ2 STA
   .in ;inc-zptr JSR2
-
-  ;&word LDA2 ;eval-word JSR2
-  .in LDZ2 ;&word STA2
-
-  ,&loop JMP
+  ;word LDA2
+JMP2r
 
 &null
   POP
-  (
-  ;&word ;print-short JSR2 CR
-  ;&word LDA2 ;print-short JSR2 CR
-  ;&word LDA2 ;println JSR2
-  )
-  ;&word LDA2 ;eval-word JSR2
+  ;word LDA2
 JMP2r
-&word $2
 
+@interpret ( -- )
+  ;tib .in STZ2
+&loop
+  ;read-word JSR2
+  ( CR DUP2 ;print-str JSR2 CR )
+  LDAk #00 EQU ,&end JCN ( end of line )
 
-@eval-word ( *str -- )
-  ( DUP2 LIT 'W EMIT space EMIT ;print-str JSR2 CR )
   DUP2 ;lookup JSR2
-
   DUP2 #0000 EQU2 ,&number JCN
 
   ;execute JSR2
-  ,&end JMP
+  ,&loop JMP
 
 &number
   POP2
@@ -150,15 +141,13 @@ JMP2r
 
   ( DUP ;print-short JSR2 CR )
   ;push JSR2
+  ,&loop JMP
 
 &end
 JMP2r
-
 &error
-  ;&name ;println JSR2
-  HALT
+  ;Error/unknown-word ;println JSR2
 JMP2r
-&name "eval-word 00
 
 
 @lookup ( *str -- &dictnode )
@@ -350,6 +339,8 @@ JMP2r
 &tib-overflow "tib 20 "overflow 00
 &stack-overflow "stack 20 "overflow 00
 &stack-underflow "stack 20 "underflow 00
+&unknown-word "unknown-word 00
+&missing-word "missing-word 00
 
 
 @tib
