@@ -6,7 +6,7 @@
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
 
 %ERE   { CR LIT 'E LIT 'R LIT 'E EMIT EMIT EMIT CR }
-%DEBUG { CR #01 .System/debug DEO }
+%DEBUG { CR #01 .System/debug DEO CR }
 %HALT  { #01 .System/state DEO }
 %EMIT  { .Console/write DEO }
 
