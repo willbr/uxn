@@ -1,4 +1,15 @@
 
+
+@forth-init
+  ;tib .in STZ2
+  ;memory .here-pos STZ2
+  #0010 .base STZ2
+  ;Builtin-emit .dictptr STZ2
+
+  ;prompt ;print-str JSR2
+JMP2r
+
+
 @on-console-forth
   .in LDZ2 ;tib/end EQU2 ,&tib-overflow JCN
 
