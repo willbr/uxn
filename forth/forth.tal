@@ -1,11 +1,13 @@
-@do-char ( callback )
+
+@on-console-forth
   .in LDZ2 ;tib/end EQU2 ,&tib-overflow JCN
 
   .Console/read DEI
   DUP newline EQU ,&newline JCN
   .in LDZ2 STA
   .in ;inc-zptr JSR2
-BRK
+JMP2r
+
 
 &newline ( newline -- )
   POP
