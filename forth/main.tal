@@ -1,12 +1,5 @@
 ~header.tal
 
-|0000
-@in $2
-@here $2
-@dictptr $2
-@base $2
-
-
 |0100
   ;on-key .Controller/vector DEO2
   ;on-console .Console/vector DEO2

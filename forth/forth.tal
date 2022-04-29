@@ -374,3 +374,14 @@ $fd
 &code :print-stack
 
 @memory
+
+|0000
+@in $2
+@word $2
+@here-pos $2
+@dictptr $2
+@base $2
+@compiling $1
+
+
+
