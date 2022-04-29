@@ -11,12 +11,7 @@
   ;on-key .Controller/vector DEO2
   ;on-console .Console/vector DEO2
 
-  ;tib .in STZ2
-  ;memory .here STZ2
-  #0010 .base STZ2
-  ;Builtin-emit .dictptr STZ2
-
-  ;prompt ;print-str JSR2
+  ;forth-init JSR2
 BRK
 
 
