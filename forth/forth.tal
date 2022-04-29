@@ -327,6 +327,67 @@ JMP2r
   POP2r
 JMP2r
 
+@colon
+  ;read-word JSR2
+  ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
+  LDAk #00 EQU ,&error JCN
+  ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
+  POP2
+  true .compiling STZ
+JMP2r
+&error
+  ;Error/missing-word ;println JSR2
+JMP2r
+
+
+@semi-colon
+  false .compiling STZ
+JMP2r
+
+
+@here
+  .here-pos LDZ2
+  ;push JSR2
+JMP2r
+
+
+@peek16
+  ;pop JSR2
+  DUP2 ;print-short JSR2 CR
+  LDA2
+  DUP2 ;print-short JSR2 CR
+  ;push JSR2
+JMP2r
+
+@poke16
+  ;pop JSR2
+  ;pop JSR2
+  SWP2
+  STA2
+JMP2r
+
+@peek8
+  #00
+  ;pop JSR2
+  LDA
+  ;push JSR2
+JMP2r
+
+@poke8
+  ;pop JSR2
+  ;pop JSR2
+  #00ff AND2
+  SWP2
+  STA2
+JMP2r
+
+@comma
+  LIT '# EMIT CR
+  LIT '# EMIT CR
+  LIT '# EMIT CR
+  LIT '# EMIT CR
+JMP2r
+
 ~string.tal
 
 @prompt
@@ -410,8 +471,56 @@ $fd
 @Builtin-print-stack
 &name-length 02
 &name ".s 00
-&link 0000
+&link :Builtin-colon
 &code :print-stack
+
+@Builtin-colon
+&name-length 01
+&name ": 00
+&link :Builtin-semi-colon
+&code :colon
+
+@Builtin-semi-colon
+&name-length 01
+&name "; 00
+&link :Builtin-here
+&code :semi-colon
+
+@Builtin-here
+&name-length 04
+&name "here 00
+&link :Builtin-peek16
+&code :here
+
+@Builtin-peek16
+&name-length 01
+&name "@ 00
+&link :Builtin-poke16
+&code :peek16
+
+@Builtin-poke16
+&name-length 01
+&name "! 00
+&link 0000
+&code :poke16
+
+@Builtin-peek8
+&name-length 01
+&name "c@ 00
+&link :Builtin-poke8
+&code :peek8
+
+@Builtin-poke8
+&name-length 01
+&name "c! 00
+&link :Builtin-comma
+&code :poke8
+
+@Builtin-comma
+&name-length 01
+&name ", 00
+&link 0000
+&code :comma
 
 @memory
 
