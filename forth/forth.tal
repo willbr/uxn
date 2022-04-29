@@ -1,9 +1,11 @@
+( *str
+  $1 len
+  $? null terminated string
+)
+
 (
   TODO
-  @  peek16
-  c@ peek8
-  !  poke16
-  c! poke8
+
   comma
     push here
     poke16
@@ -71,7 +73,7 @@ JMP2r
 
 &newline ( newline -- )
   POP
-  #00 .in LDZ2 STA
+  null .in LDZ2 STA
 
   ;interpret JSR2
   ;&done ;println JSR2
@@ -95,11 +97,12 @@ BRK
 JMP2r
 
 
-@read-word ( -- *word )
-  .in LDZ2 ;word STA2
+@read-word ( -- *str )
+  .in LDZ2 #0001 SUB2 ;word STA2
 
 &loop
   .in LDZ2 LDA
+  ( DUP ;print-byte JSR2 space EMIT DUP EMIT CR )
 
   DUP space EQU ,&space JCN
   DUP null  EQU ,&null  JCN
@@ -112,26 +115,42 @@ JMP2r
 &space
   POP
   null .in LDZ2 STA
-  .in ;inc-zptr JSR2
   ;word LDA2
+  ,&calc-len JSR
+  .in ;inc-zptr JSR2
 JMP2r
 
 &null
   POP
+&end
   ;word LDA2
+  ,&calc-len JSR
 JMP2r
+
+&calc-len
+  .in LDZ2 ;word LDA2 INC2 SUB2
+  NIP
+  ;word LDA2 STA
+JMP2r
+
 
 @interpret ( -- )
   ;tib .in STZ2
 &loop
   ;read-word JSR2
-  ( CR DUP2 ;print-str JSR2 CR )
-  LDAk #00 EQU ,&end JCN ( end of line )
+  DUP2 INC2 LDA #00 EQU ,&end JCN ( end of line )
+  ( LIT 'i EMIT space EMIT DUP2 ;print-str JSR2 CR )
+  ( ,&loop JMP )
 
   DUP2 ;lookup JSR2
   DUP2 #0000 EQU2 ,&number JCN
 
+  .compiling LDZ ,&compile-word JCN
+
   ;execute JSR2
+  ,&loop JMP
+
+&compile-word
   ,&loop JMP
 
 &number
@@ -139,9 +158,14 @@ JMP2r
   ;number JSR2
   ,&error JCN
 
+  .compiling LDZ ,&compile-number JCN
+
   ( DUP ;print-short JSR2 CR )
   ;push JSR2
   ,&loop JMP
+
+&compile-number
+  ;&loop JMP2
 
 &end
 JMP2r
@@ -157,7 +181,8 @@ JMP2r
 &loop ( *dictnode )
   DUP2 #0000 EQU2 ,&end JCN
 
-  DUP2 ;dict-name JSR2
+  DUP2
+  ( LIT 'l EMIT LIT 'u EMIT space EMIT DUP2 ;println JSR2 )
   STH2rk
   ;string-equal JSR2 ,&end JCN
 
@@ -170,10 +195,6 @@ JMP2r
   POP2r
 JMP2r
 
-
-@dict-name ( *dict -- *name )
-  INC2
-JMP2r
 
 @dict-link ( *dict -- *link )
   LDAk #00 SWP ADD2 ( skip strlen )
@@ -327,11 +348,13 @@ JMP2r
   POP2r
 JMP2r
 
+
 @colon
   ;read-word JSR2
   ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
   LDAk #00 EQU ,&error JCN
   ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
+  ;create-word JSR2
   POP2
   true .compiling STZ
 JMP2r
@@ -340,16 +363,37 @@ JMP2r
 JMP2r
 
 
-@semi-colon
-  false .compiling STZ
+@create-word ( *str len -- )
+CR LIT 'c EMIT LIT 'w EMIT space EMIT DUP2 ;println JSR2
+debug
+  .here-pos LDZ2 STH2k ( store new dictptr )
+
+  ( $2 link )
+  .dictptr LDZ2
+  ;push JSR2
+  ;comma JSR2
+
+  STH2r .dictptr STZ2
 JMP2r
 
 
-@here
+@semi-colon
+  ;&name todo
+  false .compiling STZ
+JMP2r
+&name "semi-colon 00
+
+
+@push-here
   .here-pos LDZ2
   ;push JSR2
 JMP2r
 
+@inc-here
+  .here-pos LDZ2
+  INC2
+  .here-pos STZ2
+JMP2r
 
 @peek16
   ;pop JSR2
@@ -382,28 +426,28 @@ JMP2r
 JMP2r
 
 @comma
-  LIT '# EMIT CR
-  LIT '# EMIT CR
-  LIT '# EMIT CR
-  LIT '# EMIT CR
+  ;push-here JSR2
+  ;poke16 JSR2
+  ;inc-here JSR2
 JMP2r
 
 ~string.tal
 
 @prompt
-"> 20 00
+00 "> 20 00
 
 
 @Error
-&invalid-char "invalid 20 "char: 20 00
-&todo "todo 00
-&tib-overflow "tib 20 "overflow 00
-&stack-overflow "stack 20 "overflow 00
-&stack-underflow "stack 20 "underflow 00
-&unknown-word "unknown-word 00
-&missing-word "missing-word 00
+&invalid-char    00 "invalid 20 "char: 20 00
+&todo            00 "todo 00
+&tib-overflow    00 "tib 20 "overflow 00
+&stack-overflow  00 "stack 20 "overflow 00
+&stack-underflow 00 "stack 20 "underflow 00
+&unknown-word    00 "unknown-word 00
+&missing-word    00 "missing-word 00
 
 
+$1
 @tib
 $ff
 &end
@@ -490,7 +534,7 @@ $fd
 &name-length 04
 &name "here 00
 &link :Builtin-peek16
-&code :here
+&code :push-here
 
 @Builtin-peek16
 &name-length 01
