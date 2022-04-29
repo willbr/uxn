@@ -30,7 +30,7 @@ BRK
 
 
 @on-console ( callback )
-  ;do-char JSR2
+  ;on-console-forth JSR2
 BRK
 
 ~forth.tal
