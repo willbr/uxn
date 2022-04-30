@@ -175,10 +175,12 @@ JMP2r
   DUP2
   ( DUP2 #03 ;dump JSR2 )
   INC2
-  DUP2 #0001 SUB2 LDA mask-length AND
   STH2rk
   ( OVR2 #03 ;dump JSR2 )
+  DUP2 LDA
+  ROT ROT
   INC2
+  ( DUP2 ;print-cstr JSR2 CR )
   ;memcmp JSR2 ,&end JCN
 
 &next
