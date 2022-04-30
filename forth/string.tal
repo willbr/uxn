@@ -109,6 +109,11 @@ JMP2r
 
 @print-str ( *str -- )
   INC2
+  ;print-cstr JSR2
+JMP2r
+
+
+@print-cstr ( *cstr -- )
   ,&cond JMP
 	&while
 		LDAk EMIT
@@ -117,7 +122,6 @@ JMP2r
     LDAk ,&while JCN
 	POP2
 JMP2r
-
 
 @println ( *str -- )
   ,print-str JSR
