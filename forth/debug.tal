@@ -1,0 +1,12 @@
+%ere   { ;ere JSR2 }
+
+@ere
+  CR
+  ;&text ;print-str JSR2
+  OVR2r
+  STH2r
+  ;print-short JSR2
+  CR
+JMP2r
+&text 04 "ere 20 00
+
