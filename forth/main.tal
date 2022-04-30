@@ -5,6 +5,7 @@
   ;on-console .Console/vector DEO2
 
   ;forth-init JSR2
+  ;prompt ;print-str JSR2
 BRK
 
 

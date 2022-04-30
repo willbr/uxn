@@ -56,8 +56,6 @@
   ;memory .here-pos STZ2
   #10 .base STZ
   ;Builtin-emit .dictptr STZ2
-
-  ;prompt ;print-str JSR2
 JMP2r
 
 
@@ -82,7 +80,7 @@ JMP2r
   ;prompt ;print-str JSR2
 BRK
 &done
-20 "ok 00
+03 20 "ok 00
 
 &tib-overflow
     ;Error/tib-overflow ;print-str JSR2
