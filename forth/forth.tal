@@ -361,15 +361,34 @@ JMP2r
 JMP2r
 
 
-@create-word ( *str len -- )
-CR LIT 'c EMIT LIT 'w EMIT space EMIT DUP2 ;println JSR2
-debug
-  .here-pos LDZ2 STH2k ( store new dictptr )
+@create-word ( *str -- )
+  ( CR LIT 'c EMIT LIT 'w EMIT space EMIT DUP2 ;println JSR2 )
+  .here-pos LDZ2 STH2 ( store new dictptr )
+
+  LDAk #00 SWP
+  ;push JSR2
+  ;comma8 JSR2
+
+  LDAk INC STH
+
+&loop
+  INC2
+  ( LDAk ;debug-ascii JSR2 )
+  LDAk #00 SWP
+  ;push JSR2
+  ;comma8 JSR2
+  STHr #01 SUB STHk
+  #00 EQU ,&end JCN
+  ,&loop JMP
+
+&end
+  POP2
+  POPr
 
   ( $2 link )
   .dictptr LDZ2
   ;push JSR2
-  ;comma JSR2
+  ;comma16 JSR2
 
   STH2r .dictptr STZ2
 JMP2r
@@ -387,8 +406,15 @@ JMP2r
   ;push JSR2
 JMP2r
 
-@inc-here
+@inc-here8
   .here-pos LDZ2
+  INC2
+  .here-pos STZ2
+JMP2r
+
+@inc-here16
+  .here-pos LDZ2
+  INC2
   INC2
   .here-pos STZ2
 JMP2r
@@ -418,15 +444,20 @@ JMP2r
 @poke8
   ;pop JSR2
   ;pop JSR2
-  #00ff AND2
-  SWP2
-  STA2
+  NIP ROT ROT
+  STA
 JMP2r
 
-@comma
+@comma16
   ;push-here JSR2
   ;poke16 JSR2
-  ;inc-here JSR2
+  ;inc-here16 JSR2
+JMP2r
+
+@comma8
+  ;push-here JSR2
+  ;poke8 JSR2
+  ;inc-here8 JSR2
 JMP2r
 
 ~string.tal
@@ -547,22 +578,28 @@ $fd
 &code :poke16
 
 @Builtin-peek8
-&name-length 01
+&name-length 02
 &name "c@ 00
 &link :Builtin-poke8
 &code :peek8
 
 @Builtin-poke8
-&name-length 01
+&name-length 02
 &name "c! 00
-&link :Builtin-comma
+&link :Builtin-comma8
 &code :poke8
 
-@Builtin-comma
+@Builtin-comma16
 &name-length 01
 &name ", 00
+&link :Builtin-comma8
+&code :comma16
+
+@Builtin-comma8
+&name-length 02
+&name "c, 00
 &link 0000
-&code :comma
+&code :comma8
 
 @memory
 
