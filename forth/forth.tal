@@ -1,38 +1,3 @@
-(
-  TODO
-
-  word
-    len = readword
-      push 1
-      push len
-  find
-    pop len
-    pop addr
-    ret = findword
-    push ret
-
-  getcfa
-  cfa
-  exit
-  lit
-  docol
-  word
-  find
-
-  colon
-    docreate
-    push docol
-    comma
-    hide
-    state = 1
-  semicolon
-    push doexit
-    comma
-    hide
-    state = 0
-  tick
-)
-
 %mask-immediate { #80 }
 %mask-length    { #3f }
 
