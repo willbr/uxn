@@ -54,7 +54,7 @@
 @forth-init
   ;tib .in STZ2
   ;memory .here-pos STZ2
-  #0010 .base STZ2
+  #10 .base STZ
   ;Builtin-emit .dictptr STZ2
 
   ;prompt ;print-str JSR2
@@ -155,7 +155,7 @@ JMP2r
 
 &number
   POP2
-  ;number JSR2
+  ;parse-number JSR2
   ,&error JCN
 
   .compiling LDZ ,&compile-number JCN
@@ -573,7 +573,7 @@ $fd
 @word $2
 @here-pos $2
 @dictptr $2
-@base $2
+@base $1
 @compiling $1
 
 

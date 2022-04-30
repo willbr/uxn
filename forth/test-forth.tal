@@ -1,0 +1,59 @@
+~header.tal
+
+|0100
+  ;hello ;println JSR2
+
+  ;test-read-word JSR2
+
+  ;bye ;println JSR2
+
+  HALT
+BRK
+
+
+@test-read-word
+  ;tib .in STZ2
+  ;&line1 #0e ;tib ;memcpy JSR2
+
+  ;read-word JSR2
+  ( DUP2 ;println JSR2 )
+  DUP2
+  ;&one ;string-equal JSR2
+  true ;assert-equal-u8 JSR2
+
+  ;&two ;string-equal JSR2
+  false ;assert-equal-u8 JSR2
+
+  ;read-word JSR2
+  ( DUP2 ;println JSR2 )
+  DUP2
+  ;&one ;string-equal JSR2
+  false ;assert-equal-u8 JSR2
+
+  ;&two ;string-equal JSR2
+  true ;assert-equal-u8 JSR2
+
+  ;read-word JSR2
+  ( DUP2 ;println JSR2 )
+  ;&three ;string-equal JSR2
+  true ;assert-equal-u8 JSR2
+
+  ;read-word JSR2
+  ;&null ;string-equal JSR2
+  true ;assert-equal-u8 JSR2
+JMP2r
+
+0f &line1 "one 20 "two 20 "three 00
+&null  00 00
+&one   03 "one 00
+&two   03 "two 00
+&three 05 "three 00
+
+
+@hello 05 "hello 00
+@bye   04 "bye 00
+
+
+~test.tal
+~forth.tal
+
