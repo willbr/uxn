@@ -43,10 +43,10 @@ build: main.tal input.txt
 run: build
 	$(uxncli) out.rom
 
-wbuild-test:
-	watchexec -cr --ignore "*.rom" "make build-test"
+wtest:
+	watchexec -cr --ignore "*.rom" "make test"
 
-build-test: build-test-string #build-test-forth
+test: build-test-string build-test-forth
 
 build-test-string: test-string.tal
 #	$(cat) $<
