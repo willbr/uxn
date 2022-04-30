@@ -10,6 +10,15 @@
 |0100
   ;hello ;println JSR2
 
+  ;test-string-equal JSR2
+
+  ;bye ;println JSR2
+
+  HALT
+BRK
+
+
+@test-string-equal
   #00
   ;hello ;bye ;string-equal JSR2
   ;assert-equal-u8 JSR2
@@ -25,11 +34,8 @@
   #01
   ;null ;null ;string-equal JSR2
   ;assert-equal-u8 JSR2
+JMP2r
 
-  ;bye ;println JSR2
-
-  HALT
-BRK
 
 @assert-equal-u8 ( u8 u8 -- )
   DUP2
@@ -63,28 +69,28 @@ JMP2r
 @text-reset ( -- )
   ;&data ;print-str JSR2
 JMP2r
-&data 1b "[0m 00
+&data 04 1b "[0m 00
 
 
 @text-green ( -- )
   ;&data ;print-str JSR2
 JMP2r
-&data 1b "[32m 00
+&data 04 1b "[32m 00
 
 
 @text-red ( -- )
   ;&data ;print-str JSR2
 JMP2r
-&data 1b "[31m 00
+&data 04 1b "[31m 00
 
 
-@null 00
-@hello "hello 00
-@bye "bye 00
-@pass "pass 00
-@fail "fail 00
+@null  00 00
+@hello 05 "hello 00
+@bye   04 "bye 00
+@pass  04 "pass 00
+@fail  04 "fail 00
 
 
 ~string.tal
-@Error/invalid-char "invalid-char 00
+@Error/invalid-char 0c "invalid-char 00
 
