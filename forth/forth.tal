@@ -281,7 +281,7 @@ JMP2r
   ;push JSR2
 JMP2r
 
-@dot ( -- )
+@print-tos ( -- )
   ;pop JSR2
   ;print-short JSR2
 JMP2r

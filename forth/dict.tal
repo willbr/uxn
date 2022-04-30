@@ -19,14 +19,14 @@
 @Builtin-exit
 &name-length 04
 &name "exit 00
-&link :Builtin-dot
+&link :Builtin-print-tos
 &code :exit
 
-@Builtin-dot
+@Builtin-print-tos
 &name-length 01
 &name ". 00
 &link :Builtin-add
-&code :dot
+&code :print-tos
 
 @Builtin-add
 &name-length 01
