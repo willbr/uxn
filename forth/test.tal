@@ -5,6 +5,22 @@
   ;print-byte JSR2
   space EMIT
 
+  EQU
+  ;highlight-result JSR2
+  CR
+
+JMP2r
+
+@assert-equal-u16 ( u16 u16 -- )
+  OVR2 OVR2 SWP2
+
+  ;print-short JSR2
+  space EMIT
+  ;print-short JSR2
+  space EMIT
+
+  EQU2
+
   ;highlight-result JSR2
   CR
 
@@ -12,7 +28,7 @@ JMP2r
 
 
 @highlight-result ( u8 -- )
-  NEQ ,&fail JCN
+  #00 EQU ,&fail JCN
   ;text-green JSR2
   ;pass ;print-str JSR2
   ,&end JMP
