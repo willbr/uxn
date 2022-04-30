@@ -1,0 +1,50 @@
+@assert-equal-u8 ( u8 u8 -- )
+  DUP2
+  ;print-byte JSR2
+  space EMIT
+  ;print-byte JSR2
+  space EMIT
+
+  ;highlight-result JSR2
+  CR
+
+JMP2r
+
+
+@highlight-result ( u8 -- )
+  NEQ ,&fail JCN
+  ;text-green JSR2
+  ;pass ;print-str JSR2
+  ,&end JMP
+
+&fail
+  ;text-red JSR2
+  ;fail ;print-str JSR2
+
+&end
+  ;text-reset JSR2
+JMP2r
+
+
+@text-reset ( -- )
+  ;&data ;print-str JSR2
+JMP2r
+&data 04 1b "[0m 00
+
+
+@text-green ( -- )
+  ;&data ;print-str JSR2
+JMP2r
+&data 04 1b "[32m 00
+
+
+@text-red ( -- )
+  ;&data ;print-str JSR2
+JMP2r
+&data 04 1b "[31m 00
+
+
+@null  00 00
+@pass  04 "pass 00
+@fail  04 "fail 00
+
