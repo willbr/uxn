@@ -145,7 +145,7 @@ JMP2r
 JMP2r
 
 
-@dump (addr u -- )
+@dump ( addr u -- )
   STHk
 &loop
   #00 EQU ,&end JCN
