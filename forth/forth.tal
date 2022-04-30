@@ -93,7 +93,6 @@ JMP2r
   .compiling LDZ ,&c JCN
   LIT 'i EMIT
   ,&next JMP
-
 &c
   LIT 'c EMIT
 &next
@@ -109,7 +108,7 @@ JMP2r
   ;read-word JSR2
   DUP2 INC2 LDA #00 EQU ;&end JCN2 ( end of line )
 
-  DUP2 ;dbg JSR2
+  ( DUP2 ;dbg JSR2 )
 
   DUP2 ;lookup JSR2
   DUP2 #0000 NEQ2 ,&word JCN
@@ -137,6 +136,7 @@ JMP2r
 JMP2r
 
 &compile-word
+  ;dict-code JSR2 LDA2
   ;push JSR2
   ;comma16 JSR2
 JMP2r
@@ -249,10 +249,29 @@ JMP2r
 JMP2r
 
 
-@execute ( &dictnode -- )
-  ;dict-code JSR2
-  LDA2 JSR2
+@execute ( *node -- )
+  DUP2 ;dict-code JSR2
+  LDA2
+  DUP2 ;docol EQU2 ,&docol JCN
+  JSR2
+  POP2
 JMP2r
+
+
+&docol ( *node ;docol -- )
+  POP2
+  ;dict-code JSR2
+&loop
+  INC2 INC2
+  LDA2k
+  DUP2 ;exit EQU2 ,&end JCN
+  JSR2
+  ,&loop JMP
+&end
+  POP2 ( *code )
+  POP2 ( *node )
+JMP2r
+
 
 
 @dup ( -- )
@@ -321,11 +340,10 @@ JMP2r
 
 
 @lit16 ( -- )
-  ;&name ;println JSR2
-  ;Error/todo ;println JSR2
-  HALT
+  INC2 INC2
+  LDA2k
+  ;push JSR2
 JMP2r
-&name 05 "lit16 00
 
 
 @docol ( -- )
