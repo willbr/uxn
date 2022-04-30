@@ -1,23 +1,46 @@
 ~header.tal
 
 |0100
+  ;forth-init JSR2
+
   ;hello ;println JSR2
 
+  ;test-lookup JSR2
+  (
   ;test-read-word JSR2
   ;test-create-word JSR2
+  )
 
   ;bye ;println JSR2
 
   HALT
 BRK
 
+~debug.tal
+
+@test-lookup
+  ;&test1 ;lookup JSR2
+  ;Builtin-emit
+  ;assert-equal-u16 JSR2
+
+  ;&test2 ;lookup JSR2
+  ;Builtin-print-tos
+  ;assert-equal-u16 JSR2
+
+  ;&test3 ;lookup JSR2
+  ;Builtin-print-stack
+  ;assert-equal-u16 JSR2
+JMP2r
+&test1 04 "emit 00
+&test2 01 ". 00
+&test3 02 ".s 00
+
 
 @test-create-word
-  ;forth-init JSR2
 
   .here-pos LDZ2 ;&here STA2
   ;&new-word ;create-word JSR2
-  ;&here LDA2 #0e ;dump JSR2
+  ( ;&here LDA2 #0e ;dump JSR2 )
 
   .here-pos LDZ2
   ( DUP2 ;print-short JSR2 CR )
