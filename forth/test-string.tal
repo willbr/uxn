@@ -33,9 +33,27 @@ JMP2r
   ;&test1 INC2 #02 ;&test2 INC2 ;memcmp JSR2
   #01
   ;assert-equal-u8 JSR2
+
+  ;&test3 INC2 #03 ;&test2 INC2 ;memcmp JSR2
+  #00
+  ;assert-equal-u8 JSR2
+
+  ;&test3 INC2 #01 ;&test3 INC2 ;memcmp JSR2
+  #01
+  ;assert-equal-u8 JSR2
+
+  ;&test4 INC2 #03 ;&test4 INC2 ;memcmp JSR2
+  #01
+  ;assert-equal-u8 JSR2
+
+  ;&test3 INC2 #03 ;&test4 INC2 ;memcmp JSR2
+  #00
+  ;assert-equal-u8 JSR2
 JMP2r
 &test1 81 "; 00
 &test2 01 "; 00
+&test3 01 ". 00
+&test4 02 ".s 00
 
 
 @test-parse-number
