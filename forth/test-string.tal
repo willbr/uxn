@@ -10,6 +10,7 @@
   #cafe ;print-short JSR2 CR
 
   ;test-string-equal JSR2
+  ;test-memcmp JSR2
   ;test-parse-number JSR2
 
   ;bye ;println JSR2
@@ -22,6 +23,20 @@ BRK
 @init
   #10 .base STZ
 JMP2r
+
+
+@test-memcmp
+  ;&test1 #03 ;&test2 ;memcmp JSR2
+  #00
+  ;assert-equal-u8 JSR2
+
+  ;&test1 INC2 #02 ;&test2 INC2 ;memcmp JSR2
+  #01
+  ;assert-equal-u8 JSR2
+JMP2r
+&test1 81 "; 00
+&test2 01 "; 00
+
 
 @test-parse-number
   ;&base ;print-str JSR2

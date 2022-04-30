@@ -125,6 +125,36 @@ JMP2r
 JMP2r
 
 
+@memcmp ( src16 len8 dst16 -- )
+  STH2
+&loop
+  DUP #00 EQU ,&success JCN
+  STH ROTr ROTr
+  LDAk
+  LDAkr STHr
+  NEQ ,&fail JCN
+
+  ( step )
+  INC2
+  INC2r
+  ROTr STHr #01 SUB
+  ,&loop JMP
+
+&success
+  POP
+  POP2
+  POP2r
+  #01
+JMP2r
+
+&fail
+  POPr
+  POP2
+  POP2r
+  #00
+JMP2r
+
+
 @memcpy ( src16 len8 dst16 -- )
   STH2
 &loop
