@@ -13,7 +13,7 @@ BRK
   .Controller/key DEI
   STHk
   K_ESC NEQ ,&end JCN
-    HALT
+  HALT
   &end
 BRK
 
@@ -22,5 +22,6 @@ BRK
   ;on-console-forth JSR2
 BRK
 
+~debug.tal
 ~forth.tal
 

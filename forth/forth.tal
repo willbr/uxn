@@ -1,19 +1,6 @@
-( *str
-  $1 len
-  $? null terminated string
-)
-
 (
   TODO
 
-  comma
-    push here
-    poke16
-    here += 2
-  commaByte
-    push here
-    poke8
-    here += 1
   word
     len = readword
       push 1
@@ -32,10 +19,6 @@
   word
   find
 
-  docreate
-    word
-    create-word
-
   colon
     docreate
     push docol
@@ -45,10 +28,13 @@
   semicolon
     push doexit
     comma
-    hida
+    hide
     state = 0
   tick
 )
+
+%mask-immediate { #80 }
+%mask-length    { #3f }
 
 
 @forth-init
@@ -132,26 +118,65 @@ JMP2r
 JMP2r
 
 
+@isnt-immediate ( addr -- b8 )
+  LDA mask-immediate AND
+  mask-immediate NEQ
+JMP2r
+
+
+@dbg
+  .compiling LDZ ,&c JCN
+  LIT 'i EMIT
+  ,&next JMP
+
+&c
+  LIT 'c EMIT
+&next
+  space EMIT
+  ;print-str JSR2
+  CR
+JMP2r
+
+
 @interpret ( -- )
   ;tib .in STZ2
 &loop
   ;read-word JSR2
-  DUP2 INC2 LDA #00 EQU ,&end JCN ( end of line )
-  ( LIT 'i EMIT space EMIT DUP2 ;print-str JSR2 CR )
-  ( ,&loop JMP )
+  DUP2 INC2 LDA #00 EQU ;&end JCN2 ( end of line )
+
+  DUP2 ;dbg JSR2
 
   DUP2 ;lookup JSR2
-  DUP2 #0000 EQU2 ,&number JCN
+  DUP2 #0000 NEQ2 ,&word JCN
 
-  .compiling LDZ ,&compile-word JCN
+  ;interpret-number JSR2
 
+  ;&loop JMP2
+
+&word
+  ;interpret-word JSR2
+  ;&loop JMP2
+
+&end
+JMP2r
+
+
+@interpret-word ( *str *dict -- )
+  NIP2 ( drop str )
+  DUP2 ;isnt-immediate JSR2
+  .compiling LDZ
+  AND
+  ,&compile-word JCN
+&execute-word
   ;execute JSR2
-  ,&loop JMP
+JMP2r
 
 &compile-word
-  ,&loop JMP
+  ;push JSR2
+  ;comma16 JSR2
+JMP2r
 
-&number
+@interpret-number ( *str #0000 -- )
   POP2
   ;parse-number JSR2
   ,&error JCN
@@ -160,15 +185,17 @@ JMP2r
 
   ( DUP ;print-short JSR2 CR )
   ;push JSR2
-  ,&loop JMP
-
-&compile-number
-  ;&loop JMP2
-
-&end
 JMP2r
 &error
   ;Error/unknown-word ;println JSR2
+JMP2r
+
+&compile-number
+  ;lit16
+  ;push JSR2
+  ;comma16 JSR2
+  ;push JSR2
+  ;comma16 JSR2
 JMP2r
 
 
@@ -179,11 +206,17 @@ JMP2r
 &loop ( *dictnode )
   DUP2 #0000 EQU2 ,&end JCN
 
-  DUP2
   ( LIT 'l EMIT LIT 'u EMIT space EMIT DUP2 ;println JSR2 )
+  DUP2
+  ( DUP2 #03 ;dump JSR2 )
+  INC2
+  DUP2 #0001 SUB2 LDA mask-length AND
   STH2rk
-  ;string-equal JSR2 ,&end JCN
+  ( OVR2 #03 ;dump JSR2 )
+  INC2
+  ;memcmp JSR2 ,&end JCN
 
+&next
   ;dict-link JSR2
   LDA2
 
@@ -195,12 +228,16 @@ JMP2r
 
 
 @dict-link ( *dict -- *link )
-  LDAk #00 SWP ADD2 ( skip strlen )
+  LDAk
+  mask-length AND
+  #00 SWP ADD2 ( skip strlen )
   #0002 ADD2 ( skip length byte and null byte )
 JMP2r
 
 @dict-code ( *dict -- *link )
-  LDAk #00 SWP ADD2 ( skip strlen )
+  LDAk
+  mask-length AND
+  #00 SWP ADD2 ( skip strlen )
   #0004 ADD2 ( skip length byte, null byte and link field )
 JMP2r
 
@@ -315,7 +352,23 @@ JMP2r
   ;&not-ascii ;println JSR2
   HALT
 JMP2r
-&not-ascii "not-ascii 00
+&not-ascii 09 "not-ascii 00
+
+
+@lit16 ( -- )
+  ;&name ;println JSR2
+  ;Error/todo ;println JSR2
+  HALT
+JMP2r
+&name 05 "lit16 00
+
+
+@docol ( -- )
+  ;&name ;println JSR2
+  ;Error/todo ;println JSR2
+  HALT
+JMP2r
+&name 05 "docol 00
 
 
 @exit ( -- )
@@ -323,7 +376,7 @@ JMP2r
   ;Error/todo ;println JSR2
   HALT
 JMP2r
-&name "exit 00
+&name 04 "exit 00
 
 
 @print-stack ( -- )
@@ -347,13 +400,15 @@ JMP2r
 JMP2r
 
 
-@colon
+@colon ( -- )
   ;read-word JSR2
   ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
   LDAk #00 EQU ,&error JCN
   ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
   ;create-word JSR2
-  POP2
+  ;docol
+  ;push JSR2
+  ;comma16 JSR2
   true .compiling STZ
 JMP2r
 &error
@@ -395,10 +450,11 @@ JMP2r
 
 
 @semi-colon
-  ;&name todo
   false .compiling STZ
+  ;exit
+  ;push JSR2
+  ;comma16 JSR2
 JMP2r
-&name "semi-colon 00
 
 
 @push-here
@@ -496,8 +552,20 @@ $fd
 @Builtin-emit
 &name-length 04
 &name "emit 00
-&link :Builtin-exit
+&link :Builtin-colon
 &code :emit
+
+@Builtin-colon
+&name-length 01
+&name ": 00
+&link :Builtin-semi-colon
+&code :colon
+
+@Builtin-semi-colon
+&name-length 81
+&name "; 00
+&link :Builtin-exit
+&code :semi-colon
 
 @Builtin-exit
 &name-length 04
@@ -544,20 +612,8 @@ $fd
 @Builtin-print-stack
 &name-length 02
 &name ".s 00
-&link :Builtin-colon
-&code :print-stack
-
-@Builtin-colon
-&name-length 01
-&name ": 00
-&link :Builtin-semi-colon
-&code :colon
-
-@Builtin-semi-colon
-&name-length 01
-&name "; 00
 &link :Builtin-here
-&code :semi-colon
+&code :print-stack
 
 @Builtin-here
 &name-length 04
@@ -574,7 +630,7 @@ $fd
 @Builtin-poke16
 &name-length 01
 &name "! 00
-&link 0000
+&link :Builtin-peek8
 &code :poke16
 
 @Builtin-peek8

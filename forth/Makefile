@@ -32,7 +32,7 @@ wbuild:
 	watchexec -cr --ignore "*.rom" "make build"
 
 build: main.tal input.txt
-	$(cat) $<
+#	$(cat) $<
 #	python ..\src\talie.py $< out.rom
 	$(uxnasm) $< out.rom
 #	python ..\src\uxndis.py out.rom
@@ -46,7 +46,7 @@ run: build
 wbuild-test:
 	watchexec -cr --ignore "*.rom" "make build-test"
 
-build-test: build-test-string build-test-forth
+build-test: build-test-string #build-test-forth
 
 build-test-string: test-string.tal
 #	$(cat) $<

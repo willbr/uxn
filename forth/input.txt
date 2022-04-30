@@ -1,1 +1,3 @@
-here here .s
+: star 2a emit ;
+star
+
