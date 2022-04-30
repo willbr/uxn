@@ -15,7 +15,10 @@ BRK
   ;tib .in STZ2
   ;&line1 #0e ;tib ;memcpy JSR2
 
+  ( ;tib #0a ;dump JSR2 )
+
   ;read-word JSR2
+  ( DUP2 #0a ;dump JSR2 )
   ( DUP2 ;println JSR2 )
   DUP2
   ;&one ;string-equal JSR2
