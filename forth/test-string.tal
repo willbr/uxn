@@ -1,0 +1,69 @@
+~header.tal
+
+|0100
+  ;init JSR2
+
+  ;hello ;println JSR2
+
+  #beef ;print-short JSR2
+  space EMIT
+  #cafe ;print-short JSR2 CR
+
+  ;test-string-equal JSR2
+  ;test-parse-number JSR2
+
+  ;bye ;println JSR2
+
+
+  HALT
+BRK
+
+
+@init
+  #10 .base STZ
+JMP2r
+
+@test-parse-number
+  ;&base ;print-str JSR2
+  space EMIT
+  .base LDZ ;print-byte JSR2
+  CR
+  
+  ;&cafe ;parse-number JSR2
+  ;print-byte JSR2
+  space EMIT
+  ;print-short JSR2
+  CR
+JMP2r
+&base 04 "base 00
+&cafe 04 "cafe 00
+
+
+@test-string-equal
+  #00
+  ;hello ;bye ;string-equal JSR2
+  ;assert-equal-u8 JSR2
+
+  #01
+  ;hello ;hello ;string-equal JSR2
+  ;assert-equal-u8 JSR2
+
+  #00
+  ;null ;bye ;string-equal JSR2
+  ;assert-equal-u8 JSR2
+
+  #01
+  ;null ;null ;string-equal JSR2
+  ;assert-equal-u8 JSR2
+JMP2r
+
+
+@hello 05 "hello 00
+@bye   04 "bye 00
+
+@base $1
+
+
+~test.tal
+~string.tal
+

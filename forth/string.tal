@@ -1,4 +1,4 @@
-@number ( *str -- u16 success )
+@parse-number ( *str -- u16 success )
 ( #30 to #39 is ascii 0 - 9
   #61 to #66 is ascii a - f )
 
@@ -11,7 +11,7 @@
 &loop
   LDAk null EQU ,&end JCN
 
-  .base LDZ2 STH2 MUL2r
+  #00 .base LDZ STH2 MUL2r
 
   ( LDAk EMIT space EMIT LDAk ;print-byte JSR2 CR )
 
@@ -36,7 +36,7 @@
   ,&next JMP
 
 &error
-  ;Error/invalid-char ;print-str JSR2
+  ;String-Error/invalid-char ;print-str JSR2
   LDAk EMIT
   CR
   HALT
@@ -125,3 +125,24 @@ JMP2r
 JMP2r
 
 
+@memcpy ( src16 len8 dst16 -- )
+  STH2
+&loop
+  DUP #00 EQU ,&end JCN
+  STH ROTr ROTr
+  LDAk STH2rk STA
+
+  ( step )
+  INC2
+  INC2r
+  ROTr STHr #01 SUB
+  ,&loop JMP
+
+&end
+  POP
+  POP2
+  POP2r
+JMP2r
+
+@String-Error
+&invalid-char    00 "invalid 20 "char: 20 00
