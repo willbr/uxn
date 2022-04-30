@@ -144,5 +144,47 @@ JMP2r
   POP2r
 JMP2r
 
+
+@dump (addr u -- )
+  STHk
+&loop
+  #00 EQU ,&end JCN
+  DUP2 ;print-short JSR2
+  space EMIT
+  LDAk ;print-byte JSR2
+  space EMIT
+  LDAk ;debug-ascii JSR2
+  CR
+
+  ( step )
+  INC2
+  STHr
+  #01 SUB
+  STHk
+  ,&loop JMP
+
+&end
+  POP2
+  POPr
+
+JMP2r
+
+
+@debug-ascii ( c8 -- )
+  DUP #00 EQU ,&null JCN
+  DUP #20 LTH ,&hidden JCN
+  DUP #7e GTH ,&hidden JCN
+  EMIT
+JMP2r
+&null
+  POP
+  LIT '\ EMIT
+  LIT '0 EMIT
+JMP2r
+&hidden
+  POP
+JMP2r
+
+
 @String-Error
 &invalid-char    00 "invalid 20 "char: 20 00
