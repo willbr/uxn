@@ -40,6 +40,9 @@ build: main.tal input.txt
 #	python ..\uxnemu.py out.rom
 	$(cat) input.txt | $(uxncli) out.rom
 
+run: build
+	$(uxncli) out.rom
+
 wbuild-test:
 	watchexec -cr --ignore "*.rom" "make build-test"
 
