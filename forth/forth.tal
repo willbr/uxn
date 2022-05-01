@@ -1,4 +1,5 @@
 %mask-immediate { #80 }
+%mask-hidden    { #40 }
 %mask-length    { #3f }
 
 
@@ -6,7 +7,7 @@
   ;tib .in STZ2
   ;memory .here-pos STZ2
   #10 .base STZ
-  ;Builtin-emit .dictptr STZ2
+  ;Builtin-emit .latest STZ2
 JMP2r
 
 
@@ -165,23 +166,38 @@ JMP2r
 
 
 @lookup ( *str -- &dictnode )
+(
+  CR
+  ;&s-lookup ;print-str JSR2
+  LIT '" EMIT
+  DUP2 ;print-str JSR2
+  LIT '" EMIT
+  CR
+  )
+
   STH2
-  .dictptr LDZ2
+  .latest LDZ2
 
 &loop ( *dictnode )
   DUP2 #0000 EQU2 ,&end JCN
 
-  ( LIT 'l EMIT LIT 'u EMIT space EMIT DUP2 ;println JSR2 )
+  (
+  LIT 'n EMIT space EMIT
+  LIT '" EMIT
+  DUP2 ;print-str JSR2
+  LIT '" EMIT
+  CR
+  )
+
   DUP2
-  ( DUP2 #03 ;dump JSR2 )
   INC2
   STH2rk
-  ( OVR2 #03 ;dump JSR2 )
   DUP2 LDA
   ROT ROT
   INC2
+
   ( DUP2 ;print-cstr JSR2 CR )
-  ;memcmp JSR2 ,&end JCN
+  ;memcmp JSR2 ,&match JCN
 
 &next
   ;dict-link JSR2
@@ -189,9 +205,13 @@ JMP2r
 
   ,&loop JMP
 
+&match
+  ( ;&s-matched ;println JSR2 )
 &end
   POP2r
 JMP2r
+&s-lookup 07 "lookup 20 00
+&s-matched 07 "matched 00
 
 
 @dict-link ( *dict -- *link )
@@ -391,9 +411,13 @@ JMP2r
   LDAk #00 EQU ,&error JCN
   ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
   ;create-word JSR2
+
+  ;mark-hidden JSR2
+
   ;docol
   ;push JSR2
   ;comma16 JSR2
+
   true .state STZ
 JMP2r
 &error
@@ -403,7 +427,7 @@ JMP2r
 
 @create-word ( *str -- )
   ( CR LIT 'c EMIT LIT 'w EMIT space EMIT DUP2 ;println JSR2 )
-  .here-pos LDZ2 STH2 ( store new dictptr )
+  .here-pos LDZ2 STH2 ( store new latest )
 
   LDAk #00 SWP
   ;push JSR2
@@ -426,19 +450,36 @@ JMP2r
   POPr
 
   ( $2 link )
-  .dictptr LDZ2
+  .latest LDZ2
   ;push JSR2
   ;comma16 JSR2
 
-  STH2r .dictptr STZ2
+  STH2r .latest STZ2
+JMP2r
+
+@mark-hidden
+  .latest LDZ2 LDA
+  mask-hidden ORA
+  .latest LDZ2 STA
+JMP2r
+
+
+@clear-hidden
+  ere
+  .latest LDZ2 LDA
+  mask-hidden EOR
+  .latest LDZ2 STA
 JMP2r
 
 
 @semi-colon
-  false .state STZ
+  ;clear-hidden JSR2
+
   ;exit
   ;push JSR2
   ;comma16 JSR2
+
+  false .state STZ
 JMP2r
 
 
@@ -542,7 +583,7 @@ $fd
 @in $2
 @word $2
 @here-pos $2
-@dictptr $2
+@latest $2
 @base $1
 @state $1
 
