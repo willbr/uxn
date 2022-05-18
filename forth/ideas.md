@@ -6,6 +6,11 @@
 : dis ( dissasemble Uxn ) ;
 : see ( pretty print forth code ) ;
 
+# ux
+
+    old dos like block cursor
+    make it read like pico8
+
 # readline
     bg text
     fg cursor & mouse
@@ -36,6 +41,20 @@
     double
         docol lit 2 * exit
         
+
+# syntax
+
+    %binary %010101010
+    %dec %12345
+    $hex $beefcafe
+
+# string functions
+
+    strtok
+
+# games
+
+    tetris
 
 # references
 
