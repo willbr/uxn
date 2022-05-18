@@ -2,6 +2,8 @@
 %mask-hidden    { #40 }
 %mask-length    { #3f }
 
+%NEXT { ;donext JMP2 }
+
 
 @forth-init
   ;tib .in STZ2
@@ -279,9 +281,7 @@ JMP2r
 @execute ( *node -- )
   DUP2 ;dict-code JSR2
   LDA2
-  DUP2 ;docol EQU2 ,&docol JCN
   JSR2
-  POP2
 JMP2r
 
 
@@ -299,6 +299,13 @@ JMP2r
   POP2 ( *node )
 JMP2r
 
+@donext
+  .nextp LDZ2
+  DUP2
+  #0002 ADD2
+  .nextp STZ2
+  JMP2
+
 
 
 @dup ( -- )
@@ -306,12 +313,12 @@ JMP2r
   DUP2
   ;push JSR2
   ;push JSR2
-JMP2r
+  NEXT
 
 @print-tos ( -- )
   ;pop JSR2
   ;print-short JSR2
-JMP2r
+  NEXT
 
 
 @add ( -- )
@@ -319,7 +326,7 @@ JMP2r
   ;pop JSR2
   ADD2
   ;push JSR2
-JMP2r
+  NEXT
 
 
 @minus ( -- )
@@ -328,14 +335,14 @@ JMP2r
   SWP2
   SUB2
   ;push JSR2
-JMP2r
+  NEXT
 
 @mult ( -- )
   ;pop JSR2
   ;pop JSR2
   MUL2
   ;push JSR2
-JMP2r
+  NEXT
 
 
 @div ( -- )
@@ -344,7 +351,7 @@ JMP2r
   SWP2
   DIV2
   ;push JSR2
-JMP2r
+  NEXT
 
 
 @emit ( -- )
@@ -356,7 +363,7 @@ JMP2r
   EMIT
   POP
 
-JMP2r
+  NEXT
 
 &error
   ;print-short JSR2 space EMIT
@@ -370,7 +377,7 @@ JMP2r
   INC2 INC2
   LDA2k
   ;push JSR2
-JMP2r
+  NEXT
 
 
 @docol ( -- )
@@ -380,13 +387,17 @@ JMP2r
 JMP2r
 &name 05 "docol 00
 
-
-@exit ( -- )
+@pop-return ( -- )
   ;&name ;println JSR2
   ;Error/todo ;println JSR2
   HALT
 JMP2r
-&name 04 "exit 00
+&name 0a "pop-return 00
+
+
+@exit ( -- )
+  ;pop-return JSR
+  NEXT
 
 
 @print-stack ( -- )
@@ -519,33 +530,34 @@ JMP2r
   ;pop JSR2
   SWP2
   STA2
-JMP2r
+  NEXT
 
 @peek8
   #00
   ;pop JSR2
   LDA
   ;push JSR2
-JMP2r
+  NEXT
 
 @poke8
   ;pop JSR2
   ;pop JSR2
   NIP ROT ROT
   STA
-JMP2r
+  NEXT
 
 @comma16
   ;push-here JSR2
   ;poke16 JSR2
   ;inc-here16 JSR2
-JMP2r
+  NEXT
 
 @comma8
   ;push-here JSR2
   ;poke8 JSR2
   ;inc-here8 JSR2
-JMP2r
+  NEXT
+
 
 ~string.tal
 
@@ -591,6 +603,7 @@ $fd
 @latest $2
 @base $1
 @state $1
+@nextp $2
 
 
 
