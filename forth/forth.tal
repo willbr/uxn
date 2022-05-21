@@ -186,43 +186,31 @@ JMP2r
 
 
 @lookup ( *str -- &dictnode )
-(
-  CR
-  ;&s-lookup ;print-str JSR2
-  LIT '" EMIT
-  DUP2 ;print-str JSR2
-  LIT '" EMIT
-  CR
-  )
-
+  ( DUP2 ;print-str JSR2 CR )
   STH2
+
   .latest LDZ2
 
 &loop ( *dictnode )
   DUP2 #0000 EQU2 ,&end JCN
 
-  (
-  LIT 'n EMIT space EMIT
-  LIT '" EMIT
-  DUP2 ;print-str JSR2
-  LIT '" EMIT
-  CR
-  )
-
   DUP2
-  INC2
+  ( skip link and length )
+  #0003 ADD2
+  ( DUP2 ;print-cstr JSR2 CR )
+
   STH2rk
-  DUP2 LDA
-  ROT ROT
-  INC2
+  LDA
+  STH2rk
+  INC
 
   ( DUP2 ;print-cstr JSR2 CR )
-  ;memcmp JSR2 ,&match JCN
+  ;memcmp JSR2
+
+  ,&match JCN
 
 &next
-  ;dict-link JSR2
   LDA2
-
   ,&loop JMP
 
 &match
@@ -234,14 +222,9 @@ JMP2r
 &s-matched 07 "matched 00
 
 
-@dict-link ( *dict -- *link )
-  LDAk
-  mask-length AND
-  #00 SWP ADD2 ( skip strlen )
-  #0002 ADD2 ( skip length byte and null byte )
-JMP2r
-
 @dict-code ( *dict -- *link )
+ere
+debug
   LDAk
   mask-length AND
   #00 SWP ADD2 ( skip strlen )
@@ -268,7 +251,7 @@ JMP2r
   ;tos JSR2
 
   DUP2 ;Wst/end GEQ2 ,&stack-overflow JCN
-  
+
   STA2
 
   ;Wst/ptr LDA #02 ADD ;Wst/ptr STA
@@ -299,6 +282,9 @@ JMP2r
 
 
 @execute ( *node -- )
+  LIT 'x EMIT space EMIT
+  DUP2 INC2 ;print-cstr JSR2 CR
+
   (
   ere
   DUP2 ;print-short JSR2 CR
@@ -306,6 +292,7 @@ JMP2r
   )
 
   ;dict-code JSR2
+
   LDA2
 
   (
@@ -314,18 +301,14 @@ JMP2r
   ;add ;print-short JSR2 CR
   )
 
-  ere
-
   JSR2
 JMP2r
 
 
 @donext
-  .nextp LDZ2
-  #0002 ADD2
-  DUP2
-  .nextp STZ2
-  JMP2
+  ere
+  debug
+  JMP2r
 
 
 @dup ( -- )
@@ -408,35 +391,6 @@ JMP2r
 &name 05 "docol 00
 
 
-@push-return ( u16 -- )
-  ( DUP2 ;print-short JSR2 CR )
-  ;tos-return JSR2
-
-  DUP2 ;Rst/end GEQ2 ,&stack-overflow JCN
-  
-  STA2
-
-  ;Rst/ptr LDA #02 ADD ;Rst/ptr STA
-JMP2r
-&stack-overflow
-  ;Error/stack-overflow ;println JSR2
-  HALT
-JMP2r
-
-
-@pop-return ( -- )
-  ( calculate tos )
-  ;tos-return JSR2
-
-  DUP2 ;Rst EQU2 ,&stack-underflow JCN
-
-  #0002 SUB2
-  LDA2
-
-  ;Rst/ptr LDA #02 SUB ;Rst/ptr STA
-JMP2r
-
-
 &stack-underflow
   ;Error/stack-underflow ;println JSR2
   HALT
@@ -444,7 +398,7 @@ JMP2r
 
 
 @exit ( -- )
-  ;pop-return JSR
+  STH2r
   .nextp STZ2
   NEXT
 
