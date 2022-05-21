@@ -28,7 +28,7 @@
 
     @dict
         &link $2
-        &name_length $1
+        &flag + length $1
         &name &?????
         &codeword &????
         
@@ -45,8 +45,8 @@
 # syntax
 
     %binary %010101010
-    %dec %12345
-    $hex $beefcafe
+    %dec    %12345
+    $hex    $beefcafe
 
 # string functions
 
