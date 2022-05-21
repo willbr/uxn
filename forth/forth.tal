@@ -14,10 +14,18 @@ JMP2r
 
 
 @on-console-forth
+  ( check for overflow )
   .in LDZ2 ;tib/end EQU2 ,&tib-overflow JCN
 
+  ( read char )
   .Console/read DEI
+
+  ( DUP EMIT )
+
+  ( check for newline )
   DUP newline EQU ,&newline JCN
+
+  ( store char, and increment pointer )
   .in LDZ2 STA
   .in ;inc-zptr JSR2
 JMP2r
@@ -25,6 +33,7 @@ JMP2r
 
 &newline ( newline -- )
   POP
+  ( terminal tib with null char )
   null .in LDZ2 STA
 
   ;interpret JSR2
@@ -58,9 +67,11 @@ JMP2r
   .in LDZ2 #0001 SUB2 ;word STA2
 
 &loop
+  ( load next char )
   .in LDZ2 LDA
   ( DUP ;print-byte JSR2 space EMIT DUP EMIT CR )
 
+  ( check char )
   DUP space EQU ,&space JCN
   DUP null  EQU ,&null  JCN
 
