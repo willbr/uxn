@@ -111,18 +111,23 @@ JMP2r
   LIT 'c EMIT
 &next
   space EMIT
-  ;print-str JSR2
+  ;print-cstr JSR2
   CR
 JMP2r
 
 
 @interpret ( -- )
   ;tib .in STZ2
+  ( CR .in LDZ2 ;print-cstr JSR2 CR )
 &loop
   ;read-word JSR2
-  DUP2 INC2 LDA #00 EQU ;&end JCN2 ( end of line )
-
   ( DUP2 ;dbg JSR2 )
+
+  ( read first char )
+  DUP2 INC2 LDA
+
+  ( check for end of line )
+  null EQU ;&end JCN2
 
   DUP2 ;lookup JSR2
   DUP2 #0000 NEQ2 ,&word JCN
@@ -141,10 +146,12 @@ JMP2r
 
 @interpret-word ( *str *dict -- )
   NIP2 ( drop str )
+
   DUP2 ;isnt-immediate JSR2
   .state LDZ
   AND
   ,&compile-word JCN
+
 &execute-word
   ;execute JSR2
 JMP2r
@@ -249,6 +256,13 @@ JMP2r
 JMP2r
 
 
+@tos-return ( -- )
+  ;Rst
+  #00 ;Rst/ptr LDA
+  ADD2
+JMP2r
+
+
 @push ( u16 -- )
   ( DUP2 ;print-short JSR2 CR )
   ;tos JSR2
@@ -285,33 +299,33 @@ JMP2r
 
 
 @execute ( *node -- )
-  DUP2 ;dict-code JSR2
-  LDA2
-  JSR2
-JMP2r
+  (
+  ere
+  DUP2 ;print-short JSR2 CR
+  ;Builtin-add ;print-short JSR2 CR
+  )
 
-
-&docol ( *node ;docol -- )
-  POP2
   ;dict-code JSR2
-&loop
-  INC2 INC2
-  LDA2k
-  DUP2 ;exit EQU2 ,&end JCN
+  LDA2
+
+  (
+  ere
+  DUP2 ;print-short JSR2 CR
+  ;add ;print-short JSR2 CR
+  )
+
+  ere
+
   JSR2
-  ,&loop JMP
-&end
-  POP2 ( *code )
-  POP2 ( *node )
 JMP2r
+
 
 @donext
   .nextp LDZ2
-  DUP2
   #0002 ADD2
+  DUP2
   .nextp STZ2
   JMP2
-
 
 
 @dup ( -- )
@@ -393,16 +407,45 @@ JMP2r
 JMP2r
 &name 05 "docol 00
 
-@pop-return ( -- )
-  ;&name ;println JSR2
-  ;Error/todo ;println JSR2
+
+@push-return ( u16 -- )
+  ( DUP2 ;print-short JSR2 CR )
+  ;tos-return JSR2
+
+  DUP2 ;Rst/end GEQ2 ,&stack-overflow JCN
+  
+  STA2
+
+  ;Rst/ptr LDA #02 ADD ;Rst/ptr STA
+JMP2r
+&stack-overflow
+  ;Error/stack-overflow ;println JSR2
   HALT
 JMP2r
-&name 0a "pop-return 00
+
+
+@pop-return ( -- )
+  ( calculate tos )
+  ;tos-return JSR2
+
+  DUP2 ;Rst EQU2 ,&stack-underflow JCN
+
+  #0002 SUB2
+  LDA2
+
+  ;Rst/ptr LDA #02 SUB ;Rst/ptr STA
+JMP2r
+
+
+&stack-underflow
+  ;Error/stack-underflow ;println JSR2
+  HALT
+JMP2r
 
 
 @exit ( -- )
   ;pop-return JSR
+  .nextp STZ2
   NEXT
 
 
@@ -429,11 +472,12 @@ JMP2r
 
 @colon ( -- )
   ;read-word JSR2
-  ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
-  LDAk #00 EQU ,&error JCN
-  ( LIT '# EMIT space EMIT DUP2 ;println JSR2 )
-  ;create-word JSR2
+  ( LIT '# EMIT space EMIT DUP2 ;print-str JSR2 CR )
 
+  ( check fo null string )
+  LDAk #00 EQU ,&error JCN
+
+  ;create-word JSR2
   ;mark-hidden JSR2
 
   ;docol
@@ -487,7 +531,6 @@ JMP2r
 
 
 @clear-hidden
-  ere
   .latest LDZ2 LDA
   mask-hidden EOR
   .latest LDZ2 STA
