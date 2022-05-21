@@ -52,14 +52,9 @@ BRK
 
 
 @inc-zptr ( zaddr -- )
-  STHk LDZ2
-  INC
-  STHr STZ2
-  (
   DUP LDZ2
   INC
   ROT STZ2
-  )
 JMP2r
 
 
