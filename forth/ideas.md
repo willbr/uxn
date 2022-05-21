@@ -30,7 +30,8 @@
         &link $2
         &flag + length $1
         &name &?????
-        &codeword &????
+        &codeword $2
+        &def &????
         
     codeword is asm code
 
