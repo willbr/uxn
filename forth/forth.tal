@@ -2,8 +2,6 @@
 %mask-hidden    { #40 }
 %mask-length    { #3f }
 
-%NEXT { ;donext JMP2 }
-
 
 @forth-init
   ;tib .in STZ2
@@ -56,6 +54,7 @@ BRK
 
 &error
 BRK
+
 &tib-overflow
     ;Error/tib-overflow ;print-str JSR2
     HALT
@@ -133,6 +132,10 @@ JMP2r
 &loop
   .error LDZ #01 EQU ,&end JCN
   ;read-word JSR2
+  (
+  LIT 'w EMIT space EMIT
+  DUP2 ;print-str JSR2 CR
+  )
   ( DUP2 ;dbg JSR2 )
 
   ( read first char )
@@ -174,6 +177,7 @@ JMP2r
   ;comma16 JSR2
 JMP2r
 
+
 @interpret-number ( *str #0000 -- )
   POP2
   ;parse-number JSR2
@@ -203,19 +207,25 @@ JMP2r
   STH2
 
   .latest LDZ2
+  ( DUP2 #10 ;dump JSR2 CR )
 
 &loop ( *dictnode )
   DUP2 #0000 EQU2 ,&end JCN
+  ( DUP2 #10 ;dump JSR2 CR )
 
   DUP2
   ( skip link and length )
   #0003 ADD2
   ( DUP2 ;print-cstr JSR2 CR )
+  ( DUP2 ;print-cstr JSR2 space EMIT )
 
-  STH2rk
-  LDA
-  STH2rk
-  INC
+  ( load length )
+  STH2rk LDA
+  ( DUP ;print-byte JSR2 space EMIT )
+
+  ( load *cstr )
+  STH2rk INC2
+  ( DUP2 ;print-cstr JSR2 CR )
 
   ( DUP2 ;print-cstr JSR2 CR )
   ;memcmp JSR2
@@ -224,6 +234,8 @@ JMP2r
 
 &next
   LDA2
+  ( DUP2 #10 ;dump JSR2 CR )
+
   ,&loop JMP
 
 &match
@@ -236,12 +248,20 @@ JMP2r
 
 
 @dict-code ( *dict -- *link )
-ere
-debug
-  LDAk
-  mask-length AND
-  #00 SWP ADD2 ( skip strlen )
-  #0004 ADD2 ( skip length byte, null byte and link field )
+  ( debug )
+  ( DUP2 #10 ;dump  JSR2 )
+  ( skip link )
+  INC2 INC2
+
+  ( read length )
+  LDAk mask-length AND
+
+  ( skip strlen )
+  #00 SWP ADD2
+
+  ( skip flag and null char )
+  INC2 INC2
+  ( DUP2 ;print-short JSR2 CR )
 JMP2r
 
 
@@ -296,7 +316,9 @@ JMP2r
 
 @execute ( *node -- )
   LIT 'x EMIT space EMIT
-  DUP2 INC2 ;print-cstr JSR2 CR
+  DUP2
+  ( skip to name )
+  #0003 ADD2 ;print-cstr JSR2 CR
 
   (
   ere
@@ -305,7 +327,6 @@ JMP2r
   )
 
   ;dict-code JSR2
-
   LDA2
 
   (
@@ -314,14 +335,9 @@ JMP2r
   ;add ;print-short JSR2 CR
   )
 
+
   JSR2
 JMP2r
-
-
-@donext
-  ere
-  debug
-  JMP2r
 
 
 @dup ( -- )
@@ -329,12 +345,12 @@ JMP2r
   DUP2
   ;push JSR2
   ;push JSR2
-  NEXT
+JMP2r
 
 @print-tos ( -- )
   ;pop JSR2
   ;print-short JSR2
-  NEXT
+JMP2r
 
 
 @add ( -- )
@@ -342,7 +358,7 @@ JMP2r
   ;pop JSR2
   ADD2
   ;push JSR2
-  NEXT
+JMP2r
 
 
 @minus ( -- )
@@ -351,14 +367,14 @@ JMP2r
   SWP2
   SUB2
   ;push JSR2
-  NEXT
+JMP2r
 
 @mult ( -- )
   ;pop JSR2
   ;pop JSR2
   MUL2
   ;push JSR2
-  NEXT
+JMP2r
 
 
 @div ( -- )
@@ -367,7 +383,7 @@ JMP2r
   SWP2
   DIV2
   ;push JSR2
-  NEXT
+JMP2r
 
 
 @emit ( -- )
@@ -379,7 +395,7 @@ JMP2r
   EMIT
   POP
 
-  NEXT
+JMP2r
 
 &error
   ;print-short JSR2 space EMIT
@@ -393,15 +409,7 @@ JMP2r
   INC2 INC2
   LDA2k
   ;push JSR2
-  NEXT
-
-
-@docol ( -- )
-  ;&name ;println JSR2
-  ;Error/todo ;println JSR2
-  HALT
 JMP2r
-&name 05 "docol 00
 
 
 &stack-underflow
@@ -413,7 +421,7 @@ JMP2r
 @exit ( -- )
   STH2r
   .nextp STZ2
-  NEXT
+JMP2r
 
 
 @print-stack ( -- )
@@ -446,10 +454,6 @@ JMP2r
 
   ;create-word JSR2
   ;mark-hidden JSR2
-
-  ;docol
-  ;push JSR2
-  ;comma16 JSR2
 
   true .state STZ
 JMP2r
@@ -546,33 +550,33 @@ JMP2r
   ;pop JSR2
   SWP2
   STA2
-  NEXT
+JMP2r
 
 @peek8
   #00
   ;pop JSR2
   LDA
   ;push JSR2
-  NEXT
+JMP2r
 
 @poke8
   ;pop JSR2
   ;pop JSR2
   NIP ROT ROT
   STA
-  NEXT
+JMP2r
 
 @comma16
   ;push-here JSR2
   ;poke16 JSR2
   ;inc-here16 JSR2
-  NEXT
+JMP2r
 
 @comma8
   ;push-here JSR2
   ;poke8 JSR2
   ;inc-here8 JSR2
-  NEXT
+JMP2r
 
 
 ~string.tal
