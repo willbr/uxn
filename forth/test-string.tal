@@ -5,7 +5,8 @@
 
   ;hello ;println JSR2
 
-  #beef ;print-short JSR2
+  #be ;print-byte JSR2
+  #ef ;print-byte JSR2
   space EMIT
   #cafe ;print-short JSR2 CR
 
