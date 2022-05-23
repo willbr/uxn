@@ -405,12 +405,6 @@ JMP2r
 JMP2r
 
 
-&stack-underflow
-  ;Error/stack-underflow ;println JSR2
-  HALT
-JMP2r
-
-
 @exit ( -- )
   STH2r
   .nextp STZ2
