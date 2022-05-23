@@ -5,6 +5,10 @@
   ;print-byte JSR2
   space EMIT
 
+  LIT '= EMIT
+  LIT '= EMIT
+  space EMIT
+
   EQU
   ;highlight-result JSR2
   CR
@@ -17,6 +21,10 @@ JMP2r
   ;print-short JSR2
   space EMIT
   ;print-short JSR2
+  space EMIT
+
+  LIT '= EMIT
+  LIT '= EMIT
   space EMIT
 
   EQU2
