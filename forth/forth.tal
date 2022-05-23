@@ -457,14 +457,27 @@ JMP2r
 
 @create-word ( *str -- )
   ( CR LIT 'c EMIT LIT 'w EMIT space EMIT DUP2 ;println JSR2 )
-  .here-pos LDZ2 STH2 ( store new latest )
 
+  ( read new latest )
+  .here-pos LDZ2
+
+  ( write link )
+  .latest LDZ2
+  ;push JSR2
+  ;comma16 JSR2
+
+  ( write new latest )
+  .latest STZ2
+
+  ( write string length )
   LDAk #00 SWP
   ;push JSR2
   ;comma8 JSR2
 
+  ( stash string length )
   LDAk INC STH
 
+  ( write string )
 &loop
   INC2
   ( LDAk ;debug-ascii JSR2 )
