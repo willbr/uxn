@@ -241,7 +241,8 @@ JMP2r
 
 
 @debug-mode ( c8 -- )
-  mask-modes AND
+  DUP mask-opcodes AND
+  #00 EQU ,&end JCN
 
   DUP mask-keep AND #00 EQU ,&not-keep JCN
   LIT 'k EMIT
@@ -255,6 +256,7 @@ JMP2r
   LIT '2 EMIT
 &not-short
 
+&end
   POP
 JMP2r
 
