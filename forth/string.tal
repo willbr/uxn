@@ -191,6 +191,7 @@ JMP2r
 
 
 @dump ( addr u -- )
+  CR
   STHk
 &loop
   #00 EQU ,&end JCN
@@ -329,6 +330,47 @@ JMP2r
 "ORA 00
 "EOR 00
 "SFT 00
+
+@dis ( addr u -- )
+  CR
+  STHk
+&loop
+  #00 EQU ,&end JCN
+  DUP2 ;print-short JSR2
+  space EMIT
+  LDAk ;print-byte JSR2
+  space EMIT
+  LDAk ;debug-ascii JSR2
+  space EMIT
+  LDAk ;debug-instruction JSR2
+
+  LDAk #80 NEQ ,&not-lit JCN
+  space EMIT
+  LIT '# EMIT
+  INC2 LDAk ;print-byte JSR2
+  ,&not-lit2 JMP
+&not-lit
+
+  LDAk #a0 NEQ ,&not-lit2 JCN
+  space EMIT
+  LIT '# EMIT
+  INC2 LDA2k ;print-short JSR2
+  INC2
+&not-lit2
+  CR
+
+  ( step )
+  INC2
+  STHr
+  #01 SUB
+  STHk
+  ,&loop JMP
+
+&end
+  POP2
+  POPr
+
+JMP2r
 
 @String-Error
 &invalid-char    00 "invalid 20 "char: 20 00
