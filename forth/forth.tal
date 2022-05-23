@@ -496,7 +496,7 @@ JMP2r
 
 @mark-hidden
   ( get flag pointer )
-  .latest LDZ2 INC2
+  .latest LDZ2 INC2 INC2
 
   ( mark it )
   LDAk mask-hidden ORA
@@ -509,10 +509,7 @@ JMP2r
 
 @clear-hidden
   ( get flag pointer )
-  .latest LDZ2 INC2
-
-  ( skip link )
-  INC2 INC2
+  .latest LDZ2 INC2 INC2
 
   ( clear it )
   LDAk
