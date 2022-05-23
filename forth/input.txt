@@ -1,4 +1,9 @@
 : star 2a emit ;
-star
-: 2star star star ;
-2star
+: 5star star star star star star ;
+: cr 0a emit ;
+: space 20 emit ;
+: margin cr space space ;
+: blip margin star ;
+: bar margin 5star ;
+: f bar blip bar blip blip cr ;
+f
