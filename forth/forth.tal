@@ -272,13 +272,6 @@ JMP2r
 JMP2r
 
 
-@tos-return ( -- )
-  ;Rst
-  #00 ;Rst/ptr LDA
-  ADD2
-JMP2r
-
-
 @push ( u16 -- )
   ( DUP2 ;print-short JSR2 CR )
   ;tos JSR2
