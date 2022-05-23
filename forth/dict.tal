@@ -95,8 +95,16 @@
 &code ;comma16 JMP2
 
 @Builtin-comma8
-&link 0000
+&link :Builtin-debug
 &name-length 02
 &name "c, 00
 &code ;comma8 JMP2
+
+@Builtin-debug
+&link 0000
+&name-length 05
+&name "debug 00
+&code
+  debug
+  JMP2r
 
