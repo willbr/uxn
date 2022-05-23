@@ -4,10 +4,13 @@
 
 
 @forth-init
+  #20 .wst STZ
+  #20 .rst STZ
   ;tib .in STZ2
   ;memory .here-pos STZ2
   #10 .base STZ
   ;Builtin-emit .latest STZ2
+
 JMP2r
 
 
@@ -171,16 +174,42 @@ JMP2r
   ,&compile-word JCN
 
 &execute-word
+  .temp STZ2
+  ;swap-stacks JSR2
+  .temp LDZ2
+
   ;dict-code JSR2
   ( DUP2 #10 ;dump JSR2 CR )
   ( DUP2 #10 ;dis JSR2 CR )
   ( execute )
   JSR2
+
+  ;swap-stacks JSR2
 JMP2r
 
 &compile-word
   ;dict-code JSR2
   ;compile-call JSR2
+JMP2r
+
+
+@swap-stacks
+  .System/wst DEI
+  STH
+  .wst LDZ
+  .System/wst DEO
+  STHr
+  .wst STZ
+
+  ( keep return address )
+  STH2r
+
+  .System/rst DEI
+  .rst LDZ
+  .System/rst DEO
+  .rst STZ
+
+  STH2
 JMP2r
 
 
@@ -191,8 +220,13 @@ JMP2r
 
   .state LDZ ,&compile-number JCN
 
+
   ( DUP ;print-short JSR2 CR )
+  .temp STZ2
+  ;swap-stacks JSR2
+  .temp LDZ2
   ;push JSR2
+  ;swap-stacks JSR2
 JMP2r
 &error
   ;Error/unknown-word ;println JSR2
@@ -618,6 +652,9 @@ $fd
 @state $1
 @nextp $2
 @error $1
+@wst $1
+@rst $1
+@temp $2
 
 
 
