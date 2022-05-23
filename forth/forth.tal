@@ -4,8 +4,9 @@
 
 
 @forth-init
-  #20 .wst STZ
-  #20 .rst STZ
+  #d0 .wst STZ
+  #d0 .rst STZ
+  ;swap-stacks JSR2
   ;tib .in STZ2
   ;memory .here-pos STZ2
   #10 .base STZ
@@ -225,7 +226,6 @@ JMP2r
   .temp STZ2
   ;swap-stacks JSR2
   .temp LDZ2
-  ;push JSR2
   ;swap-stacks JSR2
 JMP2r
 &error
@@ -235,10 +235,8 @@ JMP2r
 
 &compile-number
   #00 LIT LIT2
-  ;push JSR2
   ;comma8 JSR2
 
-  ;push JSR2
   ;comma16 JSR2
 JMP2r
 
@@ -314,85 +312,32 @@ JMP2r
 JMP2r
 
 
-@push ( u16 -- )
-  ( DUP2 ;print-short JSR2 CR )
-  ;tos JSR2
-
-  DUP2 ;Wst/end GEQ2 ,&stack-overflow JCN
-
-  STA2
-
-  ;Wst/ptr LDA #02 ADD ;Wst/ptr STA
-JMP2r
-
-&stack-overflow
-  ;Error/stack-overflow ;println JSR2
-  HALT
-JMP2r
-
-
-@pop ( -- u16 )
-  ( calculate tos )
-  ;tos JSR2
-
-  DUP2 ;Wst EQU2 ,&stack-underflow JCN
-
-  #0002 SUB2
-  LDA2
-
-  ;Wst/ptr LDA #02 SUB ;Wst/ptr STA
-JMP2r
-
-&stack-underflow
-  ;Error/stack-underflow ;println JSR2
-  HALT
-JMP2r
-
-
 @dup ( -- )
-  ;pop JSR2
   DUP2
-  ;push JSR2
-  ;push JSR2
 JMP2r
 
 
 @print-tos ( -- )
-  ;pop JSR2
   ;print-short JSR2
 JMP2r
 
 
 @add ( -- )
-  ;pop JSR2
-  ;pop JSR2
   ADD2
-  ;push JSR2
 JMP2r
 
 
 @minus ( -- )
-  ;pop JSR2
-  ;pop JSR2
-  SWP2
   SUB2
-  ;push JSR2
 JMP2r
 
 @mult ( -- )
-  ;pop JSR2
-  ;pop JSR2
   MUL2
-  ;push JSR2
 JMP2r
 
 
 @div ( -- )
-  ;pop JSR2
-  ;pop JSR2
-  SWP2
   DIV2
-  ;push JSR2
 JMP2r
 
 
@@ -459,7 +404,6 @@ JMP2r
 
   ( write link )
   .latest LDZ2
-  ;push JSR2
   ;comma16 JSR2
 
   ( write new latest )
@@ -467,7 +411,6 @@ JMP2r
 
   ( write string length )
   LDAk #00 SWP
-  ;push JSR2
   ;comma8 JSR2
 
   ( stash string length )
@@ -480,7 +423,6 @@ JMP2r
   ( LDAk ;debug-ascii JSR2 )
 
   LDAk #00 SWP
-  ;push JSR2
   ;comma8 JSR2
 
   #01 STH SUBr
@@ -528,8 +470,6 @@ JMP2r
 
   ( LIT2 u16 JSR2 )
 
-  ;push JSR2
-  ;push JSR2
   ;comma16 JSR2
   ;comma16 JSR2
 JMP2r
@@ -539,7 +479,6 @@ JMP2r
   ;clear-hidden JSR2
 
   #00 LIT JMP2r
-  ;push JSR2
   ;comma8 JSR2
 
   false .state STZ
@@ -548,7 +487,6 @@ JMP2r
 
 @push-here
   .here-pos LDZ2
-  ;push JSR2
 JMP2r
 
 @inc-here8
@@ -565,32 +503,24 @@ JMP2r
 JMP2r
 
 @peek16
-  ;pop JSR2
   DUP2 ;print-short JSR2 CR
   LDA2
   DUP2 ;print-short JSR2 CR
-  ;push JSR2
 JMP2r
 
 @poke16
-  ;pop JSR2
-  ;pop JSR2
-  SWP2
   STA2
 JMP2r
 
-@peek8
-  #00
-  ;pop JSR2
+@peek8 ( u16 -- u16 )
   LDA
-  ;push JSR2
+  ( convert to u16 )
+  #00 SWP
 JMP2r
 
-@poke8
-  ;pop JSR2
-  ;pop JSR2
-  NIP ROT ROT
+@poke8 (u16 addr16 -- )
   STA
+  POP
 JMP2r
 
 @comma16
