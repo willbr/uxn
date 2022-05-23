@@ -344,7 +344,7 @@ JMP2r
 @emit ( -- )
   ( DUP2 ;print-short JSR2 CR )
   NIP
-  DUP #20 LTH ,&error JCN
+  ( DUP #20 LTH ,&error JCN )
   DUP #7e GTH ,&error JCN
 
   EMIT
