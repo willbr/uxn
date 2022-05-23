@@ -9,7 +9,7 @@ print = console.print
 
 install(show_locals=True)
 
-def disassemble(rom, offset=0x100, length=None, insert_zero_page=True):
+def disassemble(rom, offset=0x100, length=None, insert_zero_page=False):
     if insert_zero_page:
         rom = bytearray(0x100) + rom
 
@@ -74,7 +74,7 @@ def disassemble_file(filename):
     with open(filename, 'rb') as f:
         rom = bytearray(f.read())
 
-    disassemble(rom)
+    disassemble(rom, insert_zero_page=True)
 
 
 if __name__ == "__main__":
