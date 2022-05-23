@@ -2,7 +2,6 @@
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     detected_OS := Windows
 	PATH := $(PATH);../bin/
-	mkdir := mkdir
 	make := make
 	rm := del
 	cat := type
@@ -16,7 +15,6 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 else
     detected_OS := $(shell uname)  # same as "uname -s"
 	PATH := $(PATH):./bin/:/home/wjbr/src/uxnemu/bin/
-	mkdir := mkdir
 	make := make
 	rm := rm
 	cat := cat
@@ -34,11 +32,11 @@ wbuild:
 build: main.tal input.txt
 #	$(cat) $<
 #	python ..\src\talie.py $< out.rom
-	$(uxnasm) $< out.rom
+	$(uxnasm) $< forth.rom
 #	python ..\src\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
-	$(cat) input.txt | $(uxncli) out.rom
+	$(cat) input.txt | $(uxncli) forth.rom
 
 run: build
 	$(uxncli) out.rom
