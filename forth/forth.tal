@@ -463,12 +463,12 @@ JMP2r
 JMP2r
 
 
-@compile-call ( u16 -- )
+@compile-call ( addr16 -- )
+  ( LIT2 addr16 JSR2 )
   LIT LIT2
   ROT ROT
   LIT JSR2
-
-  ( LIT2 u16 JSR2 )
+  SWP2
 
   ;comma16 JSR2
   ;comma16 JSR2
