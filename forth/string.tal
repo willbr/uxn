@@ -44,9 +44,6 @@
   POP2r ( drop return value )
   POP2  ( drop char pointer )
   #01
-
-  true .error STZ
-  HALT
 JMP2r
 
 &end
