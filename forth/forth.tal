@@ -305,13 +305,6 @@ JMP2r
 JMP2r
 
 
-@tos ( -- u16 )
-  ;Wst
-  #00 ;Wst/ptr LDA
-  ADD2
-JMP2r
-
-
 @dup ( -- )
   DUP2
 JMP2r
