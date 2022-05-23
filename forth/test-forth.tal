@@ -19,6 +19,10 @@ BRK
 ~debug.tal
 
 @test-lookup
+  ;&test4 ;lookup JSR2
+  ;Builtin-semi-colon
+  ;assert-equal-u16 JSR2
+
   ;&test1 ;lookup JSR2
   ;Builtin-emit
   ;assert-equal-u16 JSR2
@@ -30,10 +34,12 @@ BRK
   ;&test3 ;lookup JSR2
   ;Builtin-print-stack
   ;assert-equal-u16 JSR2
+
 JMP2r
 &test1 04 "emit 00
 &test2 01 ". 00
 &test3 02 ".s 00
+&test4 01 "; 00
 
 
 @test-create-word
