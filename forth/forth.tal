@@ -33,8 +33,7 @@ JMP2r
   ( store char, and increment pointer )
   .in LDZ2 STA
   .in ;inc-zptr JSR2
-  &end
-JMP2r
+BRK
 
 
 &newline ( newline -- )
