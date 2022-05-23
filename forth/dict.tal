@@ -2,106 +2,101 @@
 &link :Builtin-colon
 &name-length 04
 &name "emit 00
-&code :emit
+&code ;emit JMP2
 
 @Builtin-colon
 &link :Builtin-semi-colon
 &name-length 01
 &name ": 00
-&code :colon
+&code ;colon JMP2
 
 @Builtin-semi-colon
-&link :Builtin-exit
+&link :Builtin-print-tos
 &name-length 81
 &name "; 00
-&code :semi-colon
-
-@Builtin-exit
-&link :Builtin-print-tos
-&name-length 04
-&name "exit 00
-&code :exit
+&code ;semi-colon JMP2
 
 @Builtin-print-tos
 &link :Builtin-add
 &name-length 01
 &name ". 00
-&code :print-tos
+&code ;print-tos JMP2
 
 @Builtin-add
 &link :Builtin-minus
 &name-length 01
 &name "+ 00
-&code :add
+&code ;add JMP2
 
 @Builtin-minus
 &link :Builtin-mult
 &name-length 01
 &name "- 00
-&code :minus
+&code ;minus JMP2
 
 @Builtin-mult
 &link :Builtin-div
 &name-length 01
 &name "* 00
-&code :mult
+&code ;mult JMP2
 
 @Builtin-div
 &link :Builtin-dup
 &name-length 01
 &name "/ 00
-&code :div
+&code ;div JMP2
 
 @Builtin-dup
 &link :Builtin-print-stack
 &name-length 03
 &name "dup 00
-&code :dup
+&code ;dup JMP2
 
 @Builtin-print-stack
 &link :Builtin-here
 &name-length 02
 &name ".s 00
-&code :print-stack
+&code ;print-stack JMP2
 
 @Builtin-here
 &link :Builtin-peek16
 &name-length 04
 &name "here 00
-&code :push-here
+&code ;push-here JMP2
 
 @Builtin-peek16
 &link :Builtin-poke16
 &name-length 01
 &name "@ 00
-&code :peek16
+&code ;peek16 JMP2
 
 @Builtin-poke16
 &link :Builtin-peek8
 &name-length 01
 &name "! 00
-&code :poke16
+&code ;poke16 JMP2
 
 @Builtin-peek8
 &link :Builtin-poke8
 &name-length 02
 &name "c@ 00
-&code :peek8
+&code ;peek8 JMP2
 
 @Builtin-poke8
 &link :Builtin-comma8
 &name-length 02
 &name "c! 00
-&code :poke8
+&code ;poke8 JMP2
 
 @Builtin-comma16
 &link :Builtin-comma8
 &name-length 01
 &name ", 00
-&code :comma16
+&code ;comma16 JMP2
 
 @Builtin-comma8
 &link 0000
 &name-length 02
 &name "c, 00
-&code :comma8
+&code ;comma8 JMP2
+
