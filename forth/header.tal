@@ -8,11 +8,7 @@
 %debug { CR #01 .System/debug DEO CR }
 %todo  { CR ;Error/todo ;print-str JSR2 space EMIT ;println JSR2 }
 
-%HALT  {
-  true .error STZ
-  #01 .System/state DEO
-  }
-
+%HALT  { #01 .System/state DEO }
 %EMIT  { .Console/write DEO }
 
 %DEC2 { #0001 SUB2 }
