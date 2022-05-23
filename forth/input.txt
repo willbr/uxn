@@ -1,1 +1,4 @@
-0 1 2 + .s
+: star 2a emit ;
+star
+: 2star star star ;
+2star

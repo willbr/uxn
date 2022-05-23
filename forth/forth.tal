@@ -42,7 +42,7 @@ BRK
   null .in LDZ2 STA
 
   ;interpret JSR2
-  .error LDZ #01 ,&error JCN
+  .error LDZ ,&error JCN
   ;&done ;println JSR2
 
   ;tib .in STZ2
@@ -107,6 +107,7 @@ JMP2r
 
 
 @isnt-immediate ( addr -- b8 )
+  INC2 INC2
   LDA mask-immediate AND
   mask-immediate NEQ
 JMP2r
@@ -131,10 +132,10 @@ JMP2r
 &loop
   .error LDZ #01 EQU ,&end JCN
   ;read-word JSR2
-  (
-  LIT 'w EMIT space EMIT
-  DUP2 ;print-str JSR2 CR
-  )
+
+  ( LIT 'w EMIT space EMIT )
+  ( DUP2 ;print-str JSR2 CR )
+
   ( DUP2 ;dbg JSR2 )
 
   ( read first char )
@@ -159,6 +160,9 @@ JMP2r
 
 
 @interpret-word ( *str *dict -- )
+  ( OVR2 ;print-str JSR2 CR
+  DUP2 #10 ;dump JSR2 )
+
   NIP2 ( drop str )
 
   DUP2 ;isnt-immediate JSR2
@@ -167,13 +171,16 @@ JMP2r
   ,&compile-word JCN
 
 &execute-word
-  ;execute JSR2
+  ;dict-code JSR2
+  ( DUP2 #10 ;dump JSR2 CR )
+  ( DUP2 #10 ;dis JSR2 CR )
+  ( execute )
+  JSR2
 JMP2r
 
 &compile-word
-  ;dict-code JSR2 LDA2
-  ;push JSR2
-  ;comma16 JSR2
+  ;dict-code JSR2
+  ;compile-call JSR2
 JMP2r
 
 
@@ -193,9 +200,10 @@ JMP2r
 JMP2r
 
 &compile-number
-  ;lit16
+  #00 LIT LIT2
   ;push JSR2
-  ;comma16 JSR2
+  ;comma8 JSR2
+
   ;push JSR2
   ;comma16 JSR2
 JMP2r
@@ -226,12 +234,11 @@ JMP2r
   STH2rk INC2
   ( DUP2 ;print-cstr JSR2 CR )
 
-  ( DUP2 ;print-cstr JSR2 CR )
   ;memcmp JSR2
 
   ,&match JCN
 
-&next
+  ( next )
   LDA2
   ( DUP2 #10 ;dump JSR2 CR )
 
@@ -249,6 +256,7 @@ JMP2r
 @dict-code ( *dict -- *link )
   ( debug )
   ( DUP2 #10 ;dump  JSR2 )
+
   ( skip link )
   INC2 INC2
 
@@ -260,11 +268,12 @@ JMP2r
 
   ( skip flag and null char )
   INC2 INC2
+
   ( DUP2 ;print-short JSR2 CR )
 JMP2r
 
 
-@tos ( -- )
+@tos ( -- u16 )
   ;Wst
   #00 ;Wst/ptr LDA
   ADD2
@@ -306,38 +315,13 @@ JMP2r
 JMP2r
 
 
-@execute ( *node -- )
-  LIT 'x EMIT space EMIT
-  DUP2
-  ( skip to name )
-  #0003 ADD2 ;print-cstr JSR2 CR
-
-  (
-  ere
-  DUP2 ;print-short JSR2 CR
-  ;Builtin-add ;print-short JSR2 CR
-  )
-
-  ;dict-code JSR2
-  LDA2
-
-  (
-  ere
-  DUP2 ;print-short JSR2 CR
-  ;add ;print-short JSR2 CR
-  )
-
-
-  JSR2
-JMP2r
-
-
 @dup ( -- )
   ;pop JSR2
   DUP2
   ;push JSR2
   ;push JSR2
 JMP2r
+
 
 @print-tos ( -- )
   ;pop JSR2
@@ -379,14 +363,12 @@ JMP2r
 
 
 @emit ( -- )
-  ;pop JSR2
   ( DUP2 ;print-short JSR2 CR )
-  ( DUP2 #0020 LTH2 ,&error JCN )
-  DUP2 #007e GTH2 ,&error JCN
+  NIP
+  DUP #20 LTH ,&error JCN
+  DUP #7e GTH ,&error JCN
 
   EMIT
-  POP
-
 JMP2r
 
 &error
@@ -395,19 +377,6 @@ JMP2r
   HALT
 JMP2r
 &not-ascii 09 "not-ascii 00
-
-
-@lit16 ( -- )
-  INC2 INC2
-  LDA2k
-  ;push JSR2
-JMP2r
-
-
-@exit ( -- )
-  STH2r
-  .nextp STZ2
-JMP2r
 
 
 @print-stack ( -- )
@@ -472,25 +441,24 @@ JMP2r
 
   ( write string )
 &loop
+
   INC2
   ( LDAk ;debug-ascii JSR2 )
+
   LDAk #00 SWP
   ;push JSR2
   ;comma8 JSR2
-  STHr #01 SUB STHk
-  #00 EQU ,&end JCN
+
+  #01 STH SUBr
+
+  ( check for null )
+  LDAk #00 EQU ,&end JCN
   ,&loop JMP
 
 &end
-  POP2
-  POPr
+  POP2 ( char )
+  POPr ( counter )
 
-  ( $2 link )
-  .latest LDZ2
-  ;push JSR2
-  ;comma16 JSR2
-
-  STH2r .latest STZ2
 JMP2r
 
 @mark-hidden
@@ -519,12 +487,26 @@ JMP2r
 JMP2r
 
 
+@compile-call ( u16 -- )
+  LIT LIT2
+  ROT ROT
+  LIT JSR2
+
+  ( LIT2 u16 JSR2 )
+
+  ;push JSR2
+  ;push JSR2
+  ;comma16 JSR2
+  ;comma16 JSR2
+JMP2r
+
+
 @semi-colon
   ;clear-hidden JSR2
 
-  ;exit
+  #00 LIT JMP2r
   ;push JSR2
-  ;comma16 JSR2
+  ;comma8 JSR2
 
   false .state STZ
 JMP2r
