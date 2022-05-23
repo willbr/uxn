@@ -495,16 +495,31 @@ JMP2r
 JMP2r
 
 @mark-hidden
-  .latest LDZ2 LDA
-  mask-hidden ORA
-  .latest LDZ2 STA
+  ( get flag pointer )
+  .latest LDZ2 INC2
+
+  ( mark it )
+  LDAk mask-hidden ORA
+
+  ( save it )
+  ROT ROT
+  STA
 JMP2r
 
 
 @clear-hidden
-  .latest LDZ2 LDA
+  ( get flag pointer )
+  .latest LDZ2 INC2
+
+  ( skip link )
+  INC2 INC2
+
+  ( clear it )
+  LDAk
   mask-hidden EOR
-  .latest LDZ2 STA
+
+  ( save it )
+  ROT ROT STA
 JMP2r
 
 
