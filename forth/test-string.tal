@@ -13,6 +13,16 @@
   ;test-memcmp JSR2
   ;test-parse-number JSR2
 
+  LIT LIT ;debug-instruction JSR2 CR
+  LIT BRK ;debug-instruction JSR2 CR
+  LIT INCk ;debug-instruction JSR2 CR
+  LIT POPr ;debug-instruction JSR2 CR
+  LIT SWP2 ;debug-instruction JSR2 CR
+  LIT ROT ;debug-instruction JSR2 CR
+  LIT DUP ;debug-instruction JSR2 CR
+  LIT OVR ;debug-instruction JSR2 CR
+  LIT SFTkr2 ;debug-instruction JSR2 CR
+
   ;bye ;println JSR2
 
 

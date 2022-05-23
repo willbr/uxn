@@ -1,3 +1,9 @@
+%mask-modes   { #e0 }
+%mask-opcodes { #1f }
+%mask-keep    { #80 }
+%mask-return  { #40 }
+%mask-short   { #20 }
+
 @parse-number ( *str -- u16 success )
 ( #30 to #39 is ascii 0 - 9
   #61 to #66 is ascii a - f )
@@ -193,6 +199,8 @@ JMP2r
   LDAk ;print-byte JSR2
   space EMIT
   LDAk ;debug-ascii JSR2
+  space EMIT
+  LDAk ;debug-instruction JSR2
   CR
 
   ( step )
@@ -221,9 +229,104 @@ JMP2r
   LIT '0 EMIT
 JMP2r
 &hidden
+  LIT '? EMIT
   POP
 JMP2r
 
+
+@debug-instruction ( c8 -- )
+  DUP ;debug-opcode JSR2
+  ;debug-mode JSR2
+JMP2r
+
+
+@debug-mode ( c8 -- )
+  mask-modes AND
+
+  DUP mask-keep AND #00 EQU ,&not-keep JCN
+  LIT 'k EMIT
+&not-keep
+
+  DUP mask-return AND #00 EQU ,&not-return JCN
+  LIT 'r EMIT
+&not-return
+
+  DUP mask-short AND #00 EQU ,&not-short JCN
+  LIT '2 EMIT
+&not-short
+
+  POP
+JMP2r
+
+
+@debug-opcode ( c8 -- )
+  DUP mask-opcodes AND
+  DUP #00 NEQ ,&other JCN
+  OVR mask-keep EQU ,&op-lit JCN
+  POP2
+  LIT 'B EMIT
+  LIT 'R EMIT
+  LIT 'K EMIT
+JMP2r
+
+&op-lit
+  POP2
+  ;&lit ;print-cstr JSR2
+JMP2r
+
+&other
+  NIP
+
+  ( calc table offset )
+  #04 MUL #00 SWP
+  ;&table ADD2
+
+  ;print-cstr JSR2
+JMP2r
+
+( Stack )
+&lit
+"LIT 00
+&table
+"BRK 00
+"INC 00
+"POP 00
+&nip
+"NIP 00
+"SWP 00
+"ROT 00
+"DUP 00
+"OVR 00
+
+( Logic )
+"EQU 00
+"NEQ 00
+"GTH 00
+"LTH 00
+"JMP 00
+"JCN 00
+"JSR 00
+"STH 00
+
+( Memory )
+"LDZ 00
+"STZ 00
+"LDR 00
+"STR 00
+"LDA 00
+"STA 00
+"DEI 00
+"DEO 00
+
+( Arithmetic )
+"ADD 00
+"SUB 00
+"MUL 00
+"DIV 00
+"AND 00
+"ORA 00
+"EOR 00
+"SFT 00
 
 @String-Error
 &invalid-char    00 "invalid 20 "char: 20 00
