@@ -273,6 +273,7 @@ JMP2r
 
   ,&match JCN
 
+&step
   ( next )
   LDA2
   ( DUP2 #10 ;dump JSR2 CR )
