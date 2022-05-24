@@ -284,7 +284,8 @@ JMP2r
 &end
   POP2r
 JMP2r
-&s-lookup 07 "lookup 20 00
+
+&s-lookup  07 "lookup  20 00
 &s-matched 07 "matched 00
 
 
