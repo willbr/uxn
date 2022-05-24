@@ -101,10 +101,18 @@
 &code ;comma8 JMP2
 
 @Builtin-debug
-&link 0000
+&link :var-latest
 &name-length 05
 &name "debug 00
 &code
   debug
+  JMP2r
+
+@var-latest
+&link 0000
+&name-length 06
+&name "latest 00
+&code
+  ;latest
   JMP2r
 
