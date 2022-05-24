@@ -38,8 +38,8 @@ build: main.tal input.txt
 #	python ..\uxnemu.py out.rom
 	$(cat) input.txt | $(uxncli) forth.rom
 
-run: build
-	$(uxncli) out.rom
+run:
+	$(uxncli) forth.rom
 
 wtest:
 	watchexec -cr --ignore "*.rom" "make test"
