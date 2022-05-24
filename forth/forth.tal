@@ -516,7 +516,7 @@ JMP2r
   #00 SWP
 JMP2r
 
-@poke8 (u16 addr16 -- )
+@poke8 ( u16 addr16 -- )
   STA
   POP
 JMP2r
