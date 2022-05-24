@@ -1,10 +1,11 @@
-%ere   { ;ere JSR2 }
+%ere   { CR ;ere JSR2 }
+%ere1  { CR LIT '1 EMIT SPACE ;ere JSR2 }
+%ere2  { CR LIT '2 EMIT SPACE ;ere JSR2 }
 
 @ere
-  CR
   ;&text ;print-str JSR2
-  OVR2r
-  STH2r
+  ( get parent address )
+  OVR2r STH2r
   ;print-short JSR2
   CR
 JMP2r
