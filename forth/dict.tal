@@ -53,16 +53,10 @@
 &code ;dup JMP2
 
 @Builtin-print-stack
-&link :Builtin-here
+&link :Builtin-peek16
 &name-length 02
 &name ".s 00
 &code ;print-stack JMP2
-
-@Builtin-here
-&link :Builtin-peek16
-&name-length 04
-&name "here 00
-&code ;push-here JMP2
 
 @Builtin-peek16
 &link :Builtin-poke16
