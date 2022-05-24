@@ -503,9 +503,7 @@ JMP2r
 JMP2r
 
 @peek16
-  DUP2 ;print-short JSR2 CR
   LDA2
-  DUP2 ;print-short JSR2 CR
 JMP2r
 
 @poke16
