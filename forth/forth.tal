@@ -242,7 +242,18 @@ JMP2r
 
 &loop ( *dictnode )
   DUP2 #0000 EQU2 ,&end JCN
+  ( DUP2 #0003 ADD2 ;print-cstr JSR2 CR )
   ( DUP2 #10 ;dump JSR2 CR )
+
+  ( node length )
+  DUP2 INC2 INC2
+  LDA mask-length AND
+
+  ( needle length )
+  STH2rk LDA
+
+  ( skip if they don't match )
+  NEQ ,&step JCN
 
   DUP2
   ( skip link and length )
