@@ -1,9 +1,4 @@
 : star 2a emit ;
-: 5star star star star star star ;
-: cr 0a emit ;
-: space 20 emit ;
-: margin cr space space ;
-: blip margin star ;
-: bar margin 5star ;
-: f bar blip bar blip blip cr ;
-f
+latest @ >cfa 04 dis
+' star 04 dis
+debug
