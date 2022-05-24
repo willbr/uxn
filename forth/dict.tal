@@ -77,7 +77,7 @@
 &code ;peek8 JMP2
 
 @Builtin-poke8
-&link :Builtin-comma8
+&link :Builtin-comma16
 &name-length 02
 &name "c! 00
 &code ;poke8 JMP2
