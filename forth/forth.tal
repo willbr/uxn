@@ -310,13 +310,6 @@ JMP2r
 JMP2r
 
 
-@tos ( -- u16 )
-  ;Wst
-  #00 ;Wst/ptr LDA
-  ADD2
-JMP2r
-
-
 @dup ( -- )
   DUP2
 JMP2r
@@ -364,23 +357,6 @@ JMP2r
 
 
 @print-stack ( -- )
-  ( calculate tos )
-  ;Wst
-  #00 ;Wst/ptr LDA
-  ADD2
-  STH2
-  ;Wst
-
-&loop
-  DUP2 STH2rk EQU2 ,&end JCN
-  LDA2k ;print-short JSR2
-  space EMIT
-  #0002 ADD2
-  ,&loop JMP
-
-&end
-  POP2
-  POP2r
 JMP2r
 
 
@@ -559,18 +535,6 @@ $1
 @tib
 $ff
 &end
-
-@Wst
-$fd
-&end
-&err $1
-&ptr $1
-
-@Rst
-$fd
-&end
-&err $1
-&ptr $1
 
 ~dict.tal
 
