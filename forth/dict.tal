@@ -162,11 +162,13 @@ JMP2r
 &link :Builtin-tick
 &name-length 07
 &name "0branch 00
-&code
+&code ( bool addr16 -- )
+ere1
+debug
 JMP2r
 
 @Builtin-tick
-&link :var-latest
+&link :Builtin-immediate
 &name-length 01
 &name "' 00
 &code
@@ -174,6 +176,31 @@ JMP2r
   ;lookup JSR2
   ;dict-code JSR2
 JMP2r
+
+@Builtin-immediate
+&link :var-here
+&name-length 89
+&name "immediate 00
+&code
+  ( get flag addr )
+  ;latest LDA2 INC2 INC2
+
+  ( |= flag )
+  LDAk mask-immediate ORA
+
+  ( rotate address to tos )
+  ROT ROT
+  STA
+JMP2r
+
+
+@var-here
+&link 0000
+&name-length 04
+&name "here 00
+&code
+  ;here
+  JMP2r
 
 @var-latest
 &link 0000
