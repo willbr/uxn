@@ -157,10 +157,20 @@ JMP2r
   JMP2
 
 @Builtin-0branch
-&link :var-latest
+&link :Builtin-tick
 &name-length 07
 &name "0branch 00
 &code
+JMP2r
+
+@Builtin-tick
+&link :var-latest
+&name-length 01
+&name "' 00
+&code
+  ;read-word JSR2
+  ;lookup JSR2
+  ;dict-code JSR2
 JMP2r
 
 @var-latest
