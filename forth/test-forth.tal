@@ -6,10 +6,8 @@
   ;hello ;println JSR2
 
   ;test-lookup JSR2
-  (
   ;test-read-word JSR2
   ;test-create-word JSR2
-  )
 
   ;bye ;println JSR2
 
@@ -19,6 +17,10 @@ BRK
 ~debug.tal
 
 @test-lookup
+  ;&test5 ;lookup JSR2
+  #0000
+  ;assert-equal-u16 JSR2
+
   ;&test4 ;lookup JSR2
   ;Builtin-semi-colon
   ;assert-equal-u16 JSR2
@@ -40,6 +42,7 @@ JMP2r
 &test2 01 ". 00
 &test3 02 ".s 00
 &test4 01 "; 00
+&test5 01 "0 00
 
 
 @test-create-word
