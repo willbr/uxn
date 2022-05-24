@@ -570,7 +570,6 @@ $fd
 @latest $2
 @base $1
 @state $1
-@nextp $2
 @error $1
 @wst $1
 @rst $1
