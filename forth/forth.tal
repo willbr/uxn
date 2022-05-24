@@ -214,22 +214,27 @@ JMP2r
 JMP2r
 
 
-@interpret-number ( *str #0000 -- )
+@interpret-number ( *cstr #0000 -- )
   POP2
-  ;parse-number JSR2
+  DUP2 ;parse-number JSR2
   ,&error JCN
+  NIP2
 
   .state LDZ ,&compile-number JCN
 
-
-  ( DUP ;print-short JSR2 CR )
+  ( DUP2 ;print-short JSR2 CR )
   .temp STZ2
   ;swap-stacks JSR2
   .temp LDZ2
   ;swap-stacks JSR2
 JMP2r
 &error
-  ;Error/unknown-word ;println JSR2
+  ;Error/unknown-word ;print-str JSR2
+  SPACE
+  LIT '" EMIT
+  ;print-str JSR2
+  LIT '" EMIT
+  CR
   #01 .error STZ
 JMP2r
 
@@ -546,7 +551,7 @@ JMP2r
 &tib-overflow    00 "tib 20 "overflow 00
 &stack-overflow  00 "stack 20 "overflow 00
 &stack-underflow 00 "stack 20 "underflow 00
-&unknown-word    00 "unknown-word 00
+&unknown-word    00 "unknown-word: 00
 &missing-word    00 "missing-word 00
 
 
