@@ -47,10 +47,18 @@
 &code ;div JMP2
 
 @Builtin-dup
-&link :Builtin-print-stack
+&link :Builtin-swap
 &name-length 03
 &name "dup 00
 &code ;dup JMP2
+
+@Builtin-swap
+&link :Builtin-print-stack
+&name-length 04
+&name "swap 00
+&code
+  SWP2
+JMP2r
 
 @Builtin-print-stack
 &link :Builtin-peek16
