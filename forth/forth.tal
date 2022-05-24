@@ -117,19 +117,6 @@ JMP2r
 JMP2r
 
 
-@dbg
-  .state LDZ ,&c JCN
-  LIT 'i EMIT
-  ,&next JMP
-&c
-  LIT 'c EMIT
-&next
-  space EMIT
-  ;print-cstr JSR2
-  CR
-JMP2r
-
-
 @interpret ( -- )
   ;tib .in STZ2
   ( CR .in LDZ2 ;print-cstr JSR2 CR )
