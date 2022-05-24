@@ -137,6 +137,7 @@ JMP2r
 
   DUP2 ;lookup JSR2
   DUP2 #0000 NEQ2 ,&word JCN
+  POP2
 
   ;interpret-number JSR2
 
@@ -201,8 +202,7 @@ JMP2r
 JMP2r
 
 
-@interpret-number ( *cstr #0000 -- )
-  POP2
+@interpret-number ( *cstr -- )
   DUP2 ;parse-number JSR2
   ,&error JCN
   NIP2
@@ -215,7 +215,7 @@ JMP2r
   .temp LDZ2
   ;swap-stacks JSR2
 JMP2r
-&error
+&error ( str -- )
   ;Error/unknown-word ;print-str JSR2
   SPACE
   LIT '" EMIT
@@ -225,7 +225,7 @@ JMP2r
   #01 .error STZ
 JMP2r
 
-&compile-number
+&compile-number ( u16 -- )
   #00 LIT LIT2
   ;comma8 JSR2
 
