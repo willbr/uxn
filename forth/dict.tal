@@ -101,12 +101,67 @@
 &code ;comma8 JMP2
 
 @Builtin-debug
-&link :var-latest
+&link :Builtin-left-bracket
 &name-length 05
 &name "debug 00
 &code
   debug
   JMP2r
+
+@Builtin-left-bracket
+&link :Builtin-right-bracket
+&name-length 81
+&name "[ 00
+&code
+  false .state STZ
+  JMP2r
+
+@Builtin-right-bracket
+&link :Builtin-cfa
+&name-length 81
+&name "] 00
+&code
+  true .state STZ
+  JMP2r
+
+@Builtin-cfa
+&link :Builtin-dis
+&name-length 04
+&name ">cfa 00
+&code
+  ;dict-code JSR2
+  JMP2r
+
+@Builtin-dis
+&link :Builtin-branch
+&name-length 03
+&name "dis 00
+&code
+  ( drop the high byte )
+  NIP
+  ;dis JSR2
+JMP2r
+
+@Builtin-branch
+&link :Builtin-0branch
+&name-length 06
+&name "branch 00
+&code
+  ere1
+  debug
+  STH2r
+  debug
+  ADD2
+  ere2
+  debug
+  JMP2
+
+@Builtin-0branch
+&link :var-latest
+&name-length 07
+&name "0branch 00
+&code
+JMP2r
 
 @var-latest
 &link 0000
