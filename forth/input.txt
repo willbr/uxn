@@ -1,18 +1,19 @@
 : true 1 ;
 : false 0 ;
-
 : op_lit2 a0 ;
 : op_jmp2r 6c ;
-
+: op_jsr2 2e ;
 : ,lit op_lit2 c, , ;
-: ,call ,lit op_jmp2r c, ;
+: ,call ,lit op_jsr2 c, ;
 
 : if immediate ' 0branch ,call here @ 0 ,lit ;
 : then immediate dup here @ swap - swap 1 + ! ;
+: test if 1 then 2 ;
 
-: test if 1 2 then 3 ;
-
-' 0branch debug
 ' test 0a dis
-test
+debug
+0 test
+debug
+1 test
+debug
 
