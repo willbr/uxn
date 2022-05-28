@@ -1,5 +1,18 @@
 : true 1 ;
 : false 0 ;
-: if immediate here @ 0 , ' 0branch , ;
-: then immediate dup here @ swap - swap ! ;
-true if 1 then 2
+
+: op_lit2 a0 ;
+: op_jmp2r 6c ;
+
+: ,lit op_lit2 c, , ;
+: ,call ,lit op_jmp2r c, ;
+
+: if immediate ' 0branch ,call here @ 0 ,lit ;
+: then immediate dup here @ swap - swap 1 + ! ;
+
+: test if 1 2 then 3 ;
+
+' 0branch debug
+' test 0a dis
+test
+
