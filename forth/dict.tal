@@ -210,15 +210,15 @@ JMP2r
 @var-base
 &link :var-state
 &name-length 04
-&name "here 00
+&name "base 00
 &code
   ;base
   JMP2r
 
 @var-state
 &link :var-here
-&name-length 04
-&name "here 00
+&name-length 05
+&name "state 00
 &code
   ;state
   JMP2r
