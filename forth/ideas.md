@@ -32,7 +32,7 @@
         &name &?????
         &codeword $2
         &def &????
-        
+
     codeword is asm code
 
     or a call to DOCOL if forth code
@@ -41,7 +41,6 @@
 
     double
         docol lit 2 * exit
-        
 
 # syntax
 
@@ -52,6 +51,11 @@
 # string functions
 
     strtok
+
+# other
+
+decompile a word with `see`
+
 
 # games
 
