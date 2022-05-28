@@ -519,7 +519,6 @@ JMP2r
 
 
 @Error
-&invalid-char    00 "invalid 20 "char: 20 00
 &todo            00 "todo 00
 &tib-overflow    00 "tib 20 "overflow 00
 &stack-overflow  00 "stack 20 "overflow 00
