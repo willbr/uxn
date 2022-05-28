@@ -1,8 +1,10 @@
-: true 1 ;
+: true  1 ;
 : false 0 ;
-: op_lit2 a0 ;
+
+: op_lit2  a0 ;
 : op_jmp2r 6c ;
-: op_jsr2 2e ;
+: op_jsr2  2e ;
+
 : ,lit op_lit2 c, , ;
 : ,call ,lit op_jsr2 c, ;
 
@@ -10,10 +12,5 @@
 : then immediate dup here @ swap - swap 1 + ! ;
 : test if 1 then 2 ;
 
-' test 0a dis
-debug
 0 test
 debug
-1 test
-debug
-
