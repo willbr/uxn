@@ -158,16 +158,33 @@ JMP2r
 &name-length 07
 &name "0branch 00
 &code ( bool -- )
-ere
-.state LDZ ,&compile JCN
-ere1
-  #beef #cafe POP2 POP2
-  POP2
-  POP2
+  .state LDZ ,&compile JCN
+  NIP ,&true-immediate JCN
+  STH2r
+
+  ( read offset )
+  DUP2 INC2 LDA2
+
+  ( increment by offset )
+  ADD2
+
+  STH2
 JMP2r
+
+&true-immediate
+  STH2r
+  #0003 ADD2
+  STH2
+JMP2r
+
 &compile
-ere2
+  ere2
+  NIP ,&true-compile JCN
 JMP2r
+
+&true-compile
+JMP2r
+
 
 @Builtin-tick
 &link :Builtin-immediate
