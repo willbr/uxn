@@ -178,7 +178,7 @@ JMP2r
 JMP2r
 
 @Builtin-immediate
-&link :var-here
+&link :var-base
 &name-length 89
 &name "immediate 00
 &code
@@ -194,8 +194,24 @@ JMP2r
 JMP2r
 
 
+@var-base
+&link :var-state
+&name-length 04
+&name "here 00
+&code
+  ;base
+  JMP2r
+
+@var-state
+&link :var-here
+&name-length 04
+&name "here 00
+&code
+  ;state
+  JMP2r
+
 @var-here
-&link 0000
+&link :var-latest
 &name-length 04
 &name "here 00
 &code
