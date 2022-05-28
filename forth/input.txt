@@ -1,4 +1,5 @@
-: star 2a emit ;
-latest @ >cfa 04 dis
-' star 04 dis
-debug
+: true 1 ;
+: false 0 ;
+: if immediate here @ 0 , ' 0branch , ;
+: then immediate dup here @ swap - swap ! ;
+true if 1 then 2

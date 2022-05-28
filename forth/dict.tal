@@ -149,13 +149,8 @@ JMP2r
 &name-length 06
 &name "branch 00
 &code
-  ere1
-  debug
   STH2r
-  debug
   ADD2
-  ere2
-  debug
   JMP2
 
 @Builtin-0branch
@@ -163,8 +158,9 @@ JMP2r
 &name-length 07
 &name "0branch 00
 &code ( bool addr16 -- )
-ere1
-debug
+  #beef #cafe POP2 POP2
+  POP2
+  POP2
 JMP2r
 
 @Builtin-tick
@@ -172,9 +168,26 @@ JMP2r
 &name-length 01
 &name "' 00
 &code
+  DUP2r
+  STH2r
+
+  ( assert next instruction is LIT2 )
+  ( DUP2 LDA LIT LIT2 NEQ )
+
+  ( skip LIT byte to get next address )
+  #0001 ADD2
+
+  INC2r
+  INC2r
+  INC2r
+  INC2r
+
+  ( repl version code )
+  (
   ;read-word JSR2
   ;lookup JSR2
   ;dict-code JSR2
+  )
 JMP2r
 
 @Builtin-immediate
