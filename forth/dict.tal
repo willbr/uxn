@@ -157,10 +157,16 @@ JMP2r
 &link :Builtin-tick
 &name-length 07
 &name "0branch 00
-&code ( bool addr16 -- )
+&code ( bool -- )
+ere
+.state LDZ ,&compile JCN
+ere1
   #beef #cafe POP2 POP2
   POP2
   POP2
+JMP2r
+&compile
+ere2
 JMP2r
 
 @Builtin-tick
@@ -168,6 +174,15 @@ JMP2r
 &name-length 01
 &name "' 00
 &code
+  .state LDZ ,&tick-compile JCN
+  ( repl version code )
+  ;read-word JSR2
+  ( DUP2 ;print-str JSR2 CR )
+  ;lookup JSR2
+  ;dict-code JSR2
+JMP2r
+
+&tick-compile
   DUP2r
   STH2r
 
@@ -176,18 +191,13 @@ JMP2r
 
   ( skip LIT byte to get next address )
   #0001 ADD2
+  LDA2
 
   INC2r
   INC2r
   INC2r
   INC2r
 
-  ( repl version code )
-  (
-  ;read-word JSR2
-  ;lookup JSR2
-  ;dict-code JSR2
-  )
 JMP2r
 
 @Builtin-immediate
