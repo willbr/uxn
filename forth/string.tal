@@ -42,11 +42,13 @@
   ,&next JMP
 
 &error
+  (
   ;String-Error/invalid-char ;print-str JSR2
   LIT '" EMIT
   LDAk EMIT
   LIT '" EMIT
   CR
+  )
   POP2r ( drop return value )
   POP2  ( drop char pointer )
   #01
