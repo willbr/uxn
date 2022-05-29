@@ -37,14 +37,17 @@ build-test: test-random.tal
 #	python ..\uxnemu.py out.rom
 	c:\tools\uxn\uxncli.exe .\out.rom
 
-build: readline.tal
-	$(cat) $<
+build: readline.tal font.tal
+#	$(cat) $<
 #	python ..\src\talie.py $< out.rom
 	$(uxnasm) $< out.rom
 #	python ..\src\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
 	c:\tools\uxn\uxnemu.exe out.rom
+
+font.tal: font.uf2
+	$(uxncli) ../bin2tal/out.rom $< > $@
 
 edit-font:
 	$(uxnemu) c:\tools\uxn32\turye.rom font.uf2
