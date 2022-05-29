@@ -32,29 +32,55 @@
 
     ;on-key .Controller/vector DEO2
     ;on-frame .Screen/vector DEO2
-    ;draw-smile JSR2
 BRK
 
 
 @on-key
   .Controller/key DEI
-  STHk
   #1b NEQ ,&end JCN
   HALT
   &end
-
-  ;print-key JSR2
-
 BRK
 
 
 @on-frame
-  ;str ;draw-uf2 JSR2
-  BRK
-@str "hello 00
+  (
+  ;clear-screen JSR2
+  ;render-screen JSR2
+  )
+BRK
 
 
-@print-key ( key -- )
+@clear-screen
+  #0000
+&loop
+  DUP2 #0200 EQU2 ,&end JCN
+  DUP2 ;clear-column JSR2
+  #0010 ADD2
+  ,&loop JMP
+&end
+  POP2
+JMP2r
+
+
+@clear-column ( x16 -- )
+	.Screen/x DEO2
+	#0000 .Screen/y DEO2
+  #00
+&loop
+  DUP #14 EQU ,&end JCN
+  ;draw-smile JSR2
+  INC
+  ,&loop JMP
+&end
+  POP
+JMP2r
+
+
+@render-screen
+	#0000 .Screen/x DEO2
+	#0000 .Screen/y DEO2
+  ( ;str ;draw-uf2 JSR2 )
 JMP2r
 
 
@@ -68,12 +94,9 @@ JMP2r
 		.Screen/x DEO2
 		INC2 LDAk ,&while JCN
 	POP2
-
 JMP2r
 
 @draw-smile ( -- )
-	#0010 .Screen/x DEO2
-	#0020 .Screen/y DEO2
 	;smile-icns .Screen/addr DEO2
 	#16 .Screen/auto DEO
 	#01 .Screen/sprite DEOk DEO
@@ -87,4 +110,10 @@ JMP2r
 
 @font
 ~font.tal
+
+@line-buffer
+$51
+
+@screen-buffer
+$0640
 
