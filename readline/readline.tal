@@ -14,40 +14,54 @@
 %down  { #20 }
 %left  { #40 }
 %right { #80 }
+%k_esc { #1b }
+%k_backspace { #08 }
 
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
-
-
 |0100
   (
-    #0080 .Screen/width  DEO2
-    #0080 .Screen/height DEO2
-    )
+  #0080 .Screen/width  DEO2
+  #0080 .Screen/height DEO2
+  )
 
-    #01ff .System/r DEO2
-    #0f0f .System/g DEO2
-    #020f .System/b DEO2
+  #01ff .System/r DEO2
+  #0f0f .System/g DEO2
+  #020f .System/b DEO2
 
-    ;on-key .Controller/vector DEO2
-    ;on-frame .Screen/vector DEO2
+  ;on-key .Controller/vector DEO2
+  ;on-frame .Screen/vector DEO2
+
+  ;line/buffer ;line/pos STA2
 BRK
 
 
 @on-key
   .Controller/key DEI
-  #1b NEQ ,&end JCN
+  DUP k_esc EQU ;on-esc JCN2
+  DUP k_backspace EQU ;on-backspace JCN2
+  ;line/pos LDA2 STA
+  ;line/pos LDA2 INC2 ;line/pos STA2
+BRK
+
+@on-esc
+  POP
   HALT
-  &end
+BRK
+
+
+@on-backspace
+  POP
+  #00 ;line/pos LDA2 STA
+  ;line/pos LDA2 #0001 SUB2 ;line/pos STA2
+  #20 ;line/pos LDA2 STA
 BRK
 
 
 @on-frame
-  (
   ;clear-screen JSR2
   ;render-screen JSR2
-  )
 BRK
 
 
@@ -64,8 +78,8 @@ JMP2r
 
 
 @clear-column ( x16 -- )
-	.Screen/x DEO2
-	#0000 .Screen/y DEO2
+ .Screen/x DEO2
+  #0000 .Screen/y DEO2
   #00
 &loop
   DUP #14 EQU ,&end JCN
@@ -78,42 +92,46 @@ JMP2r
 
 
 @render-screen
-	#0000 .Screen/x DEO2
-	#0000 .Screen/y DEO2
-  ( ;str ;draw-uf2 JSR2 )
+  #0000 .Screen/x DEO2
+  #0000 .Screen/y DEO2
+  ;line/buffer ;draw-uf2 JSR2
 JMP2r
 
 
 @draw-uf2 ( text* -- )
-	#15 .Screen/auto DEO
-	&while
-		LDAk #20 SUB #00 SWP
-			DUP2 #50 SFT2 ;font ADD2 #00ff ADD2 .Screen/addr DEO2
-			;font ADD2 LDA #00 SWP .Screen/x DEI2 ADD2
-		#01 .Screen/sprite DEOk DEO
-		.Screen/x DEO2
-		INC2 LDAk ,&while JCN
-	POP2
+  #15 .Screen/auto DEO
+  &while
+    LDAk #20 SUB #00 SWP
+    DUP2 #50 SFT2 ;font ADD2 #0100 ADD2 .Screen/addr DEO2
+    ;font ADD2 LDA #00 SWP .Screen/x DEI2 ADD2
+    #01 .Screen/sprite DEOk DEO
+    .Screen/x DEO2
+    INC2 LDAk ,&while JCN
+  POP2
 JMP2r
 
 @draw-smile ( -- )
-	;smile-icns .Screen/addr DEO2
-	#16 .Screen/auto DEO
-	#01 .Screen/sprite DEOk DEO
+  ;smile-icns .Screen/addr DEO2
+  #16 .Screen/auto DEO
+  #01 .Screen/sprite DEOk DEO
 JMP2r
 
 @smile-icns
-	( first row )
-	0007 1820 2040 4044 00e0 1804 0402 0222
-	( second row ) 
-	4040 4423 2018 0700 0202 22c4 0418 e000
+  ( first row )
+  0007 1820 2040 4044 00e0 1804 0402 0222
+  ( second row )
+  4040 4423 2018 0700 0202 22c4 0418 e000
 
 @font
 ~font.tal
 
-@line-buffer
-$51
+@line
+&pos    $2
+&buffer ( $51 )
+"Beef-Cafe 00
 
+(
 @screen-buffer
 $0640
+)
 
