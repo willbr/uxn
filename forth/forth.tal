@@ -71,7 +71,27 @@ BRK
 JMP2r
 
 
+@skip-whitespace
+  .in LDZ2
+&loop
+  LDAk
+  DUP space EQU ,&step JCN
+  DUP null  EQU ,&end JCN
+  ,&end JMP
+
+&step
+  POP
+  INC2
+  ,&loop JMP
+
+&end
+  POP  ( char )
+  .in STZ2
+JMP2r
+
 @read-word ( -- *str )
+  ;skip-whitespace JSR2
+
   .in LDZ2 #0001 SUB2 ;word STA2
 
 &loop
@@ -519,7 +539,6 @@ JMP2r
 
 
 @Error
-&invalid-char    00 "invalid 20 "char: 20 00
 &todo            00 "todo 00
 &tib-overflow    00 "tib 20 "overflow 00
 &stack-overflow  00 "stack 20 "overflow 00
