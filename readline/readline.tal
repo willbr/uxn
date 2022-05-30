@@ -41,9 +41,13 @@ BRK
   .Controller/key DEI
   DUP k_esc EQU ;on-esc JCN2
   DUP k_backspace EQU ;on-backspace JCN2
+  ;key STA
+  (
   ;line/pos LDA2 STA
   ;line/pos LDA2 INC2 ;line/pos STA2
+  )
 BRK
+
 
 @on-esc
   POP
@@ -60,7 +64,7 @@ BRK
 
 
 @on-frame
-  ;clear-screen JSR2
+  ( ;clear-screen JSR2 )
   ;render-screen JSR2
 BRK
 
@@ -94,7 +98,39 @@ JMP2r
 @render-screen
   #0000 .Screen/x DEO2
   #0000 .Screen/y DEO2
-  ;line/buffer ;draw-uf2 JSR2
+  LIT '0 ;draw-char JSR2
+  LIT 'x ;draw-char JSR2
+  #be ;draw-byte JSR2
+  #ef ;draw-byte JSR2
+  ( ;line/buffer ;draw-uf2 JSR2 )
+JMP2r
+
+
+@draw-byte ( u8 -- )
+	DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD
+  ;draw-char JSR2
+JMP2r
+
+
+@draw-char ( u8 -- )
+  ( cast to u16 )
+  #00 SWP
+
+  ( convert to offset )
+  #0020 MUL2
+
+  ( skip font header )
+  ;font #0100 ADD2
+
+  ( skip to char )
+  ADD2
+
+  .Screen/addr DEO2
+
+  #15 .Screen/auto DEO
+
+  #01 .Screen/sprite DEOk DEO
 JMP2r
 
 
@@ -124,6 +160,8 @@ JMP2r
 
 @font
 ~font.tal
+
+@key 00
 
 @line
 &pos    $2
