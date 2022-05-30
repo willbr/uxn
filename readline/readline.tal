@@ -1,3 +1,5 @@
+(
+)
 |00 @System &vector $2 &wst $1 &rst $1 &pad $4 &r $2 &g $2 &b $2 &debug $1 &state $1
 |10 @Console &vector $2 &read $1 &pad $5 &write $1
 |20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
@@ -38,13 +40,20 @@ BRK
 
 @on-key
   .Controller/key DEI
+  DUP ;key STA
   DUP #00 EQU ,&end JCN
   DUP k_esc EQU ;on-esc JCN2
   DUP k_backspace EQU ;on-backspace JCN2
-  DUP ;key STA
-  ;line/in LDA2 STA
+  ;line/in LDA2
+  DUP2 ;line/end EQU2 ,&overflow JCN
+  STA
   ;line/in LDA2 INC2 ;line/in STA2
 &end
+BRK
+
+&overflow
+  POP2
+  POP
 BRK
 
 
@@ -56,9 +65,21 @@ BRK
 
 @on-backspace
   POP
+
+  ( insert null )
   #00 ;line/in LDA2 STA
-  ;line/in LDA2 #0001 SUB2 ;line/in STA2
+
+  ( read pointer )
+  ;line/in LDA2
+
+  DUP2 ;line/buffer EQU2 ,&underflow JCN
+
+  #0001 SUB2 ;line/in STA2
   #20 ;line/in LDA2 STA
+BRK
+
+&underflow
+  POP2
 BRK
 
 
@@ -206,6 +227,7 @@ JMP2r
 
 @line
 &in    :&buffer
-&buffer ( $51 )
-"Beef-Cafe 00
+&buffer $fe
+&end
+$1 ( extra space for null char )
 
