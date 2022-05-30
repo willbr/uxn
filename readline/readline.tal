@@ -38,11 +38,13 @@ BRK
 
 @on-key
   .Controller/key DEI
+  DUP #00 EQU ,&end JCN
   DUP k_esc EQU ;on-esc JCN2
   DUP k_backspace EQU ;on-backspace JCN2
   DUP ;key STA
   ;line/in LDA2 STA
   ;line/in LDA2 INC2 ;line/in STA2
+&end
 BRK
 
 
@@ -150,8 +152,11 @@ JMP2r
 
 
 @draw-char ( u8 -- )
+  #15 .Screen/auto DEO
+
   ( cast to u16 )
   #00 SWP
+  DUP2
 
   ( convert to offset )
   #0020 MUL2
@@ -164,9 +169,9 @@ JMP2r
 
   .Screen/addr DEO2
 
-  #15 .Screen/auto DEO
-
+  ;font ADD2 LDA #00 SWP .Screen/x DEI2 ADD2
   #01 .Screen/sprite DEOk DEO
+  .Screen/x DEO2
 JMP2r
 
 
