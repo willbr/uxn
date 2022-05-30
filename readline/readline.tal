@@ -16,6 +16,7 @@
 %right { #80 }
 %k_esc { #1b }
 %k_backspace { #08 }
+%k_enter { #0d }
 
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
@@ -32,8 +33,6 @@
 
   ;on-key .Controller/vector DEO2
   ;on-frame .Screen/vector DEO2
-
-  ;line/buffer ;line/pos STA2
 BRK
 
 
@@ -41,11 +40,9 @@ BRK
   .Controller/key DEI
   DUP k_esc EQU ;on-esc JCN2
   DUP k_backspace EQU ;on-backspace JCN2
-  ;key STA
-  (
-  ;line/pos LDA2 STA
-  ;line/pos LDA2 INC2 ;line/pos STA2
-  )
+  DUP ;key STA
+  ;line/in LDA2 STA
+  ;line/in LDA2 INC2 ;line/in STA2
 BRK
 
 
@@ -57,16 +54,42 @@ BRK
 
 @on-backspace
   POP
-  #00 ;line/pos LDA2 STA
-  ;line/pos LDA2 #0001 SUB2 ;line/pos STA2
-  #20 ;line/pos LDA2 STA
+  #00 ;line/in LDA2 STA
+  ;line/in LDA2 #0001 SUB2 ;line/in STA2
+  #20 ;line/in LDA2 STA
 BRK
 
 
 @on-frame
   ( ;clear-screen JSR2 )
   ;render-screen JSR2
+
+  #0000 .Screen/x DEO2
+  #0010 .Screen/y DEO2
+  ;debug-key JSR2
+
+  #0000 .Screen/x DEO2
+  #0020 .Screen/y DEO2
+  ;line/buffer ;draw-short JSR2
+  LIT ': ;draw-char JSR2
+  ;line/in LDA2 ;draw-short JSR2
+  LIT ': ;draw-char JSR2
+  ;key LDA
+  ;draw-byte JSR2
+  LIT ': ;draw-char JSR2
+  ;key LDA
+  ;draw-char JSR2
 BRK
+
+
+@debug-key
+  LIT '( ;draw-char JSR2
+  LIT '0 ;draw-char JSR2
+  LIT 'x ;draw-char JSR2
+  ;key LDA
+  ;draw-byte JSR2
+  LIT ') ;draw-char JSR2
+JMP2r
 
 
 @clear-screen
@@ -98,11 +121,24 @@ JMP2r
 @render-screen
   #0000 .Screen/x DEO2
   #0000 .Screen/y DEO2
-  LIT '0 ;draw-char JSR2
-  LIT 'x ;draw-char JSR2
-  #be ;draw-byte JSR2
-  #ef ;draw-byte JSR2
-  ( ;line/buffer ;draw-uf2 JSR2 )
+
+  ;line/buffer
+&loop
+  LDAk
+  DUP #00 EQU ,&end JCN
+  ;draw-char JSR2
+  INC2
+  ,&loop JMP
+&end
+POP
+  POP2
+JMP2r
+
+
+@draw-short ( u16 -- )
+  SWP
+  ;draw-byte JSR2
+  ;draw-byte JSR2
 JMP2r
 
 
@@ -164,12 +200,7 @@ JMP2r
 @key 00
 
 @line
-&pos    $2
+&in    :&buffer
 &buffer ( $51 )
 "Beef-Cafe 00
-
-(
-@screen-buffer
-$0640
-)
 
