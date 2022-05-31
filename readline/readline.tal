@@ -29,9 +29,9 @@
   #0080 .Screen/height DEO2
   )
 
-  #01ff .System/r DEO2
-  #0f0f .System/g DEO2
-  #020f .System/b DEO2
+  #2d0f .System/r DEO2
+  #2ddf .System/g DEO2
+  #2ddf .System/b DEO2
 
   ;on-key .Controller/vector DEO2
   ;on-frame .Screen/vector DEO2
