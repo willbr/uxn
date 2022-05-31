@@ -44,7 +44,10 @@ build: readline.tal font.tal
 #	python ..\src\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
-	c:\tools\uxn\uxnemu.exe out.rom
+	make run
+
+run:
+	$(uxnemu) out.rom
 
 font.tal: font.uf2
 	$(uxncli) ../bin2tal/out.rom $< > $@
