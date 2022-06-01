@@ -153,8 +153,9 @@ JMP2r
   INC2
   ,&loop JMP
 &end
-POP
+  POP
   POP2
+  ;draw-cursor JSR2
 JMP2r
 
 
@@ -206,6 +207,10 @@ JMP2r
     .Screen/x DEO2
     INC2 LDAk ,&while JCN
   POP2
+JMP2r
+
+@draw-cursor
+  ;draw-smile JSR2
 JMP2r
 
 @draw-smile ( -- )
