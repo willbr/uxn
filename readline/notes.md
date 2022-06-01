@@ -1,3 +1,14 @@
+# readline
+
+    add cursor
+    add hotkeys
+        ctrl+a move to start
+        ctrl+e move to end
+        ctrl+u kill line
+        ctrl+k kill forward
+        enter  return from readline
+        tab    callback function
+
 # add see to print word code
 
 rename cfa to dfa
