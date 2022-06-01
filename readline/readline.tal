@@ -87,11 +87,9 @@ BRK
   ( ;clear-screen JSR2 )
   ;render-screen JSR2
 
-  (
   #0000 .Screen/x DEO2
   #0010 .Screen/y DEO2
   ;debug-key JSR2
-  )
 
   (
   #0000 .Screen/x DEO2
