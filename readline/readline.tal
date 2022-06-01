@@ -43,6 +43,7 @@ BRK
   DUP ;key STA
   DUP #00 EQU ,&end JCN
   DUP k_esc EQU ;on-esc JCN2
+  DUP k_enter EQU ;on-enter JCN2
   DUP k_backspace EQU ;on-backspace JCN2
   ;line/in LDA2
   DUP2 ;line/end EQU2 ,&overflow JCN
@@ -56,6 +57,10 @@ BRK
   POP
 BRK
 
+
+@on-enter
+  HALT
+BRK
 
 @on-esc
   POP
