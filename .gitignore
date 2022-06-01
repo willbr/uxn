@@ -1,6 +1,7 @@
 # Uxn
 src/tests/*/bin/
 *.rom
+.snarf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

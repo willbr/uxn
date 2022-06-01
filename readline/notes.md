@@ -1,22 +1,38 @@
->dfa
-dfa>
+# add see to print word code
+
+rename cfa to dfa
+add reverse lookup
+
+    >dfa
+    dfa>
 
 
-pred if true-body else false-body then
-then or endif?
+# predicates
+
+    pred if true-body else false-body then
+    then or endif?
 
 
-limit index do ? loop
-limit index do ? +loop
+# loops
+    limit index do ? loop
+    limit index do ? +loop
 
-i ( -- index )
+    i ( -- index )
 
-begin body f until
-begin body f again
-begin pred while body repeat
+    begin body f until
+    begin body f again
+    begin pred while body repeat
 
-leave
-2000 > if leave then
+    leave
+    2000 > if leave then
 
 
+
+# string functions
+    : word ( c -- ) ;
+    \ read until char c
+
+
+    : strtok ( delim_ptr -- ) ;
+    \ read token until char in str delim
 
