@@ -8,7 +8,15 @@
         "nope" puts
     }
 
-into
+into forth
+
+    n 1 > if
+        "hi" puts
+    else
+        "nope" puts
+    endif
+
+into uxntal
 
     n 1 >
     ;true jcn
@@ -27,7 +35,13 @@ infinite loop
         "beep" puts
     }
 
-into
+into forth
+
+    begin
+        "bee" puts
+    again
+
+into uxntal
 
     @loop
         "beep" puts
