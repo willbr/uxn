@@ -87,10 +87,13 @@ BRK
   ( ;clear-screen JSR2 )
   ;render-screen JSR2
 
+  (
   #0000 .Screen/x DEO2
   #0010 .Screen/y DEO2
   ;debug-key JSR2
+  )
 
+  (
   #0000 .Screen/x DEO2
   #0020 .Screen/y DEO2
   ;line/buffer ;draw-short JSR2
@@ -102,6 +105,7 @@ BRK
   LIT ': ;draw-char JSR2
   ;key LDA
   ;draw-char JSR2
+  )
 BRK
 
 
@@ -210,7 +214,9 @@ JMP2r
 JMP2r
 
 @draw-cursor
-  ;draw-smile JSR2
+  ;cursor .Screen/addr DEO2
+  #16 .Screen/auto DEO
+  #01 .Screen/sprite DEOk DEO
 JMP2r
 
 @draw-smile ( -- )
@@ -224,6 +230,12 @@ JMP2r
   0007 1820 2040 4044 00e0 1804 0402 0222
   ( second row )
   4040 4423 2018 0700 0202 22c4 0418 e000
+
+@cursor
+  ( first row )
+  f8f8 f8f8 f8f8 f8f8 0000 0000 0000 0000
+  ( second row )
+  f8f8 f8f8 f800 0000 0000 0000 0000 0000
 
 @font
 ~font.tal
