@@ -1,5 +1,3 @@
-(
-)
 |00 @System &vector $2 &wst $1 &rst $1 &pad $4 &r $2 &g $2 &b $2 &debug $1 &state $1
 |10 @Console &vector $2 &read $1 &pad $5 &write $1
 |20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
@@ -23,9 +21,9 @@
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
-%line_length  { #10 }
-%line_size    { #11 }
-%line_padding { $10 $1 }
+%line_length  { #20 }
+%line_size    { #21 }
+%line_padding { $20 $1 }
 
 %ds {
   DUP2 ;draw-short JSR2
@@ -202,17 +200,27 @@ JMP2r
 %sprite_height { #0010 }
 @render-screen
   #0000 .Screen/x DEO2
+  #0000 .Screen/y DEO2
   ;window/0 ;render-cstr JSR2
+
   #0000 .Screen/x DEO2
+  #0010 .Screen/y DEO2
   ;window/1 ;render-cstr JSR2
+
   #0000 .Screen/x DEO2
+  #0020 .Screen/y DEO2
   ;window/2 ;render-cstr JSR2
+
   #0000 .Screen/x DEO2
+  #0030 .Screen/y DEO2
   ;window/3 ;render-cstr JSR2
+
   #0000 .Screen/x DEO2
+  #0040 .Screen/y DEO2
   ;window/4 ;render-cstr JSR2
 
   #0000 .Screen/x DEO2
+  #0050 .Screen/y DEO2
 
   sprite_height ;cur_line LDA2 MUL2
   .Screen/y DEO2
