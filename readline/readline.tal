@@ -199,25 +199,11 @@ JMP2r
 
 %sprite_height { #0010 }
 @render-screen
-  #0000 .Screen/x DEO2
-  #0000 .Screen/y DEO2
-  ;window/0 ;render-cstr JSR2
-
-  #0000 .Screen/x DEO2
-  #0010 .Screen/y DEO2
-  ;window/1 ;render-cstr JSR2
-
-  #0000 .Screen/x DEO2
-  #0020 .Screen/y DEO2
-  ;window/2 ;render-cstr JSR2
-
-  #0000 .Screen/x DEO2
-  #0030 .Screen/y DEO2
-  ;window/3 ;render-cstr JSR2
-
-  #0000 .Screen/x DEO2
-  #0040 .Screen/y DEO2
-  ;window/4 ;render-cstr JSR2
+  #0000 ;window/0 ;render-line JSR2
+  #0010 ;window/1 ;render-line JSR2
+  #0020 ;window/2 ;render-line JSR2
+  #0030 ;window/3 ;render-line JSR2
+  #0040 ;window/4 ;render-line JSR2
 
   #0000 .Screen/x DEO2
   #0050 .Screen/y DEO2
@@ -229,6 +215,13 @@ JMP2r
   ;render-cstr JSR2
   ;draw-cursor JSR2
 
+JMP2r
+
+
+@render-line ( line8 dst16 -- )
+  #0000 .Screen/x DEO2
+  SWP2  .Screen/y DEO2
+  ;render-cstr JSR2
 JMP2r
 
 
