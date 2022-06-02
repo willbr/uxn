@@ -23,11 +23,19 @@
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
+%line_length  { #10 }
+%line_size    { #11 }
+%line_padding { $10 $1 }
+
+%ds {
+  DUP2 ;draw-short JSR2
+  LIT ': ;draw-char JSR2
+}
+
+
 |0100
-  (
-  #0080 .Screen/width  DEO2
-  #0080 .Screen/height DEO2
-  )
+  #0100 .Screen/width  DEO2
+  #0100 .Screen/height DEO2
 
   #2d0f .System/r DEO2
   #2ddf .System/g DEO2
@@ -40,15 +48,21 @@ BRK
 
 @on-key
   .Controller/key DEI
+
+  ( store keycode )
   DUP ;key STA
+
   DUP #00 EQU ,&end JCN
   DUP k_esc EQU ;on-esc JCN2
   DUP k_enter EQU ;on-enter JCN2
   DUP k_backspace EQU ;on-backspace JCN2
+
+  ( add to line buffer )
   ;line/in LDA2
   DUP2 ;line/end EQU2 ,&overflow JCN
   STA
   ;line/in LDA2 INC2 ;line/in STA2
+  #00 ;line/in LDA2 STA
 &end
 BRK
 
@@ -58,9 +72,60 @@ BRK
 BRK
 
 
+@strlen ( addr16 )
+  ( store the counter on the return stack )
+  #00 STH
+&loop
+  LDAk
+  #00 EQU ,&end JCN
+  INCr
+  INC2
+  ,&loop JMP
+  &end
+  POP2
+  STHr
+JMP2r
+
+
+@strsize ( addr16 )
+  ;strlen JSR2
+  ( add 1 for null terminator )
+  INC
+JMP2r
+
+
+@strcpy ( src16 dst16 -- )
+  OVR2
+
+  ( calc source size )
+  ;strsize JSR2
+
+  ROT ROT
+  ;memcpy JSR2
+JMP2r
+
+
 @on-enter
-  HALT
+  ( copy line/buffer to the current window line )
+  ;line/buffer
+
+  ( calc destination )
+  ;window
+  #00 line_size
+  ;cur_line LDA2
+  MUL2
+  ADD2
+
+  ;strcpy JSR2
+
+  ( inc cur_line )
+  ;cur_line DUP2 LDA2 INC2 SWP2 STA2
+
+  ( reset buffer )
+  ;line/buffer ;line/in STA2
+  #00 ;line/buffer STA
 BRK
+
 
 @on-esc
   POP
@@ -94,21 +159,7 @@ BRK
 
   #0000 .Screen/x DEO2
   #0010 .Screen/y DEO2
-  ;debug-key JSR2
-
-  (
-  #0000 .Screen/x DEO2
-  #0020 .Screen/y DEO2
-  ;line/buffer ;draw-short JSR2
-  LIT ': ;draw-char JSR2
-  ;line/in LDA2 ;draw-short JSR2
-  LIT ': ;draw-char JSR2
-  ;key LDA
-  ;draw-byte JSR2
-  LIT ': ;draw-char JSR2
-  ;key LDA
-  ;draw-char JSR2
-  )
+  ( ;debug-key JSR2 )
 BRK
 
 
@@ -148,11 +199,32 @@ JMP2r
 JMP2r
 
 
+%sprite_height { #0010 }
 @render-screen
   #0000 .Screen/x DEO2
-  #0000 .Screen/y DEO2
+  ;window/0 ;render-cstr JSR2
+  #0000 .Screen/x DEO2
+  ;window/1 ;render-cstr JSR2
+  #0000 .Screen/x DEO2
+  ;window/2 ;render-cstr JSR2
+  #0000 .Screen/x DEO2
+  ;window/3 ;render-cstr JSR2
+  #0000 .Screen/x DEO2
+  ;window/4 ;render-cstr JSR2
+
+  #0000 .Screen/x DEO2
+
+  sprite_height ;cur_line LDA2 MUL2
+  .Screen/y DEO2
 
   ;line/buffer
+  ;render-cstr JSR2
+  ;draw-cursor JSR2
+
+JMP2r
+
+
+@render-cstr
 &loop
   LDAk
   DUP #00 EQU ,&end JCN
@@ -162,7 +234,6 @@ JMP2r
 &end
   POP
   POP2
-  ;draw-cursor JSR2
 JMP2r
 
 
@@ -228,6 +299,26 @@ JMP2r
   #01 .Screen/sprite DEOk DEO
 JMP2r
 
+@memcpy ( src16 len8 dst16 -- )
+  STH2
+&loop
+  DUP #00 EQU ,&end JCN
+  STH ROTr ROTr
+  LDAk STH2rk STA
+
+  ( step )
+  INC2
+  INC2r
+  ROTr STHr #01 SUB
+  ,&loop JMP
+
+&end
+  POP
+  POP2
+  POP2r
+JMP2r
+
+
 @smile-icns
   ( first row )
   0007 1820 2040 4044 00e0 1804 0402 0222
@@ -247,7 +338,21 @@ JMP2r
 
 @line
 &in    :&buffer
-&buffer $fe
+&buffer $10
 &end
 $1 ( extra space for null char )
+
+@cur_line $2
+@window
+&0
+  line_padding
+&1
+  line_padding
+&2
+  line_padding
+&3
+  line_padding
+&4
+  line_padding
+&end
 
