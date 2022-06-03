@@ -14,11 +14,22 @@
 %right { #80 }
 %k_esc { #1b }
 %k_backspace { #08 }
+%k_delete { #7f }
 %k_tab { #09 }
 %k_enter { #0d }
 %c_null { #00 }
 %c_cr { #0d }
 %c_space { #20 }
+
+%mask_up    { #10 }
+%mask_down  { #20 }
+%mask_left  { #40 }
+%mask_right { #80 }
+
+%mask_ctrl  { #01 }
+%mask_alt   { #02 }
+%mask_shift { #04 }
+%mask_home  { #08 }
 
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
@@ -52,16 +63,37 @@ debug
   ( store keycode )
   DUP ;key STA
 
-  DUP #00 EQU ,&end JCN
+  DUP #00 EQU ;on-modifier JCN2
   DUP k_esc EQU ;on-esc JCN2
   (
   DUP k_enter EQU ;on-enter JSR2
   DUP k_backspace EQU ;on-backspace JCN2
+  DUP k_delete EQU ;on-delete JCN2
   )
 
   ( DUP ;add-to-line-buffer JSR2 )
   ;emit JSR2
-&end
+BRK
+
+
+@on-modifier
+  .Controller/button DEI
+  DUP ;button STA
+  DUP mask_left AND ;on-left JCN2
+  DUP mask_right AND ;on-right JCN2
+  POP
+BRK
+
+
+@on-left
+POP
+;window/cursor DUP2 LDA2 DEC2 SWP2 STA2
+BRK
+
+
+@on-right
+POP
+;window/cursor DUP2 LDA2 INC2 SWP2 STA2
 BRK
 
 
@@ -156,8 +188,12 @@ BRK
 BRK
 
 
+@on-delete
+BRK
+
+
 @on-frame
-  ( ;clear-screen JSR2 )
+  ;clear-screen JSR2
   ;render-screen JSR2
   ;draw-cursor JSR2
 
@@ -176,12 +212,12 @@ BRK
 
 
 @debug-key
-  LIT '( ;draw-char JSR2
-  LIT '0 ;draw-char JSR2
-  LIT 'x ;draw-char JSR2
+  #20 ;draw-char JSR2
   ;key LDA
   ;draw-byte JSR2
-  LIT ') ;draw-char JSR2
+  #20 ;draw-char JSR2
+  ;button LDA
+  ;draw-byte JSR2
 JMP2r
 
 
@@ -203,7 +239,19 @@ JMP2r
   #00
 &loop
   DUP #14 EQU ,&end JCN
-  ;draw-smile JSR2
+  ;clear .Screen/addr DEO2
+  #16 .Screen/auto DEO
+
+  .Screen/x DEI2
+  .Screen/y DEI2
+  (
+  ( bg ) #01 .Screen/sprite DEOk DEO
+  )
+  ( reset xy )
+  .Screen/y DEO2
+  .Screen/x DEO2
+  ( fg ) #41 .Screen/sprite DEOk DEO
+
   INC
   ,&loop JMP
 &end
@@ -213,7 +261,6 @@ JMP2r
 
 @render-screen
   ;window/buffer ;render-buffer JSR2
-
 JMP2r
 
 
@@ -364,7 +411,7 @@ JMP2r
 
   ;cursor .Screen/addr DEO2
   #16 .Screen/auto DEO
-  #01 .Screen/sprite DEOk DEO
+  #41 .Screen/sprite DEOk DEO
 JMP2r
 
 
@@ -448,10 +495,17 @@ JMP2r
   ( second row )
   f8f8 f8f8 f800 0000 0000 0000 0000 0000
 
+@clear
+  ( first row )
+  0000 0000 0000 0000 0000 0000 0000 0000
+  ( second row )
+  0000 0000 0000 0000 0000 0000 0000 0000
+
 @font
 ~font.tal
 
 @key 00
+@button 00
 @error 00
 
 @line
