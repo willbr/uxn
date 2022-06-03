@@ -159,10 +159,7 @@ BRK
 @on-frame
   ( ;clear-screen JSR2 )
   ;render-screen JSR2
-
-  #0000 .Screen/x DEO2
-  #0010 .Screen/y DEO2
-  ( ;debug-key JSR2 )
+  ;draw-cursor JSR2
 
   #0000 .Screen/x DEO2
   #00d0 .Screen/y DEO2
@@ -170,11 +167,11 @@ BRK
 
   #0000 .Screen/x DEO2
   #00e0 .Screen/y DEO2
-  ;window/cursor LDA2 ;draw-short JSR2
+  ;debug-key JSR2
 
   #0000 .Screen/x DEO2
   #00f0 .Screen/y DEO2
-  ;debug-key JSR2
+  ;line/buffer ;render-cstr JSR2
 BRK
 
 
@@ -216,13 +213,6 @@ JMP2r
 
 @render-screen
   ;window/buffer ;render-buffer JSR2
-
-  #0000 .Screen/x DEO2
-  #0050 .Screen/y DEO2
-
-  #00f0 .Screen/y DEO2
-  #0000 .Screen/x DEO2
-  ;draw-cursor JSR2
 
 JMP2r
 
@@ -315,7 +305,63 @@ JMP2r
 JMP2r
 
 
+@char-width ( char8 -- width8 )
+  ( convert to u16 )
+  #00 SWP
+
+  ( offset into array )
+  ;font
+  ADD2
+
+  ( deref )
+  LDA
+JMP2r
+
+
+@skip-forward
+  ( stash offset )
+  #0000 STH2
+  ;window/cursor   LDA2
+  ;window/cur_line LDA2
+&loop
+  OVR2 OVR2 EQU2 ,&end JCN
+  DUP2 LDA ;char-width JSR2
+  #00 SWP STH2 ADD2r
+
+  INC2
+  ,&loop JMP
+&end
+  POP2
+  POP2
+  STH2r
+JMP2r
+
+
+@skip-down
+  #0000 STH2
+  ;window/cur_line LDA2
+  ;window/buffer
+&loop
+  OVR2 OVR2 EQU2 ,&end JCN
+  INC2r
+  line_size16
+  ADD2
+  ,&loop JMP
+&end
+  POP2
+  POP2
+  STH2r
+JMP2r
+
+
 @draw-cursor
+  ;skip-forward JSR2
+  .Screen/x DEO2
+
+  ;skip-down JSR2
+  #0010 MUL2
+  .Screen/y DEO2
+
   ;cursor .Screen/addr DEO2
   #16 .Screen/auto DEO
   #01 .Screen/sprite DEOk DEO
