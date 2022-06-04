@@ -86,14 +86,28 @@ BRK
 
 
 @on-left
-POP
-;window/cursor DUP2 LDA2 DEC2 SWP2 STA2
+  POP
+  ;window/cursor DUP2 LDA2
+  DUP2 ;window/cur_line LDA2 EQU2 ,&underflow JCN
+  DEC2 SWP2 STA2
+BRK
+
+&underflow
+  POP2
+  POP2
 BRK
 
 
+
 @on-right
-POP
-;window/cursor DUP2 LDA2 INC2 SWP2 STA2
+  POP
+  ;window/cursor DUP2 LDA2
+  DUP2 ;window/cur_line LDA2 line_size16 ADD2 EQU2 ,&overflow JCN
+  INC2 SWP2 STA2
+BRK
+&overflow
+  POP2
+  POP2
 BRK
 
 
