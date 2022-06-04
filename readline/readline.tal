@@ -34,8 +34,8 @@
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
-%line_size8  { #80 }
-%line_size16 { #0080 }
+%line_size8  { #08 }
+%line_size16 { #0008 }
 
 %ds {
   DUP2 ;draw-short JSR2
@@ -53,11 +53,40 @@
 
   ;on-key .Controller/vector DEO2
   ;on-frame .Screen/vector DEO2
+
+  #2a ;window/buffer
+  ( calc size )
+  ;window/end ;window/buffer SUB2
+  ;memset JSR2
+
+  ;window/buffer ;window/line_start STA2
+
+  ( calc line end )
+  ;window/buffer line_size16 ADD2
+  ;window/line_end STA2
 BRK
 
 
+@memset ( char addr16 n16 -- )
+&loop
+  DUP2 #0000 EQU2 ,&end JCN
+  DEC2  STH2
+
+  STAk
+
+  INC2
+  STH2r
+
+  ,&loop JMP
+&end
+  POP2
+  POP2
+  POP
+JMP2r
+
+
 @on-key ( -- )
-debug
+  debug
   .Controller/key DEI
 
   ( store keycode )
@@ -81,6 +110,8 @@ BRK
   DUP ;button STA
   DUP mask_left AND ;on-left JCN2
   DUP mask_right AND ;on-right JCN2
+  DUP mask_up AND ;on-up JCN2
+  DUP mask_down AND ;on-down JCN2
   POP
 BRK
 
@@ -88,7 +119,7 @@ BRK
 @on-left
   POP
   ;window/cursor DUP2 LDA2
-  DUP2 ;window/cur_line LDA2 EQU2 ,&underflow JCN
+  DUP2 ;window/line_start LDA2 EQU2 ,&underflow JCN
   DEC2 SWP2 STA2
 BRK
 
@@ -102,7 +133,7 @@ BRK
 @on-right
   POP
   ;window/cursor DUP2 LDA2
-  DUP2 ;window/cur_line LDA2 line_size16 ADD2 EQU2 ,&overflow JCN
+  DUP2 ;window/line_start LDA2 line_size16 ADD2 EQU2 ,&overflow JCN
   INC2 SWP2 STA2
 BRK
 &overflow
@@ -111,16 +142,15 @@ BRK
 BRK
 
 
-@add-to-line-buffer ( char8 -- )
-  ;line/in LDA2
-  DUP2 ;line/end EQU2 ,&overflow JCN
-  STA
-  ;line/in LDA2 INC2 ;line/in STA2
-  #00 ;line/in LDA2 STA
-JMP2r
-&overflow
-  POP2
-  POP
+@on-up
+  ;window/cursor DUP2 LDA2
+  line_size16 SUB2 SWP2 STA2
+BRK
+
+
+@on-down
+  ;window/cursor DUP2 LDA2
+  line_size16 ADD2 SWP2 STA2
 BRK
 
 
@@ -158,21 +188,6 @@ JMP2r
 
 
 @on-enter
-  ( copy line/buffer to the current window line )
-  ;line/buffer
-
-  ( calc destination )
-  ;window
-  line_size16
-  ;window/cur_line LDA2
-  MUL2
-  ADD2
-
-  ;strcpy JSR2
-
-  ( reset buffer )
-  ;line/buffer ;line/in STA2
-  #00 ;line/buffer STA
 JMP2r
 
 
@@ -183,18 +198,6 @@ BRK
 
 
 @on-backspace
-  POP
-
-  ( insert null )
-  #00 ;line/in LDA2 STA
-
-  ( read pointer )
-  ;line/in LDA2
-
-  DUP2 ;line/buffer EQU2 ,&underflow JCN
-
-  #0001 SUB2 ;line/in STA2
-  #20 ;line/in LDA2 STA
 BRK
 
 &underflow
@@ -221,7 +224,7 @@ BRK
 
   #0000 .Screen/x DEO2
   #00f0 .Screen/y DEO2
-  ;line/buffer ;render-cstr JSR2
+  ;window/cursor LDA2 ;draw-short JSR2
 BRK
 
 
@@ -303,14 +306,16 @@ JMP2r
 
 
 @render-line ( add16 -- )
+  #00 STH
 &loop
+  line_size8 STHrk EQU ,&end JCN
   LDAk
-  DUP c_null EQU ,&end JCN
   ;draw-char JSR2
+  INCr
   INC2
   ,&loop JMP
 &end
-  POP
+  POPr
   POP2
 JMP2r
 
@@ -383,7 +388,7 @@ JMP2r
   ( stash offset )
   #0000 STH2
   ;window/cursor   LDA2
-  ;window/cur_line LDA2
+  ;window/line_start LDA2
 &loop
   OVR2 OVR2 EQU2 ,&end JCN
   DUP2 LDA ;char-width JSR2
@@ -400,7 +405,7 @@ JMP2r
 
 @skip-down
   #0000 STH2
-  ;window/cur_line LDA2
+  ;window/line_start LDA2
   ;window/buffer
 &loop
   OVR2 OVR2 EQU2 ,&end JCN
@@ -474,12 +479,13 @@ JMP2r
   c_space ;emit JSR2
 JMP2r
 
+
 @emit-enter ( char -- )
   POP
-  ;window/cur_line LDA2
+  ;window/line_start LDA2
   line_size16
   ADD2
-  ;window/cur_line STA2k
+  ;window/line_start STA2k
   POP2
   ;window/cursor STA2
 JMP2r
@@ -488,7 +494,7 @@ JMP2r
 @emit-backspace ( char -- )
   POP ( char )
   ;window/cursor LDA2
-  DUP2 ;window/cur_line LDA2 EQU2 ,&underflow JCN
+  DUP2 ;window/line_start LDA2 EQU2 ,&underflow JCN
 
   DEC2 ;window/cursor STA2
   #20 ;window/cursor LDA2 STA
@@ -522,14 +528,9 @@ JMP2r
 @button 00
 @error 00
 
-@line
-&in    :&buffer
-&buffer $10
-&end
-$1 ( extra space for null char )
-
 @window
-&cur_line :&buffer
+&line_start $2
+&line_end   $2
 &cursor   :&buffer
 &buffer
 $1000
