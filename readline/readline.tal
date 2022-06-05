@@ -154,6 +154,7 @@ BRK
 
 
 @on-down
+  line_size16 ;window/cursor ;inc-by-16 JSR2
   ;next-line JSR2
 BRK
 
@@ -165,8 +166,7 @@ BRK
 
   line_size16
   DUP2 ;window/line_start ;inc-by-16 JSR2
-  DUP2 ;window/line_end ;inc-by-16 JSR2
-  ;window/cursor ;inc-by-16 JSR2
+  ;window/line_end ;inc-by-16 JSR2
 JMP2r
 
 &underflow
@@ -517,8 +517,11 @@ JMP2r
 JMP2r
 
 
-@check-line-overflow
-  POP2
+@check-line-overflow ( cursor -- )
+  ;window/line_end LDA2 NEQ2 ,&end JCN
+  ;next-line JSR2
+
+&end
 JMP2r
 
 
