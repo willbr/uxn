@@ -34,9 +34,9 @@
 %DEC  { #01 SUB }
 %DEC2 { #0001 SUB2 }
 
-%line_size8  { #10 }
-%line_size16 { #0010 }
-%line_count8 { #08 }
+%line_size8   { #20 }
+%line_size16  { #0020 }
+%line_count8  { #08 }
 %line_count16 { #0008 }
 
 %ds {
@@ -154,8 +154,13 @@ BRK
 
 
 @on-down
+  ;window/line_end LDA2
+  ;window/buffer_end LDA2
+  EQU2 ,&underflow JCN
+
   line_size16 ;window/cursor ;inc-by-16 JSR2
   ;next-line JSR2
+&underflow
 BRK
 
 
@@ -167,8 +172,6 @@ BRK
   line_size16
   DUP2 ;window/line_start ;inc-by-16 JSR2
   ;window/line_end ;inc-by-16 JSR2
-JMP2r
-
 &underflow
 JMP2r
 
@@ -509,13 +512,27 @@ JMP2r
   DUP k_tab EQU ;emit-tab JCN2
 
   ( other key )
-  ;window/cursor LDA2 STAk
+  ;window/cursor LDA2
+  DUP2 ;check-window-overflow JSR2 ,&overflow JCN
+  STAk
   INC2
   DUP2 ;check-line-overflow JSR2
+  DUP2 ;check-window-overflow JSR2 ,&overflow JCN
   ;window/cursor STA2
   POP ( char )
 JMP2r
+&overflow
+  POP2
+  POP
+JMP2r
 
+@check-window-overflow ( cursor16 -- bool )
+  ;window/buffer_end LDA2 EQU2 ,&overflow JCN
+  #00
+JMP2r
+&overflow
+  #01
+JMP2r
 
 @check-line-overflow ( cursor -- )
   ;window/line_end LDA2 NEQ2 ,&end JCN
