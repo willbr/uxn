@@ -136,10 +136,10 @@ BRK
 
 
 
-@on-right
+@on-right ( key8 -- )
   POP
   ;window/cursor DUP2 LDA2
-  DUP2 ;window/line_start LDA2 line_size16 ADD2 EQU2 ,&overflow JCN
+  DUP2 INC2 ;window/line_end LDA2 EQU2 ,&overflow JCN
   INC2 SWP2 STA2
 BRK
 &overflow
