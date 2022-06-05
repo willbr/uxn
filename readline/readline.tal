@@ -111,7 +111,7 @@ JMP2r
 BRK
 
 
-@on-modifier
+@on-modifier ( -- )
   .Controller/button DEI
   DUP ;button STA
   DUP mask_left AND ;on-left JCN2
@@ -122,7 +122,7 @@ BRK
 BRK
 
 
-@on-left
+@on-left ( key -- )
   POP
   ;window/cursor DUP2 LDA2
   DUP2 ;window/line_start LDA2 EQU2 ,&underflow JCN
