@@ -1,5 +1,33 @@
 # ideas
 
+## forth do
+
+store the index on the return stack
+
+    limit index do ... loop
+
+    %i { STHrk }
+
+example
+
+    10 0 do star loop cr
+
+into
+
+        10 0
+        SWP STH2
+    &loop
+        star
+    &step
+        INCr
+    &pred
+        ,&loop SWPr LTHkr STHr SWPr JCN
+
++loop
+
+    &step
+        ADDr
+
 ## c ish syntax
 
     (n > 1) if {
