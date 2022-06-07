@@ -93,13 +93,13 @@ example
 into
 
         10 0
-        SWP STH2
+        STH2
     &loop
         star
     &step
         INCr
     &pred
-        ,&loop SWPr LTHkr STHr SWPr JCN
+        GTHkr STHr ,&loop JCN
 
 +loop
 
