@@ -1,5 +1,111 @@
 # ideas
 
+## logic
+
+    bool if ... endif
+    bool if ... else ... endif
+
+## forth if .. endif
+
+    if #2a emit endif
+
+into
+
+    #00 EQU ,&endif JCN
+        #2a emit
+    &endif
+
+## forth if .. else .. endif
+
+    if #2a else #2b endif emit
+
+into
+
+        ,&true JCN
+        #2b
+        ,&endif JMP
+    &true
+        #2a
+    &endif
+
+## loops
+
+    begin ... flag until
+    begin ... flag while ... repeat
+    begin ... again
+
+    limit index do ... loop
+    limit index do ... +loop
+
+    leave
+
+## forth begin ... again
+
+    begin draw again
+
+    &loop
+        draw
+        ,&loop JMP
+
+## forth begin ... flag until
+
+    begin logic done? until
+
+into
+
+    &loop
+        logic
+        done? #00 EQU ,&loop JCN
+
+or
+
+    &loop
+        logic
+        done? ,&endloop JCN
+        ,&loop JMP
+    &endloop
+
+
+## forth begin .. flag while .. repeat
+
+    being running? while logic repeat
+
+into
+
+    &loop
+        running? #00 EQU ,&endloop JCN
+        logic
+        ,&loop JMP
+    &endloop
+
+## forth do
+
+store the index on the return stack
+
+    limit index do ... loop
+
+    %i { STHrk }
+
+example
+
+    10 0 do star loop cr
+
+into
+
+        10 0
+        SWP STH2
+    &loop
+        star
+    &step
+        INCr
+    &pred
+        ,&loop SWPr LTHkr STHr SWPr JCN
+
++loop
+
+    &step
+        ADDr
+
 ## c ish syntax
 
     (n > 1) if {
