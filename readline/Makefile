@@ -13,6 +13,7 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	uxnasm := c:\tools\uxn\uxnasm.exe
 	uxncli := c:\tools\uxn\uxncli.exe
 	uxnemu := c:\tools\uxn\uxnemu.exe
+	turye := c:\tools\uxn32\turye.rom font.uf2
 else
     detected_OS := $(shell uname)  # same as "uname -s"
 	PATH := $(PATH):./bin/
@@ -23,6 +24,12 @@ else
 	EXE :=
 	ignore := echo ignore
 	hex := hex -C
+    uxn_folder := ~/src/uxnemu/bin
+    uxnasm := $(uxn_folder)/uxnasm
+    uxncli := $(uxn_folder)/uxncli
+    uxnemu := $(uxn_folder)/uxnemu
+    turye := ~/src/turye/bin/turye.rom
+
 endif
 
 wbuild:
@@ -53,5 +60,5 @@ font.tal: font.uf2
 	$(uxncli) ../bin2tal/out.rom $< > $@
 
 edit-font:
-	$(uxnemu) c:\tools\uxn32\turye.rom font.uf2
+	$(uxnemu) $(turye) font.uf2
 
