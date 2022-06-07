@@ -47,11 +47,11 @@ JMP2r
 
 @test-create-word
 
-  .here-pos LDZ2 ;&here STA2
+  .here LDZ2 ;&here STA2
   ;&new-word ;create-word JSR2
   ( ;&here LDA2 #0e ;dump JSR2 )
 
-  .here-pos LDZ2
+  .here LDZ2
   ( DUP2 ;print-short JSR2 CR )
   ;&here LDA2 #000c ADD2
   ;assert-equal-u16 JSR2
