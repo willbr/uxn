@@ -2,6 +2,7 @@
 
 ## example
 
+```forth
     \ this is a comment
 
     : init
@@ -11,4 +12,5 @@
 
         cr
     brk;
+```
 
