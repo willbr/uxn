@@ -33,14 +33,13 @@
 
 %i { STH2rk }
 
+
 : init
-    #04
-    begin DUP #00 GTH while
-        #2a emit
-        #01 SUB
-    repeat
+    hello cr
     halt
 brk;
+
+~two.fth
 
 : .
     DUP2 negative? if
