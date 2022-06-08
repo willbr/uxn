@@ -12,13 +12,22 @@
 %* { MUL2 }
 %/ { DIV2 }
 
+%=  { EQU2 }
+%!= { NEQ2 }
+%>  { GTH2 }
+%<  { LTH2 }
+
+%0= { #0000 EQU2 }
+%0> { #0000 GTH2 }
+%0< { #0000 LTH2 }
+
+%not { #0000 EQU2 }
+
 %i { STH2rk }
 
 : init
-    10 0 do
-        i . cr
-    loop
-
+    10 20 !=
+    debug
     halt
 brk;
 
