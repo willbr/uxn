@@ -1,10 +1,10 @@
 ( large letter f )
 
 %emit  { .Console/write DEO }
-%cr { #0a emit }
-%halt { #01 .System/state DEO  }
+%cr    { #0a emit }
+%halt  { #01 .System/state DEO  }
 %debug { cr #01 .System/debug DEO cr }
-%true { #01 }
+%true  { #01 }
 %false { #00 }
 
 %+ { ADD2 }
@@ -23,11 +23,17 @@
 
 %not { #0000 EQU2 }
 
+%1+ { INC2 }
+%1- { #0001 SUB2 }
+%2+ { #0002 ADD2 }
+%2- { #0002 SUB2 }
+%2* { #10 SFT2 }
+%2/ { #01 SFT2 }
+
 %i { STH2rk }
 
 : init
-    10 20 !=
-    debug
+    1 1+ .
     halt
 brk;
 
