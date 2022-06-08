@@ -59,6 +59,7 @@ brk;
     print-short
 ;
 
+%print-char { ;print-byte/char JSR2 }
 
 : print-byte ( byte -- )
 	DUP #04 SFT ,&char JSR
@@ -70,5 +71,24 @@ brk;
   SWP
   print-byte
   print-byte
+;
+
+
+: print-i16 ( i16 -- )
+    DUP2 negative? if
+        LIT '- emit
+        abs
+    endif
+    print-u16
+;
+
+
+%print-uchar { DIV2k DUP2 NIP print-char MUL2 SUB2 }
+: print-u16 ( u16 -- )
+    10000 print-uchar
+    1000  print-uchar
+    100   print-uchar
+    10    print-uchar
+    NIP print-char
 ;
 
