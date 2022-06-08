@@ -121,7 +121,11 @@ while True:
     elif w == 'repeat':
         assert False
     elif w == 'until':
-        assert False
+        header, begin_lbl, pred_lbl, end_lbl  = rst[-1]
+        assert header == 'begin'
+        print(f'  #00 EQU ;&{begin_lbl} JCN2')
+        print(f'  &{end_lbl}')
+        rst.pop()
     elif w == 'again':
         header, begin_lbl, pred_lbl, end_lbl  = rst[-1]
         assert header == 'begin'
