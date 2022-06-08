@@ -1,9 +1,9 @@
 ( large letter f )
 
-%halt { #01 .System/state DEO  }
 %emit  { .Console/write DEO }
-%debug { cr #01 .System/debug DEO cr }
 %cr { #0a emit }
+%halt { #01 .System/state DEO  }
+%debug { cr #01 .System/debug DEO cr }
 %true { #01 }
 %false { #00 }
 
@@ -12,7 +12,14 @@
 %* { MUL2 }
 %/ { DIV2 }
 
+%i { STH2rk }
+
 : init
+    10 0 do
+        i . cr
+    loop
+
+    halt
 brk;
 
 : .

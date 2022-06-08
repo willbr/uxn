@@ -76,16 +76,16 @@ while True:
         pred_lbl = gensym('pred')
         rst.append(['do', loop_lbl, pred_lbl])
         print('  ( do )')
-        print('  STH2')
+        print('  SWP2 STH2 STH2')
         print(f'  &{loop_lbl}')
     elif w == 'loop':
         header, loop_lbl, pred_lbl = rst[-1]
         assert header == 'do'
         print('  ( loop )')
-        print('  INCr')
+        print('  INC2r')
         #print(f'&{pred_lbl}')
-        print(f'  GTHkr STHr ,&{loop_lbl} JCN')
-        print('  POP2r')
+        print(f'  GTH2kr STHr ,&{loop_lbl} JCN')
+        print('  POP2r POP2r')
         rst.pop()
     elif w == '+loop':
         assert False
@@ -129,6 +129,7 @@ while True:
 
             if n < 0:
                 n = 0x10000 + n
+            n &= 0xffff
             print(f"  #{n:04x}")
         except ValueError:
             print(f'  ;{w} JSR2')
