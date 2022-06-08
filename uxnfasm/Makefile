@@ -36,6 +36,7 @@ test.tal: one.fth
 	python uxnfasm.py > $@
 
 bin/test.rom: test.tal header.tal footer.tal
+	- $(mkdir) bin
 	$(uxnasm) $< $@
 #	make run
 
