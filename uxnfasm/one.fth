@@ -2,6 +2,7 @@
 
 %emit  { .Console/write DEO }
 %cr    { #0a emit }
+%space { #20 emit }
 %halt  { #01 .System/state DEO  }
 %debug { cr #01 .System/debug DEO cr }
 %true  { #01 }
@@ -33,7 +34,10 @@
 %i { STH2rk }
 
 : init
-    1 1+ .
+    begin
+        #2a emit
+        leave
+    again
     halt
 brk;
 
