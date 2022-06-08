@@ -56,6 +56,16 @@ def is_uxntal(w):
 
     return False
 
+def format_uxntal(w):
+    if uxn.is_op(w):
+        lhs = w[:3].upper()
+        rhs = w[3:].lower()
+        f = lhs + rhs
+        return f
+    else:
+        return w
+
+
 print('~header.tal')
 # print(data)
 while True:
@@ -148,7 +158,8 @@ while True:
     elif w in macros:
         print(f"  {w}")
     elif is_uxntal(w):
-        print(f"  {w}")
+        f = format_uxntal(w)
+        print(f"  {f}")
     else:
         try:
             if w[:2] == '0x':
