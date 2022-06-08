@@ -28,7 +28,16 @@ def read_comment():
     #todo count depth for nested comments
     nw = next_word()
     while nw != ')':
+def read_macro():
+    body = []
+    name = next_word()
+    macros.append(name)
+    nw = next_word()
+    while nw != 'end-macro':
+        body.append(nw)
         nw = next_word()
+    s = ' '.join(body)
+    print(f'%{name} {{ {s} }}')
 
 counter = 0
 def gensym(s):
@@ -72,6 +81,8 @@ while True:
         assert False
     elif w == '(':
         read_comment()
+    elif w == 'macro':
+        read_macro()
     elif w[0] == '$':
         assert False
     elif w[0] == '%':

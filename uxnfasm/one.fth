@@ -1,16 +1,20 @@
 ( large letter f )
 
+macro halt  #01 .System/state DEO end-macro
+macro emit  .Console/write DEO end-macro
+macro debug cr #01 .System/debug DEO cr end-macro
+macro cr #0a emit end-macro
+
+macro + ADD2 end-macro
+macro - SUB2 end-macro
+macro * MUL2 end-macro
+macro / DIV2 end-macro
+
 : init
-    f
+    10 10 + .
 brk;
 
-: cr 10 emit ;
-: star 42 emit ;
-: stars 0 do star loop ;
-: space 32 emit ;
-: spaces 0 do space loop ;
-: margin cr 30 spaces ;
-: blip margin star ;
-: bar margin 5 stars ;
-: f bar blip bar blip blip cr ;
+: .
+    debug
+;
 
