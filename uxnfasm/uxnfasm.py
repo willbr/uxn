@@ -1,6 +1,8 @@
 import re
+import uxn
 
-macros = "halt emit debug".split()
+#macros = "halt emit debug".split()
+macros = []
 prog = re.compile(r"\s*(\S+)")
 with open('one.fth') as f:
     data = f.read()
@@ -24,20 +26,17 @@ def next_word():
 def peek_word():
     pass
 
+
 def read_comment():
     #todo count depth for nested comments
     nw = next_word()
-    while nw != ')':
-def read_macro():
     body = []
-    name = next_word()
-    macros.append(name)
-    nw = next_word()
-    while nw != 'end-macro':
+    while nw != ')':
         body.append(nw)
         nw = next_word()
     s = ' '.join(body)
-    print(f'%{name} {{ {s} }}')
+    print(f'( {s} )')
+
 
 counter = 0
 def gensym(s):
@@ -45,6 +44,17 @@ def gensym(s):
     name = f"gs-{s}-{counter}" 
     counter += 1
     return name
+
+def is_uxntal(w):
+    prefix_chars = '%:.;,&|$#~\'"'
+    if uxn.is_op(w):
+        return True
+    elif w[0] in prefix_chars:
+        return len(w) != 1
+    elif w in ['{', '}', '[', ']']:
+        return True
+
+    return False
 
 print('~header.tal')
 # print(data)
@@ -79,20 +89,47 @@ while True:
         rst.pop()
     elif w == '+loop':
         assert False
+    elif w == 'if':
+        false_lbl = gensym('false')
+        end_lbl  = gensym('end')
+        rst.append(['if', false_lbl, end_lbl])
+        print(f'  #00 EQU ,&{false_lbl} JCN')
+    elif w == 'else':
+        header, false_lbl, end_lbl = rst[-1]
+        assert header == 'if'
+        rst[-1][0] = 'else'
+        print(f'  ,&{end_lbl} JMP')
+        print(f'&{false_lbl}')
+    elif w == 'endif':
+        header, false_lbl, end_lbl = rst[-1]
+        if header == 'if':
+            print(f'  &{false_lbl}')
+        elif header == 'else':
+            print(f'  &{end_lbl}')
+        else:
+            assert False
+        rst.pop()
     elif w == '(':
         read_comment()
-    elif w == 'macro':
-        read_macro()
-    elif w[0] == '$':
-        assert False
     elif w[0] == '%':
-        assert False
+        print(w)
+        macros.append(w[1:])
     elif w in macros:
+        print(f"  {w}")
+    elif is_uxntal(w):
         print(f"  {w}")
     else:
         try:
-            n = int(w)
-            print(f"  #{n:02x}")
+            if w[:2] == '0x':
+                n = int(w[2:], 16)
+            elif w[:2] == '0b':
+                n = int(w[2:], 2)
+            else:
+                n = int(w, 10)
+
+            if n < 0:
+                n = 0x10000 + n
+            print(f"  #{n:04x}")
         except ValueError:
             print(f'  ;{w} JSR2')
 
