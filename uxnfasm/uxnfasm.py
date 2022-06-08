@@ -2,7 +2,7 @@ import re
 import uxn
 
 #macros = "halt emit debug".split()
-macros = []
+macros = {}
 prog = re.compile(r"\s*(\S+)")
 with open('one.fth') as f:
     data = f.read()
@@ -38,6 +38,21 @@ def read_comment():
     print(f'( {s} )')
 
 
+def read_macro(name):
+    nw = next_word()
+    assert nw == '{'
+    nw = next_word()
+    body = []
+    while nw != '}':
+        body.append(nw)
+        nw = next_word()
+
+    if name in macros:
+        raise ValueError(f"Duplicate macro: {name}")
+
+    macros[name] = body
+
+
 counter = 0
 def gensym(s):
     global counter
@@ -66,12 +81,7 @@ def format_uxntal(w):
         return w
 
 
-print('~header.tal')
-# print(data)
-while True:
-    w = next_word()
-    if not w:
-        break
+def compile(w):
     if w == ':':
         name = next_word()
         if name == 'init':
@@ -121,27 +131,28 @@ while True:
         rst.pop()
     elif w == 'begin':
         begin_lbl = gensym('begin')
-        pred_lbl = None
         end_lbl  = gensym('end-begin')
-        rst.append(['begin', begin_lbl, pred_lbl, end_lbl])
+        rst.append(['begin', begin_lbl, end_lbl])
         print('  ( begin )')
         print(f'  &{begin_lbl}')
     elif w == 'while':
+        header, begin_lbl, end_lbl  = rst[-1]
+        assert header == 'begin'
         print(f'  #00 EQU ;&{end_lbl} JCN2')
     elif w == 'repeat':
-        header, begin_lbl, pred_lbl, end_lbl  = rst[-1]
+        header, begin_lbl, end_lbl  = rst[-1]
         assert header == 'begin'
         print(f'  ;&{begin_lbl} JMP2')
         print(f'  &{end_lbl}')
         rst.pop()
     elif w == 'until':
-        header, begin_lbl, pred_lbl, end_lbl  = rst[-1]
+        header, begin_lbl, end_lbl  = rst[-1]
         assert header == 'begin'
         print(f'  #00 EQU ;&{begin_lbl} JCN2')
         print(f'  &{end_lbl}')
         rst.pop()
     elif w == 'again':
-        header, begin_lbl, pred_lbl, end_lbl  = rst[-1]
+        header, begin_lbl, end_lbl  = rst[-1]
         assert header == 'begin'
         print(f'  ;&{begin_lbl} JMP2')
         print(f'  &{end_lbl}')
@@ -153,10 +164,11 @@ while True:
     elif w == '(':
         read_comment()
     elif w[0] == '%':
-        print(w)
-        macros.append(w[1:])
+        read_macro(w[1:])
     elif w in macros:
-        print(f"  {w}")
+        body = macros[w]
+        for child in body:
+            compile(child)
     elif is_uxntal(w):
         f = format_uxntal(w)
         print(f"  {f}")
@@ -176,5 +188,13 @@ while True:
         except ValueError:
             print(f'  ;{w} JSR2')
 
+
+print('~header.tal')
+# print(data)
+while True:
+    w = next_word()
+    if not w:
+        break
+    compile(w)
 print('~footer.tal')
 
