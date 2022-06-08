@@ -1,3 +1,9 @@
+# todo count comment depth
+# todo line comments starting with \
+# todo incbin
+# todo raw ... end-raw  used to insert raw bytes
+# todo uxntal end-uxntal
+
 import re
 import uxn
 
