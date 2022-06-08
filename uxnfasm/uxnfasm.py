@@ -109,6 +109,29 @@ while True:
         else:
             assert False
         rst.pop()
+    elif w == 'begin':
+        begin_lbl = gensym('begin')
+        pred_lbl = None
+        end_lbl  = gensym('end-begin')
+        rst.append(['begin', begin_lbl, pred_lbl, end_lbl])
+        print('  ( begin )')
+        print(f'  &{begin_lbl}')
+    elif w == 'while':
+        assert False
+    elif w == 'repeat':
+        assert False
+    elif w == 'until':
+        assert False
+    elif w == 'again':
+        header, begin_lbl, pred_lbl, end_lbl  = rst[-1]
+        assert header == 'begin'
+        print(f'  ;&{begin_lbl} JMP2')
+        print(f'  &{end_lbl}')
+        rst.pop()
+    elif w == 'leave':
+        header, begin_lbl, pred_lbl, end_lbl  = rst[-1]
+        assert header == 'begin'
+        print(f'  ;&{end_lbl} JMP2')
     elif w == '(':
         read_comment()
     elif w[0] == '%':
