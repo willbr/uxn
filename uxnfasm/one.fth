@@ -34,10 +34,11 @@
 %i { STH2rk }
 
 : init
+    #04
     begin
         #2a emit
-        leave
-    again
+        #01 SUB
+    DUP #00 EQU until
     halt
 brk;
 
