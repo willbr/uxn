@@ -35,10 +35,10 @@
 
 : init
     #04
-    begin
+    begin DUP #00 GTH while
         #2a emit
         #01 SUB
-    DUP #00 EQU until
+    repeat
     halt
 brk;
 
