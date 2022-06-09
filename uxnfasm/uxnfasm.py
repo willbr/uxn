@@ -230,6 +230,7 @@ def main():
     cu = CompilationUnit()
 
     print('~header.tal')
+    cu.compile_file('forth.fth')
     cu.compile_file('one.fth')
 
 if __name__ == '__main__':
