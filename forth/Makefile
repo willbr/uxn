@@ -1,3 +1,4 @@
+.PHONY: build
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     detected_OS := Windows
@@ -26,17 +27,22 @@ else
 	uxnemu := uxnemu
 endif
 
-wbuild:
-	watchexec -cr --ignore "*.rom" "make build"
+FORCE: ;
 
-build: main.tal input.txt
+wbuild:
+	watchexec -cr --ignore "*.rom" "make -B uild"
+
+build: bin/forth.rom FORCE
+	$(cat) input.txt | $(uxncli) $<
+	echo bye
+
+bin/forth.rom:	main.tal input.txt
 #	$(cat) $<
 #	python ..\src\talie.py $< out.rom
-	$(uxnasm) $< forth.rom
+	$(uxnasm) $< $@
 #	python ..\src\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
-	$(cat) input.txt | $(uxncli) forth.rom
 
 run:
 	$(uxncli) forth.rom
@@ -44,15 +50,15 @@ run:
 wtest:
 	watchexec -cr --ignore "*.rom" "make test"
 
-test: build-test-string build-test-forth
+test: bin/test-string.rom bin/test-forth.rom
 
-build-test-string: test-string.tal
+bin/test-string.rom: test-string.tal
 #	$(cat) $<
-	$(uxnasm) $< out.rom
-	$(uxncli) out.rom
+	$(uxnasm) $< $@
+	$(uxncli) $@
 
-build-test-forth: test-forth.tal
+out/test-forth.rom: test-forth.tal
 #	$(cat) $<
-	$(uxnasm) $< out.rom
-	$(uxncli) out.rom
+	$(uxnasm) $< $@
+	$(uxncli) $@
 

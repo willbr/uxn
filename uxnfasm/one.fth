@@ -1,39 +1,3 @@
-( large letter f )
-
-%emit  { .Console/write DEO }
-%cr    { #0a emit }
-%space { #20 emit }
-%halt  { #01 .System/state DEO  }
-%debug { cr #01 .System/debug DEO cr }
-%true  { #01 }
-%false { #00 }
-
-%+ { ADD2 }
-%- { SUB2 }
-%* { MUL2 }
-%/ { DIV2 }
-
-%=  { EQU2 }
-%!= { NEQ2 }
-%>  { GTH2 }
-%<  { LTH2 }
-
-%0= { #0000 EQU2 }
-%0> { #0000 GTH2 }
-%0< { #0000 LTH2 }
-
-%not { #0000 EQU2 }
-
-%1+ { INC2 }
-%1- { #0001 SUB2 }
-%2+ { #0002 ADD2 }
-%2- { #0002 SUB2 }
-%2* { #10 SFT2 }
-%2/ { #01 SFT2 }
-
-%i { STH2rk }
-
-
 : init
     hello cr
     halt
