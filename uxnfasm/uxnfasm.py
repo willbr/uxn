@@ -1,15 +1,11 @@
-# todo count comment depth
 # todo line comments starting with \
 # todo incbin
-# todo raw ... end-raw  used to insert raw bytes
-# todo uxntal end-uxntal
 
 import re
 import uxn
 
-#macros = "halt emit debug".split()
-prog = re.compile(r"\s*(\S+)")
-prefix_chars = '%:.;,&|$#~\'"'
+prog = re.compile(r"\s*(\)|\S+)")
+prefix_chars = '%:.;,@&|$#~\'"'
 
 class CompilationUnit():
     def __init__(self):
@@ -119,6 +115,8 @@ class CompilationUnit():
             header, begin_lbl, pred_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
             print(f'  ;&{end_lbl} JMP2')
+        elif w == 'tal':
+            self.read_tal()
         elif w == '(':
             self.read_comment()
         elif w[0] == '%':
@@ -149,16 +147,35 @@ class CompilationUnit():
                 print(f'  ;{w} JSR2')
 
 
-    def read_comment(self):
+    def read_tal(self):
         #todo count depth for nested comments
-        nw = self.next_word()
-        body = []
-        while nw != ')':
-            body.append(nw)
-            nw = self.next_word()
-        s = ' '.join(body)
-        print(f'( {s} )')
+        w = self.next_word()
+        while w != 'endtal':
+            if w == '(':
+                self.read_comment()
+            else:
+                print(w)
+            w = self.next_word()
 
+    def read_comment(self):
+        depth = 1
+        body = ['(']
+        while True:
+            w = self.next_word()
+            body.append(w)
+
+            if w == '(':
+                depth += 1
+            elif w == ')':
+                depth -= 1
+            elif w == None:
+                break
+
+            if depth == 0:
+                break
+
+        s = ' '.join(body)
+        print(s)
 
     def read_macro(self, name):
         nw = self.next_word()

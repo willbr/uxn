@@ -1,3 +1,4 @@
+( ( nested comment ))
 : hello
     ;&str
     begin LDAk DUP while
@@ -7,5 +8,7 @@
     POP
     POP2
 ;
-&str "hello $1
+tal
+&str "hello 00
+endtal
 
