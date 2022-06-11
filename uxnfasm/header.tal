@@ -21,6 +21,7 @@
 %over { OVR2 }
 %rot  { ROT2 }
 %drop { POP2 }
+%nip  { NIP2 }
 
 
 %+ { ADD2 }
