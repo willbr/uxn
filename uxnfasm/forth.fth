@@ -3,11 +3,7 @@
 
 : .
     space
-    DUP2 negative? if
-        LIT '- emit
-        abs
-    endif
-    print-short
+    print-i16
 ;
 
 
@@ -55,4 +51,7 @@
 
 : mod DIV2k MUL2 SUB2 ;
 : /mod DIV2k STH2k MUL2 SUB2 STH2r ;
+
+: max over over > if drop else nip endif ;
+: min over over < if drop else nip endif ;
 
