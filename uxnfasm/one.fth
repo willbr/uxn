@@ -1,14 +1,13 @@
 \ this is my comment
 
+%>r { STH2 }
+%r> { STH2r }
+
 : init
-    123 999
+    1 2 3 + >r
     debug
-
-    over over max
-    . cr
-
-    min
-    . cr
+    r>
+    +
 
     debug
     halt
