@@ -2,6 +2,7 @@
 : emit .Console/write DEO ;
 
 : cr #0a emit ;
+: spaces 0 do #14 emit loop ;
 
 : .
     DUP2 negative? if
