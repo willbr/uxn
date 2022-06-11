@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-# todo line comments starting with \
 # todo incbin
 
 from pathlib import Path
@@ -9,7 +8,8 @@ import re
 import uxn
 import sys
 
-prog = re.compile(r"\s*(\)|\S+)")
+token_prog = re.compile(r"\s*(\)|\S+)")
+line_comment_prog = re.compile(r".*")
 prefix_chars = '%:.;,@&|$#~\'"'
 
 class CompilationUnit():
@@ -36,7 +36,7 @@ class CompilationUnit():
         self.rst = old_rst
 
     def next_word(self):
-        m = prog.match(self.body)
+        m = token_prog.match(self.body)
         if not m:
             return None
         self.body = self.body[m.end():]
@@ -132,6 +132,8 @@ class CompilationUnit():
             self.read_tal()
         elif w == '(':
             self.read_comment()
+        elif w == '\\':
+            self.read_line_comment()
         elif w[0] == '%':
             self.read_macro(w[1:])
         elif w[0] == '~':
@@ -168,6 +170,15 @@ class CompilationUnit():
             else:
                 print(w)
             w = self.next_word()
+
+
+    def read_line_comment(self):
+        m = line_comment_prog.match(self.body)
+        if not m:
+            return None
+        self.body = self.body[m.end():]
+        comment = m.group().strip()
+
 
     def read_comment(self):
         depth = 1
