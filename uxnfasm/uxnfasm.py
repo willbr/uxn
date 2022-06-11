@@ -52,6 +52,8 @@ class CompilationUnit():
             print(f"@{name}")
         elif w == ';':
             print('JMP2r\n')
+            if self.current_word == 'init':
+                raise ValueError('init must be closed with brk;')
         elif w == 'brk;':
             print('BRK\n')
             if self.current_word == 'init' and self.include_stdlib:
