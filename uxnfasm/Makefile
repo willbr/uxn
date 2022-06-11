@@ -33,6 +33,7 @@ endif
 
 bin/test.tal: one.fth header.tal forth.fth uxnfasm.py
 	- $(mkdir) bin
+#	python uxnfasm.py $<
 	python uxnfasm.py $< > $@
 
 bin/test.rom: bin/test.tal

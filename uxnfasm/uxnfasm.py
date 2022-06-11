@@ -1,7 +1,5 @@
 #! /usr/bin/env python
 
-# todo incbin
-
 from pathlib import Path
 
 import re
@@ -133,6 +131,8 @@ class CompilationUnit():
             print(f'  ;&{end_lbl} JMP2')
         elif w == 'tal':
             self.read_tal()
+        elif w == 'incbin':
+            self.read_binary_file()
         elif w == '(':
             self.read_comment()
         elif w == '\\':
@@ -173,6 +173,17 @@ class CompilationUnit():
             else:
                 print(w)
             w = self.next_word()
+
+
+    def read_binary_file(self):
+        filename = self.next_word()
+        with open(filename, 'rb', buffering=4) as f:
+            while True:
+                line = f.read(16)
+                if len(line) == 0:
+                    break
+                tal = ' '.join(f"{c:02x}" for c in line)
+                print(tal)
 
 
     def read_line_comment(self):
