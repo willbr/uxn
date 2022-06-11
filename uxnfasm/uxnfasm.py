@@ -237,10 +237,7 @@ def main(filename):
     cu = CompilationUnit()
     cu.forth_path = script_dir.joinpath('forth.fth')
 
-    with open(header_path) as f:
-        header = f.read()
-        print(header)
-
+    cu.compile_file(header_path)
     cu.compile_file(filename)
 
 if __name__ == '__main__':
