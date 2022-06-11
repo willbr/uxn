@@ -1,4 +1,3 @@
-
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     detected_OS := Windows
 	PATH := $(PATH);../bin/
@@ -32,11 +31,11 @@ else
 
 endif
 
-test.tal: one.fth
-	python uxnfasm.py > $@
-
-bin/test.rom: test.tal header.tal footer.tal
+bin/test.tal: one.fth header.tal forth.fth uxnfasm.py
 	- $(mkdir) bin
+	python uxnfasm.py $< > $@
+
+bin/test.rom: bin/test.tal
 	$(uxnasm) $< $@
 #	make run
 
