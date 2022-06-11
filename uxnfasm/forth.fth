@@ -1,4 +1,5 @@
 : halt #01 .System/state DEO ;
+: debug #01 .System/debug DEO ;
 : emit .Console/write DEO ;
 
 : cr #0a emit ;
