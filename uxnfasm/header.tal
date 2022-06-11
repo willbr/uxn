@@ -6,3 +6,8 @@
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
 
 %+ { ADD2 }
+
+%halt  { #01 .System/state DEO }
+%debug { #01 .System/debug DEO cr }
+%emit  { .Console/write DEO }
+
