@@ -2,7 +2,7 @@
 
 : init
     0xcafe >r
-    10 0 do i . i' . j space print-short cr loop
+    100 0 do i . i' . j space print-short cr 10 +loop
     r> drop
     cr
     debug

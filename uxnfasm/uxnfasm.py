@@ -65,17 +65,19 @@ class CompilationUnit():
             print('  ( do )')
             print('  SWP2 STH2 STH2')
             print(f'  &{loop_lbl}')
-        elif w == 'loop':
+        elif w == 'loop' or w == '+loop':
             header, loop_lbl, pred_lbl = self.rst[-1]
             assert header == 'do'
-            print('  ( loop )')
-            print('  INC2r')
+            if w == 'loop':
+                print('  ( loop )')
+                print('  INC2r')
+            else:
+                print('  ( loop )')
+                print('  STH2 ADD2r')
             #print(f'&{pred_lbl}')
             print(f'  GTH2kr STHr ,&{loop_lbl} JCN')
             print('  POP2r POP2r')
             self.rst.pop()
-        elif w == '+loop':
-            assert False
         elif w == 'if':
             false_lbl = gensym('false')
             end_lbl  = gensym('end')
