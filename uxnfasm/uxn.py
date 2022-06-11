@@ -7,8 +7,8 @@ def is_syntax(w):
     return w[0] in "~'\";:,.|@&$#"
 
 def is_op(w):
-    lhs = w[:3].lower()
-    rhs = w[3:].lower()
+    lhs = w[:3]
+    rhs = w[3:]
 
     if lhs not in op_table:
         return False
@@ -25,39 +25,39 @@ def build_op_tables():
     global reverse_op_table
 
     ops = dedent("""
-    brk 0x00 a b c m[pc+1]
-    lit 0x00
-    inc 0x01
-    pop 0x02
-    dup 0x03
-    nip 0x04
-    swp 0x05
-    ovr 0x06
-    rot 0x07
-    equ 0x08
-    neq 0x09
-    gth 0x0a
-    lth 0x0b
-    jmp 0x0c
-    jcn 0x0d
-    jsr 0x0e
-    sth 0x0f
-    ldz 0x10
-    stz 0x11
-    ldr 0x12
-    str 0x13
-    lda 0x14
-    sta 0x15
-    dei 0x16
-    deo 0x17
-    add 0x18
-    sub 0x19
-    mul 0x1a
-    div 0x1b
-    and 0x1c
-    ora 0x1d
-    eor 0x1e
-    sft 0x1f
+    BRK 0x00 a b c m[pc+1]
+    LIT 0x00
+    INC 0x01
+    POP 0x02
+    DUP 0x03
+    NIP 0x04
+    SWP 0x05
+    OVR 0x06
+    ROT 0x07
+    EQU 0x08
+    NEQ 0x09
+    GTH 0x0a
+    LTH 0x0b
+    JMP 0x0c
+    JCN 0x0d
+    JSR 0x0e
+    STH 0x0f
+    LDZ 0x10
+    STZ 0x11
+    LDR 0x12
+    STR 0x13
+    LDA 0x14
+    STA 0x15
+    DEI 0x16
+    DEO 0x17
+    ADD 0x18
+    SUB 0x19
+    MUL 0x1a
+    DIV 0x1b
+    AND 0x1c
+    ORA 0x1d
+    EOR 0x1e
+    SFT 0x1f
     """).strip()
 
     for line in ops.split('\n'):
