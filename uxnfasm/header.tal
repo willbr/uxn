@@ -51,5 +51,9 @@
 %2* { #10 SFT2 }
 %2/ { #01 SFT2 }
 
-%i { STH2rk }
+%>r { STH2 }
+%r> { STH2r }
+%i  { STH2rk }
+%i' { OVR2r STH2r }
+%j  { ROT2r STH2rk ROT2r ROT2r }
 
