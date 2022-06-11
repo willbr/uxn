@@ -1,5 +1,5 @@
 # Uxn
-src/tests/*/bin/
+**/bin/
 *.rom
 .snarf
 
