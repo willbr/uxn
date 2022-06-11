@@ -64,6 +64,7 @@ class CompilationUnit():
             self.rst.append(['do', loop_lbl, pred_lbl])
             print('  ( do )')
             print('  SWP2 STH2 STH2')
+            print(f'  ;&{pred_lbl} JMP2')
             print(f'  &{loop_lbl}')
         elif w == 'loop' or w == '+loop':
             header, loop_lbl, pred_lbl = self.rst[-1]
@@ -74,8 +75,8 @@ class CompilationUnit():
             else:
                 print('  ( loop )')
                 print('  STH2 ADD2r')
-            #print(f'&{pred_lbl}')
-            print(f'  GTH2kr STHr ,&{loop_lbl} JCN')
+            print(f'&{pred_lbl}')
+            print(f'  GTH2kr STHr ;&{loop_lbl} JCN2')
             print('  POP2r POP2r')
             self.rst.pop()
         elif w == 'if':
