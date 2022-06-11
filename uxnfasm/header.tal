@@ -5,10 +5,38 @@
 |90 @Mouse &vector $2 &x $2 &y $2 &state $1 &wheel $1
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
 
-%+ { ADD2 }
-%/ { DIV2 }
-
 %halt  { #01 .System/state DEO }
 %debug { #01 .System/debug DEO cr }
 %emit  { .Console/write DEO }
+
+%cr    { #0a emit }
+%space { #20 emit }
+
+%true  { #01 }
+%false { #00 }
+
+%+ { ADD2 }
+%- { SUB2 }
+%* { MUL2 }
+%/ { DIV2 }
+
+%=  { EQU2 }
+%!= { NEQ2 }
+%>  { GTH2 }
+%<  { LTH2 }
+
+%0= { #0000 EQU2 }
+%0> { #0000 GTH2 }
+%0< { #0000 LTH2 }
+
+%not { #0000 EQU2 }
+
+%1+ { INC2 }
+%1- { #0001 SUB2 }
+%2+ { INC2 INC2 }
+%2- { #0002 SUB2 }
+%2* { #10 SFT2 }
+%2/ { #01 SFT2 }
+
+%i { STH2rk }
 
