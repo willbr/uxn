@@ -15,6 +15,14 @@
 %true  { #01 }
 %false { #00 }
 
+
+%swap { SWP2 }
+%dup  { DUP2 }
+%over { OVR2 }
+%rot  { ROT2 }
+%drop { POP2 }
+
+
 %+ { ADD2 }
 %- { SUB2 }
 %* { MUL2 }
@@ -30,6 +38,9 @@
 %0< { #0000 LTH2 }
 
 %not { #0000 EQU2 }
+
+%and { AND2 }
+%or  { ORA2 }
 
 %1+ { INC2 }
 %1- { #0001 SUB2 }

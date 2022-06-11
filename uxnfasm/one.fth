@@ -1,12 +1,17 @@
 \ this is my comment
 
 : init
-    79 10
+    0xbeef 0xcafe
     debug
-    /mod
+
+    swap
+    dup
+    over
+    drop
+    rot
+
     debug
     halt
-    ( 09 07 )
 brk;
 
 ~two.fth
