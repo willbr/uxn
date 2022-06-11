@@ -2,7 +2,8 @@
 
 : init
     -1000 abs
-    1000 abs
+    dup
+    negate
     . cr
     . cr
     halt
