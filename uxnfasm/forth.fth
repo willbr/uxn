@@ -52,3 +52,6 @@
     NIP print-char
 ;
 
+: mod DIV2k MUL2 SUB2 ;
+: /mod DIV2k STH2k MUL2 SUB2 STH2r ;
+
