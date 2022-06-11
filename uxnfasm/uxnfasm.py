@@ -17,6 +17,8 @@ class CompilationUnit():
         self.macros = {}
         self.body = None
         self.rst = []
+        self.current_word = None
+        self.include_stdlib = True
         pass
 
     def compile_file(self, filename):
@@ -45,11 +47,15 @@ class CompilationUnit():
             name = self.next_word()
             if name == 'init':
                 print('|0100')
+                assert self.current_word == None
+            self.current_word = name
             print(f"@{name}")
         elif w == ';':
             print('JMP2r\n')
         elif w == 'brk;':
             print('BRK\n')
+            if self.current_word == 'init' and self.include_stdlib:
+                self.compile_file(self.forth_path)
         elif w == 'do':
             loop_lbl = gensym('loop')
             pred_lbl = gensym('pred')
@@ -234,14 +240,16 @@ def format_uxntal(w):
 def main(filename):
     script_dir = Path(__file__).resolve().parent
     header_path = script_dir.joinpath('header.tal')
-    forth_path = script_dir.joinpath('forth.fth')
     #print(script_dir)
     #print(header_path)
     #print(forth_path)
     cu = CompilationUnit()
+    cu.forth_path = script_dir.joinpath('forth.fth')
 
-    print('~header.tal')
-    #cu.compile_file(forth_path)
+    with open(header_path) as f:
+        header = f.read()
+        print(header)
+
     cu.compile_file(filename)
 
 if __name__ == '__main__':

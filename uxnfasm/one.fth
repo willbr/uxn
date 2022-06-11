@@ -5,28 +5,6 @@ brk;
 
 ~two.fth
 
-: .
-    DUP2 negative? if
-        LIT '- emit
-        abs
-    endif
-    print-short
-;
-
-
-: abs
-    0 SWP2 SUB2
-;
-
-
-: negative?
-    #8000 AND2 ORA
-;
-
-: u.
-    print-short
-;
-
 %print-char { ;print-byte/char JSR2 }
 
 : print-byte ( byte -- )
