@@ -1,9 +1,12 @@
 \ this is my comment
 
 : init
-    0xcafe >r
-    100 0 do i . i' . j space print-short cr 10 +loop
-    r> drop
+    10 0 do
+        10 0 do
+            j 48 + NIP emit
+        loop
+        cr
+    loop
     cr
     debug
     halt
