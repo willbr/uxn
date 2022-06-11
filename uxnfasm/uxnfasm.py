@@ -139,8 +139,7 @@ class CompilationUnit():
             for child in body:
                 self.compile(child)
         elif is_uxntal(w):
-            f = format_uxntal(w)
-            print(f"  {f}")
+            print(f"  {w}")
         else:
             try:
                 if w[:2] == '0x':
@@ -225,16 +224,6 @@ def is_uxntal(w):
         return True
     else:
         return False
-
-
-def format_uxntal(w):
-    if uxn.is_op(w):
-        lhs = w[:3].upper()
-        rhs = w[3:].lower()
-        f = lhs + rhs
-        return f
-    else:
-        return w
 
 
 def main(filename):
