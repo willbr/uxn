@@ -11,7 +11,7 @@
 ;
 
 
-: abs dup negative? if 0 swap - endif ;
+: abs dup negative? if negate endif ;
 
 
 : negative?
