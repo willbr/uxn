@@ -1,8 +1,13 @@
+#! /usr/bin/env python
+
 # todo line comments starting with \
 # todo incbin
 
+from pathlib import Path
+
 import re
 import uxn
+import sys
 
 prog = re.compile(r"\s*(\)|\S+)")
 prefix_chars = '%:.;,@&|$#~\'"'
@@ -226,13 +231,19 @@ def format_uxntal(w):
         return w
 
 
-def main():
+def main(filename):
+    script_dir = Path(__file__).resolve().parent
+    header_path = script_dir.joinpath('header.tal')
+    forth_path = script_dir.joinpath('forth.fth')
+    #print(script_dir)
+    #print(header_path)
+    #print(forth_path)
     cu = CompilationUnit()
 
     print('~header.tal')
-    cu.compile_file('forth.fth')
-    cu.compile_file('one.fth')
+    #cu.compile_file(forth_path)
+    cu.compile_file(filename)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1])
 
