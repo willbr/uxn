@@ -2,6 +2,7 @@
 : spaces 0 do #14 emit loop ;
 
 : .
+    space
     DUP2 negative? if
         LIT '- emit
         abs
@@ -10,7 +11,7 @@
 ;
 
 
-: abs 0 SWP2 SUB2 ;
+: abs dup negative? if 0 swap - endif ;
 
 
 : negative?

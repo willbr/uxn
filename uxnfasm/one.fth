@@ -1,16 +1,10 @@
 \ this is my comment
 
 : init
-    0xbeef 0xcafe
-    debug
-
-    swap
-    dup
-    over
-    drop
-    rot
-
-    debug
+    -1000 abs
+    1000 abs
+    . cr
+    . cr
     halt
 brk;
 
