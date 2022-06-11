@@ -1,3 +1,5 @@
+\ this is my comment
+
 : init
     79 10
     debug
