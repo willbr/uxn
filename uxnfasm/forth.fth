@@ -40,8 +40,8 @@
     NIP print-char
 ;
 
-: mod DIV2k MUL2 SUB2 ;
-: /mod DIV2k STH2k MUL2 SUB2 STH2r ;
+: umod DIV2k MUL2 SUB2 ;
+: u/mod DIV2k STH2k MUL2 SUB2 STH2r ;
 
 : max over over > if drop else nip endif ;
 : min over over < if drop else nip endif ;
