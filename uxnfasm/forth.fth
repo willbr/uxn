@@ -2,7 +2,7 @@
 : spaces 0 do #14 emit loop ;
 
 : .  space print-i16 ;
-: u. space print-short ;
+: u. space print-u16 ;
 
 : abs #0000 OVR2 #8000 LTH2 JMP SWP2 SUB2 ;
 : abs-alt dup -32768 = if 1- else abs endif ;
