@@ -63,3 +63,10 @@
 %i' { OVR2r STH2r }
 %j  { ROT2r STH2rk ROT2r ROT2r }
 
+%here { ;here }
+%@ { LDA2 }
+%c@ { LDA POP }
+
+%! { STA2 }
+%c! { STA POP }
+

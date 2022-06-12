@@ -54,3 +54,17 @@
     STHr
     if negate endif
     ;
+
+
+: ,
+    here @ !
+    here @ 2+
+    here !
+;
+
+: c,
+    here @ c!
+    here @ 1+
+    here !
+;
+
