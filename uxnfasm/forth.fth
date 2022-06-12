@@ -1,22 +1,12 @@
 : cr #0a emit ;
 : spaces 0 do #14 emit loop ;
 
-: .
-    space
-    print-i16
-;
-
+: .  space print-i16 ;
+: u. space print-short ;
 
 : abs #0000 OVR2 #8000 LTH2 JMP SWP2 SUB2 ;
 : abs-alt dup -32768 = if 1- else abs endif ;
 : abs-old dup negative? if negate endif ;
-
-
-: negative?
-    #7fff GTH2
-;
-
-: u.  print-short ;
 
 %print-char { ;print-byte/char JSR2 }
 
@@ -24,7 +14,6 @@
 	DUP #04 SFT ,&char JSR
 	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
 ;
-
 
 : print-short ( short -- )
   SWP
