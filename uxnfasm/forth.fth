@@ -46,3 +46,11 @@
 : max over over > if drop else nip endif ;
 : min over over < if drop else nip endif ;
 
+: /
+    over over
+    EOR2 negative?
+    STH
+    swap abs swap abs DIV2
+    STHr
+    if negate endif
+    ;

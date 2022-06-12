@@ -2,7 +2,7 @@
 
 \ : abs #0000 OVR2 #8000 LTH2 JMP SWP2 SUB2 ;
 
-%divtest { div-alt3 . cr }
+%divtest { div-alt1 . cr }
 
 : init
     -32768 2 divtest
@@ -32,9 +32,10 @@ brk;
 
 : div-alt1
     over over
+    EOR2 negative?
+    STH
     abs swap abs swap /
-    rot rot
-    EOR2 #7fff GTH2
+    STHr
     if negate endif
     ;
 
