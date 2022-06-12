@@ -256,6 +256,7 @@ def is_uxntal(w):
 def main(filename):
     script_dir = Path(__file__).resolve().parent
     header_path = script_dir.joinpath('header.tal')
+    footer_path = script_dir.joinpath('footer.tal')
     #print(script_dir)
     #print(header_path)
     #print(forth_path)
@@ -264,6 +265,7 @@ def main(filename):
 
     cu.compile_file(header_path)
     cu.compile_file(filename)
+    cu.compile_file(footer_path)
 
 if __name__ == '__main__':
     main(sys.argv[1])
