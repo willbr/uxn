@@ -14,3 +14,13 @@
     brk;
 ```
 
+## todo
+
+    base
+    here
+    allot
+    @ c@
+    ! c!
+    , c,
+    type ( address length -- )
+
