@@ -65,7 +65,7 @@
 
 %here { ;here }
 %@ { LDA2 }
-%c@ { LDA POP }
+%c@ { LDA #00 SWP }
 
 %! { STA2 }
 %c! { STA POP }
