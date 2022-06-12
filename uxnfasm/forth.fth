@@ -68,3 +68,10 @@
     here !
 ;
 
+: type
+    0 do
+        LDAk emit
+        INC2
+    loop
+    POP2
+;
