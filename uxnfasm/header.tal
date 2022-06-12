@@ -34,7 +34,14 @@
 %<  { #8000 ADD2 SWP2 #8000 ADD2 GTH2 }
 %>  { #8000 ADD2 SWP2 #8000 ADD2 LTH2 }
 
+%u<  { LTH2 }
+%u>  { GTH2 }
+%u* { MUL2 }
+%u/ { DIV2 }
+
+%negative? { #7fff GTH2 }
 %negate { #0000 SWP2 SUB2 }
+
 %0= { #0000 EQU2 }
 %0> { #0000 > }
 %0< { #0000 < }
