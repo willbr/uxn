@@ -11,7 +11,7 @@
 
 
 : negative?
-    #8000 AND2 ORA
+    #7fff GTH2
 ;
 
 : u.  print-short ;
