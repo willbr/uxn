@@ -7,7 +7,9 @@
 ;
 
 
-: abs dup negative? if negate endif ;
+: abs #0000 OVR2 #8000 LTH2 JMP SWP2 SUB2 ;
+: abs-alt dup -32768 = if 1- else abs endif ;
+: abs-old dup negative? if negate endif ;
 
 
 : negative?
