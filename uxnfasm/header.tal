@@ -70,3 +70,5 @@
 %! { STA2 }
 %c! { STA POP }
 
+%c_esc { #1b }
+

@@ -1,9 +1,8 @@
 \ this is my comment
 
 : init
-    ;hello c@
-    dup print-short space emit cr
-    debug
+    page
+    ;hello 5 type cr
     halt
 brk;
 

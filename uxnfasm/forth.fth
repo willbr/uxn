@@ -75,3 +75,23 @@
     loop
     POP2
 ;
+
+: page
+    ( move cursor to top )
+    csi
+    LIT '0 emit
+    LIT '; emit
+    LIT '0 emit
+    LIT 'H emit
+
+    ( clear page )
+    csi
+    LIT '2 emit
+    LIT 'J emit
+;
+
+
+: csi
+    c_esc emit
+    LIT '[ emit
+;
