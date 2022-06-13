@@ -18,5 +18,6 @@
 
     base
     allot
-    type ( address length -- )
+    recurse
+    u.r
 
