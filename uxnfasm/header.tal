@@ -49,6 +49,7 @@
 
 %and { AND2 }
 %or  { ORA2 }
+%xor { EOR2 }
 
 %1+ { INC2 }
 %1- { #0001 SUB2 }

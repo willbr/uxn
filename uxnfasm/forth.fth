@@ -58,14 +58,12 @@
 
 : ,
     here @ !
-    here @ 2+
-    here !
+    2 here +!
 ;
 
 : c,
     here @ c!
-    here @ 1+
-    here !
+    1 here +!
 ;
 
 : type
@@ -96,4 +94,8 @@
     LIT '[ emit
 ;
 
-: ? debug @ debug . ;
+: ? @ . ;
+
+: +! LDA2k rot + swap ! ;
+: -! LDA2k rot - swap ! ;
+
