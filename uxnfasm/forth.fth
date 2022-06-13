@@ -95,3 +95,5 @@
     c_esc emit
     LIT '[ emit
 ;
+
+: ? debug @ debug . ;

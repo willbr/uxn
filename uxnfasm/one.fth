@@ -2,10 +2,13 @@
 
 : init
     page
-    ;hello 5 type cr
+    ;number ?
+
     halt
 brk;
 
-@hello
-"hello
+@number
+tal
+1234
+endtal
 
