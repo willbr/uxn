@@ -20,4 +20,9 @@
     allot
     recurse
     u.r
+    s"
+    z"
+    ."
+    variable
+    case
 
