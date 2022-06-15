@@ -13,6 +13,7 @@ prefix_chars = '%:.;,@&|$#~\'"'
 class CompilationUnit():
     def __init__(self):
         self.macros = {}
+        self.variables = []
         self.body = None
         self.rst = []
         self.current_word = None
@@ -133,6 +134,10 @@ class CompilationUnit():
             self.read_tal()
         elif w == 'incbin':
             self.read_binary_file()
+        elif w == 'variable':
+            self.create_variable()
+        elif w == 'sprite-1bpp':
+            self.compile_sprite_1bpp()
         elif w == '(':
             self.read_comment()
         elif w == '\\':
@@ -147,6 +152,8 @@ class CompilationUnit():
                 self.compile(child)
         elif is_uxntal(w):
             print(f"  {w}")
+        elif w in self.variables:
+            print(f'  ;{w}')
         else:
             try:
                 if w[:2] == '0x':
@@ -228,6 +235,29 @@ class CompilationUnit():
 
         self.macros[name] = body
 
+    def create_variable(self):
+        name = self.next_word()
+        if name in self.variables:
+            raise ValueError(f"Duplicate variable: {name}")
+
+        if is_uxntal(name):
+            raise ValueError(f"Invalid varialbe name: {name}, it looks like uxntal.")
+
+        self.variables.append(name)
+
+    def compile_variables(self):
+        for name in self.variables:
+            print(f"  @{name} $2")
+
+    def compile_sprite_1bpp(self):
+        for i in range(8):
+            w = self.next_word()
+            s = w
+            s = re.sub('\.', '0', s)
+            s = re.sub('[^0]', '1', s)
+            n = int(s, 2)
+            print(f"{n:02x}")
+
 
 def read_file(filename):
     with open(filename) as f:
@@ -265,6 +295,7 @@ def main(filename):
 
     cu.compile_file(header_path)
     cu.compile_file(filename)
+    cu.compile_variables()
     cu.compile_file(footer_path)
 
 if __name__ == '__main__':
