@@ -1,20 +1,35 @@
 \ this is my comment
 
-\ : +!  LDA2k + swap ! drop ;
-
 : init
-    page
-    ;number @ u. cr
-    1 ;number +!
-    ;number @ u. cr
-    661 ;number -!
-    ;number @ u. cr
+on-frame
+    ;on-frame .Screen/vector DEO2
+    ;on-key .Controller/vector DEO2
 
-    halt
+    #2f00 .System/r DEO2
+    #20f0 .System/g DEO2
+    #200f .System/b DEO2
+
 brk;
 
-@number
-tal
-1234
-endtal
+: on-frame ( -> ) 
+    .Mouse/x DEI2 .Screen/x DEO2
+    .Mouse/y DEI2 .Screen/y DEO2
 
+    ;sprite .Screen/addr DEO2
+    #01 .Screen/sprite DEO
+;
+
+: on-key ( -> ) 
+    halt
+;
+
+@sprite
+sprite-1bpp
+..xxxx..
+.xxxxxx.
+xxxxxxxx
+xxxxxxxx
+xxxxxxxx
+xxxxxxxx
+.xxxxxx.
+..xxxx..
