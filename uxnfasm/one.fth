@@ -1,10 +1,12 @@
 : init
-    ;str1 emit-str
+    ;&str1 emit-str
+    cr
+    ;&str2 emit-str
 brk;
 
-@str1
+&str1
 "hello \"big\" world"
-@str2
+&str2
 "goodbye world"
 
 : emit-str
