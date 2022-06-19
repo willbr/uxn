@@ -8,6 +8,7 @@ import sys
 
 token_prog = re.compile(r"\s*(\)|\S+)")
 line_comment_prog = re.compile(r".*")
+string_prog = re.compile(r".*?(?<!\\)\"")
 prefix_chars = '%:.;,@&|$#~\'"'
 
 class CompilationUnit():
@@ -142,6 +143,8 @@ class CompilationUnit():
             self.read_comment()
         elif w == '\\':
             self.read_line_comment()
+        elif w[0] == '"':
+            self.read_string(w[1:])
         elif w[0] == '%':
             self.read_macro(w[1:])
         elif w[0] == '~':
@@ -257,6 +260,21 @@ class CompilationUnit():
             s = re.sub('[^0]', '1', s)
             n = int(s, 2)
             print(f"{n:02x}")
+
+
+    def read_string(self, w):
+        if w[-1] == '"':
+            s = w[:-1]
+        else:
+            m = string_prog.match(self.body)
+            if not m:
+                raise ValueError("failed to find end of string")
+            s = w + m.group()[:-1]
+            self.body = self.body[m.end():]
+
+        s = s.replace(r'\"', '"')
+        ss = ' 20 '.join('"' + elem for elem in s.split())
+        print(f"{ss} 00")
 
 
 def read_file(filename):

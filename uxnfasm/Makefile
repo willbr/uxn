@@ -45,7 +45,7 @@ wrun:
 
 run: bin/test.rom FORCE
 #	$(uxncli) $<
-	$(uxnemu) $<
+	$(uxncli) $<
 
 FORCE: ;
 
