@@ -48,7 +48,11 @@ class CompilationUnit():
             if name == 'init':
                 print('|0100')
                 assert self.current_word == None
-            self.current_word = name
+            if self.current_word == 'init' and self.include_stdlib:
+                self.current_word = name
+                self.compile_file(self.forth_path)
+            else:
+                self.current_word = name
             print(f"@{name}")
         elif w == ';':
             print('JMP2r\n')
@@ -56,8 +60,6 @@ class CompilationUnit():
                 raise ValueError('init must be closed with brk;')
         elif w == 'brk;':
             print('BRK\n')
-            if self.current_word == 'init' and self.include_stdlib:
-                self.compile_file(self.forth_path)
         elif w == 'do':
             loop_lbl = gensym('loop')
             pred_lbl = gensym('pred')
