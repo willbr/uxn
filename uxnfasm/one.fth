@@ -14,12 +14,3 @@ brk;
 &str2 "beep"
 &str3 "goodbye world"
 
-: emit-str
-    begin LDAk DUP while
-        emit
-        INC2
-    repeat
-    POP
-    POP2
-;
-
