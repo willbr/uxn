@@ -95,6 +95,7 @@ class CompilationUnit():
             self.depth -= 1
             self.print('BRK\n')
         elif w == 'do':
+            self.depth += 1
             loop_lbl = gensym('loop')
             pred_lbl = gensym('pred')
             self.rst.append(['do', loop_lbl, pred_lbl])
@@ -115,18 +116,22 @@ class CompilationUnit():
             self.print(f'GTH2kr STHr ;&{loop_lbl} JCN2')
             self.print('POP2r POP2r')
             self.rst.pop()
+            self.depth -= 1
         elif w == 'if':
             false_lbl = gensym('false')
             end_lbl  = gensym('end')
             self.rst.append(['if', false_lbl, end_lbl])
-            self.print(f'  #00 EQU ,&{false_lbl} JCN')
+            self.print(f'( if ) #00 EQU ,&{false_lbl} JCN')
+            self.depth += 1
         elif w == 'else':
+            self.print('( else )')
             header, false_lbl, end_lbl = self.rst[-1]
             assert header == 'if'
             self.rst[-1][0] = 'else'
             self.print(f',&{end_lbl} JMP')
             self.print(f'&{false_lbl}')
         elif w == 'endif':
+            self.print('( endif )')
             header, false_lbl, end_lbl = self.rst[-1]
             if header == 'if':
                 self.print(f'&{false_lbl}')
@@ -135,7 +140,9 @@ class CompilationUnit():
             else:
                 assert False
             self.rst.pop()
+            self.depth -= 1
         elif w == 'begin':
+            self.depth += 1
             begin_lbl = gensym('begin')
             end_lbl  = gensym('end-begin')
             self.rst.append(['begin', begin_lbl, end_lbl])
@@ -144,29 +151,33 @@ class CompilationUnit():
         elif w == 'while':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            self.print(f'#00 EQU ;&{end_lbl} JCN2')
+            self.print(f'( while ) #00 EQU ;&{end_lbl} JCN2')
         elif w == 'repeat':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
+            self.print('( repeat )')
             self.print(f';&{begin_lbl} JMP2')
             self.print(f'&{end_lbl}')
             self.rst.pop()
         elif w == 'until':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            self.print(f'#00 EQU ;&{begin_lbl} JCN2')
+            self.print(f'( until ) #00 EQU ;&{begin_lbl} JCN2')
             self.print(f'&{end_lbl}')
             self.rst.pop()
+            self.depth -= 1
         elif w == 'again':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
+            self.print('( again )')
             self.print(f';&{begin_lbl} JMP2')
             self.print(f'&{end_lbl}')
             self.rst.pop()
+            self.depth -= 1
         elif w == 'leave':
             header, begin_lbl, pred_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            self.print(f'  ;&{end_lbl} JMP2')
+            self.print(f'( leave ) ;&{end_lbl} JMP2')
         elif w == 'tal':
             self.read_tal()
         elif w == 'incbin':
