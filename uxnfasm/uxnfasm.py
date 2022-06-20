@@ -367,7 +367,6 @@ def main(filename):
     cu.compile_file(filename)
     if cu.include_stdlib and cu.stdlib_included == False:
         cu.compile_stdlib()
-    sys.stderr.write("2\n");
     cu.compile_variables()
     cu.sep = ""
     cu.compile_file(footer_path)
