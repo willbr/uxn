@@ -1,34 +1,8 @@
 %negative-i12? { #07ff GTH2 }
 
 : init
-   0.0625 f.
-   0.125  f.
-   0.25   f.
-   0.5    f.
-   0.9375 f.
-   2.5 0.5 +
-   f.
-   \ print-fraction4
-(
-   0.9375
-   dup b. cr
-   f. cr
-   )
-
-   (
-   -1.0    b.  cr
-    0.0    b.  cr
-    1.0    b.  cr
-    1.5    b.  cr
-    cr
-    1.5    b.  cr
-    2.25   b. cr
-    3.125  b. cr
-    4.0625 b. cr
-    cr
-    25.0   b. cr
-    0b0111_1111_1111_1111   b. cr
-    )
+    \ 0xa NIP print-char
+    10000 .
    cr
     halt
 brk;
@@ -63,22 +37,9 @@ brk;
 ;
 
 
-: print-binary-byte ( byte -- )
-    DUP #04 SFT ,&char JSR
-    LIT '_ emit
-    &char ( char -- )
-    DUP DUP2
-    #08 AND #00 NEQ LIT '0 ADD #18 DEO
-    #04 AND #00 NEQ LIT '0 ADD #18 DEO
-    #02 AND #00 NEQ LIT '0 ADD #18 DEO
-    #01 AND #00 NEQ LIT '0 ADD #18 DEO
+: b. ( u16 -- )
+    2 u/mod
+    ?dup if b. endif
+    NIP print-char
 ;
 
-: b. ( short -- )
-  SWP
-  LIT '0 emit
-  LIT 'b emit
-  print-binary-byte
-  LIT '_ emit
-  print-binary-byte
-;
