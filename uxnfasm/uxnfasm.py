@@ -9,7 +9,12 @@ import sys
 token_prog = re.compile(r"\s*(\)|\S+)")
 line_comment_prog = re.compile(r".*")
 string_prog = re.compile(r".*?(?<!\\)\"")
+fixed_prog = re.compile(r"(-|\+)?\d+\.\d+")
+
 prefix_chars = '%:.;,@&|$#~\'"'
+
+def eprint(s):
+    sys.stderr.write(f"{s}\n")
 
 class CompilationUnit():
     def __init__(self):
@@ -218,11 +223,14 @@ class CompilationUnit():
                     n = int(w[2:], 16)
                 elif w[:2] == '0b':
                     n = int(w[2:], 2)
+                elif fixed_prog.match(w):
+                    n = parse_fixed_point(w)
                 else:
                     n = int(w, 10)
 
                 if n < 0:
-                    n = 0x10000 + n
+                    n += 0x10000
+
                 n &= 0xffff
                 self.print(f"#{n:04x}")
             except ValueError:
@@ -354,6 +362,45 @@ def is_uxntal(w):
         return True
     else:
         return False
+
+
+def parse_fixed_point(s):
+    """
+    Q11.4
+    binary:
+    0 000 0000 0000 0000
+    ^ ^             ^ fractional part
+    | | integer part
+    |
+    | sign bit
+    """
+
+    lhs, rhs = s.split('.')
+
+    i = int(lhs)
+
+    if i < 0:
+        i += 0b1_0000_0000_0000
+
+    i &= 0b1111_1111_1111
+    i <<= 4
+
+    eprint(f"{i}")
+    eprint(f"{i:x}")
+    eprint(f"{i:b}")
+    # -1.25
+    # 0100
+    a = 0b1111
+    b = a / 16
+    c = int(b * 255)
+    eprint(f"{a} {b} {c} {c:b}")
+
+    f = float('0.' + rhs) * 16
+    f = int(f) & 0b1111
+
+    n = i + f
+
+    return n
 
 
 def main(filename):
