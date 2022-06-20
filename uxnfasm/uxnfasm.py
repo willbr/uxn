@@ -30,6 +30,9 @@ class CompilationUnit():
         old_rst = self.rst
         self.body = read_file(filename)
 
+        self.sep = ""
+        self.depth = 0
+
         while True:
             w = self.next_word(keep_newline=True)
             if not w:
@@ -368,7 +371,6 @@ def main(filename):
     if cu.include_stdlib and cu.stdlib_included == False:
         cu.compile_stdlib()
     cu.compile_variables()
-    cu.sep = ""
     cu.compile_file(footer_path)
     print()
 
