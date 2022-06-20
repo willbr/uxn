@@ -19,7 +19,10 @@ class CompilationUnit():
         self.rst = []
         self.current_word = None
         self.include_stdlib = True
-        pass
+        self.pending_token = None
+        self.prev_word = None
+        self.sep = ""
+        self.depth = 0
 
     def compile_file(self, filename):
         old_body = self.body
@@ -27,77 +30,108 @@ class CompilationUnit():
         self.body = read_file(filename)
 
         while True:
-            w = self.next_word()
+            w = self.next_word(keep_newline=True)
             if not w:
                 break
             self.compile(w)
 
         self.body = old_body
         self.rst = old_rst
+        print()
 
-    def next_word(self):
+    def next_word(self, keep_newline=False):
+        if self.pending_token:
+            w = self.pending_token
+            self.pending_token = None
+            return w
+
         m = token_prog.match(self.body)
         if not m:
             return None
         self.body = self.body[m.end():]
-        return m.group(1)
+        w = m.group(1)
+        if keep_newline and '\n' in m.group():
+            self.pending_token = w
+            return '\n'
+        return w
+
+    def print(self, w):
+        if self.prev_word == '\n' and w == '\n':
+            pass
+        elif w == '\n':
+            indent = "  " * self.depth
+            print()
+            self.sep = indent
+        else:
+            print(self.sep + w, end="")
+            self.sep = " "
+        self.prev_word = w
 
     def compile(self, w):
+        if w == '\n':
+            self.print(w)
+            return
+
         if w == ':':
+            self.depth += 1
+            self.sep = ""
             name = self.next_word()
             if name == 'init':
-                print('|0100')
+                self.print('|0100')
                 assert self.current_word == None
             if self.current_word == 'init' and self.include_stdlib:
                 self.current_word = name
+                print()
                 self.compile_file(self.forth_path)
             else:
                 self.current_word = name
-            print(f"@{name}")
+            self.print(f"@{name}")
         elif w == ';':
-            print('JMP2r\n')
+            self.depth -= 1
+            self.print('JMP2r\n')
             if self.current_word == 'init':
                 raise ValueError('init must be closed with brk;')
         elif w == 'brk;':
-            print('BRK\n')
+            self.depth -= 1
+            self.print('BRK\n')
         elif w == 'do':
             loop_lbl = gensym('loop')
             pred_lbl = gensym('pred')
             self.rst.append(['do', loop_lbl, pred_lbl])
-            print('  ( do )')
-            print('  SWP2 STH2 STH2')
-            print(f'  ;&{pred_lbl} JMP2')
-            print(f'  &{loop_lbl}')
+            self.print('( do )')
+            self.print('SWP2 STH2 STH2')
+            self.print(f';&{pred_lbl} JMP2')
+            self.print(f'&{loop_lbl}')
         elif w == 'loop' or w == '+loop':
             header, loop_lbl, pred_lbl = self.rst[-1]
             assert header == 'do'
             if w == 'loop':
-                print('  ( loop )')
-                print('  INC2r')
+                self.print('( loop )')
+                self.print('INC2r')
             else:
-                print('  ( loop )')
-                print('  STH2 ADD2r')
-            print(f'&{pred_lbl}')
-            print(f'  GTH2kr STHr ;&{loop_lbl} JCN2')
-            print('  POP2r POP2r')
+                self.print('( loop )')
+                self.print('STH2 ADD2r')
+            self.print(f'&{pred_lbl}')
+            self.print(f'GTH2kr STHr ;&{loop_lbl} JCN2')
+            self.print('POP2r POP2r')
             self.rst.pop()
         elif w == 'if':
             false_lbl = gensym('false')
             end_lbl  = gensym('end')
             self.rst.append(['if', false_lbl, end_lbl])
-            print(f'  #00 EQU ,&{false_lbl} JCN')
+            self.print(f'  #00 EQU ,&{false_lbl} JCN')
         elif w == 'else':
             header, false_lbl, end_lbl = self.rst[-1]
             assert header == 'if'
             self.rst[-1][0] = 'else'
-            print(f'  ,&{end_lbl} JMP')
-            print(f'&{false_lbl}')
+            self.print(f',&{end_lbl} JMP')
+            self.print(f'&{false_lbl}')
         elif w == 'endif':
             header, false_lbl, end_lbl = self.rst[-1]
             if header == 'if':
-                print(f'  &{false_lbl}')
+                self.print(f'&{false_lbl}')
             elif header == 'else':
-                print(f'  &{end_lbl}')
+                self.print(f'&{end_lbl}')
             else:
                 assert False
             self.rst.pop()
@@ -105,34 +139,34 @@ class CompilationUnit():
             begin_lbl = gensym('begin')
             end_lbl  = gensym('end-begin')
             self.rst.append(['begin', begin_lbl, end_lbl])
-            print('  ( begin )')
-            print(f'  &{begin_lbl}')
+            self.print('( begin )')
+            self.print(f'&{begin_lbl}')
         elif w == 'while':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            print(f'  #00 EQU ;&{end_lbl} JCN2')
+            self.print(f'#00 EQU ;&{end_lbl} JCN2')
         elif w == 'repeat':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            print(f'  ;&{begin_lbl} JMP2')
-            print(f'  &{end_lbl}')
+            self.print(f';&{begin_lbl} JMP2')
+            self.print(f'&{end_lbl}')
             self.rst.pop()
         elif w == 'until':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            print(f'  #00 EQU ;&{begin_lbl} JCN2')
-            print(f'  &{end_lbl}')
+            self.print(f'#00 EQU ;&{begin_lbl} JCN2')
+            self.print(f'&{end_lbl}')
             self.rst.pop()
         elif w == 'again':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            print(f'  ;&{begin_lbl} JMP2')
-            print(f'  &{end_lbl}')
+            self.print(f';&{begin_lbl} JMP2')
+            self.print(f'&{end_lbl}')
             self.rst.pop()
         elif w == 'leave':
             header, begin_lbl, pred_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            print(f'  ;&{end_lbl} JMP2')
+            self.print(f'  ;&{end_lbl} JMP2')
         elif w == 'tal':
             self.read_tal()
         elif w == 'incbin':
@@ -156,9 +190,9 @@ class CompilationUnit():
             for child in body:
                 self.compile(child)
         elif is_uxntal(w):
-            print(f"  {w}")
+            self.print(f"{w}")
         elif w in self.variables:
-            print(f'  ;{w}')
+            self.print(f';{w}')
         else:
             try:
                 if w[:2] == '0x':
@@ -171,9 +205,9 @@ class CompilationUnit():
                 if n < 0:
                     n = 0x10000 + n
                 n &= 0xffff
-                print(f"  #{n:04x}")
+                self.print(f"#{n:04x}")
             except ValueError:
-                print(f'  ;{w} JSR2')
+                self.print(f';{w} JSR2')
 
 
     def read_tal(self):
@@ -183,7 +217,7 @@ class CompilationUnit():
             if w == '(':
                 self.read_comment()
             else:
-                print(w)
+                self.print(w)
             w = self.next_word()
 
 
@@ -195,7 +229,7 @@ class CompilationUnit():
                 if len(line) == 0:
                     break
                 tal = ' '.join(f"{c:02x}" for c in line)
-                print(tal)
+                self.print(tal)
 
 
     def read_line_comment(self):
@@ -224,7 +258,7 @@ class CompilationUnit():
                 break
 
         s = ' '.join(body)
-        print(s)
+        self.print(s)
 
     def read_macro(self, name):
         nw = self.next_word()
@@ -252,7 +286,7 @@ class CompilationUnit():
 
     def compile_variables(self):
         for name in self.variables:
-            print(f"  @{name} $2")
+            self.print(f"@{name} $2")
 
     def compile_sprite_1bpp(self):
         for i in range(8):
@@ -261,7 +295,7 @@ class CompilationUnit():
             s = re.sub('\.', '0', s)
             s = re.sub('[^0]', '1', s)
             n = int(s, 2)
-            print(f"{n:02x}")
+            self.print(f"{n:02x}")
 
 
     def read_string(self, w):
@@ -276,7 +310,7 @@ class CompilationUnit():
 
         s = s.replace(r'\"', '"')
         ss = ' 20 '.join('"' + elem for elem in s.split())
-        print(f"{ss} 00")
+        self.print(f"{ss} 00")
 
 
 def read_file(filename):
@@ -316,7 +350,9 @@ def main(filename):
     cu.compile_file(header_path)
     cu.compile_file(filename)
     cu.compile_variables()
+    cu.sep = ""
     cu.compile_file(footer_path)
+    print()
 
 if __name__ == '__main__':
     main(sys.argv[1])
