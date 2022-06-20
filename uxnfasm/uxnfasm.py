@@ -134,7 +134,7 @@ class CompilationUnit():
             false_lbl = gensym('false')
             end_lbl  = gensym('end')
             self.rst.append(['if', false_lbl, end_lbl])
-            self.print(f'( if ) #00 EQU ,&{false_lbl} JCN')
+            self.print(f'( if ) #0000 EQU2 ,&{false_lbl} JCN')
             self.depth += 1
         elif w == 'else':
             self.print('( else )')
@@ -164,7 +164,7 @@ class CompilationUnit():
         elif w == 'while':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            self.print(f'( while ) #00 EQU ;&{end_lbl} JCN2')
+            self.print(f'( while ) #0000 EQU2 ;&{end_lbl} JCN2')
         elif w == 'repeat':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
@@ -175,7 +175,7 @@ class CompilationUnit():
         elif w == 'until':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            self.print(f'( until ) #00 EQU ;&{begin_lbl} JCN2')
+            self.print(f'( until ) #0000 EQU2 ;&{begin_lbl} JCN2')
             self.print(f'&{end_lbl}')
             self.rst.pop()
             self.depth -= 1

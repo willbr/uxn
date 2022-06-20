@@ -12,9 +12,10 @@
 %cr    { #0a emit }
 %space { #20 emit }
 
-%true  { #01 }
-%false { #00 }
+%true  { #0001 }
+%false { #0000 }
 
+%ctos { #00 SWP }
 
 %swap { SWP2 }
 %dup  { DUP2 }
@@ -28,24 +29,24 @@
 %- { SUB2 }
 %* { MUL2 }
 
-%=  { EQU2 }
-%!= { NEQ2 }
-%<  { #8000 ADD2 SWP2 #8000 ADD2 GTH2 }
-%>  { #8000 ADD2 SWP2 #8000 ADD2 LTH2 }
+%=  { EQU2 ctos }
+%!= { NEQ2 ctos }
+%<  { #8000 ADD2 SWP2 #8000 ADD2 GTH2 ctos }
+%>  { #8000 ADD2 SWP2 #8000 ADD2 LTH2 ctos }
 
-%u<  { LTH2 }
-%u>  { GTH2 }
-%u* { MUL2 }
-%u/ { DIV2 }
+%u< { LTH2 ctos }
+%u> { GTH2 ctos }
+%u* { MUL2 ctos }
+%u/ { DIV2 ctos }
 
-%negative? { #7fff GTH2 }
+%negative? { #7fff GTH2 ctos }
 %negate { #0000 SWP2 SUB2 }
 
-%0= { #0000 EQU2 }
+%0= { #0000 = }
 %0> { #0000 > }
 %0< { #0000 < }
 
-%not { #0000 EQU2 }
+%not { #0000 = }
 
 %and { AND2 }
 %or  { ORA2 }
@@ -72,4 +73,6 @@
 %c! { STA POP }
 
 %c_esc { #1b }
+
+%print-char { ;print-byte/char JSR2 }
 
