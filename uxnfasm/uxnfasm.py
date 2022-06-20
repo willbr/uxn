@@ -19,6 +19,7 @@ class CompilationUnit():
         self.rst = []
         self.current_word = None
         self.include_stdlib = True
+        self.stdlib_included = False
         self.pending_token = None
         self.prev_word = None
         self.sep = ""
@@ -67,6 +68,11 @@ class CompilationUnit():
             self.sep = " "
         self.prev_word = w
 
+    def compile_stdlib(self):
+        self.stdlib_included = True
+        print()
+        self.compile_file(self.forth_path)
+
     def compile(self, w):
         if w == '\n':
             self.print(w)
@@ -79,10 +85,9 @@ class CompilationUnit():
             if name == 'init':
                 self.print('|0100')
                 assert self.current_word == None
-            if self.current_word == 'init' and self.include_stdlib:
+            if self.current_word == 'init' and self.include_stdlib and self.stdlib_included == False:
                 self.current_word = name
-                print()
-                self.compile_file(self.forth_path)
+                self.compile_stdlib()
             else:
                 self.current_word = name
             self.print(f"@{name}")
@@ -360,6 +365,9 @@ def main(filename):
 
     cu.compile_file(header_path)
     cu.compile_file(filename)
+    if cu.include_stdlib and cu.stdlib_included == False:
+        cu.compile_stdlib()
+    sys.stderr.write("2\n");
     cu.compile_variables()
     cu.sep = ""
     cu.compile_file(footer_path)
