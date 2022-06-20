@@ -99,3 +99,12 @@
 : +! LDA2k rot + swap ! ;
 : -! LDA2k rot - swap ! ;
 
+: emit-str ( addr -- )
+    begin LDAk DUP while
+        emit
+        INC2
+    repeat
+    POP
+    POP2
+;
+
