@@ -1,7 +1,7 @@
 : init
-    ;&str1 emit-str
-    cr
-    ;&str2 emit-str
+    ;&str1 emit-str cr
+    ;&str2 emit-str cr
+    halt
 brk;
 
 &str1

@@ -47,5 +47,11 @@ run: bin/test.rom FORCE
 #	$(uxncli) $<
 	$(uxncli) $<
 
+wcat:
+	watchexec -cr --ignore "*.rom" "make cat"
+
+cat: bin/test.tal
+	head -25 $<
+
 FORCE: ;
 
