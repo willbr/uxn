@@ -8,8 +8,6 @@
 : abs-alt dup -32768 = if 1- else abs endif ;
 : abs-old dup negative? if negate endif ;
 
-%print-char { ;print-byte/char JSR2 }
-
 : print-byte ( byte -- )
 	DUP #04 SFT ,&char JSR
 	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
@@ -30,15 +28,13 @@
     print-u16
 ;
 
-
-%print-uchar { DIV2k DUP2 NIP print-char MUL2 SUB2 }
 : print-u16 ( u16 -- )
-    10000 print-uchar
-    1000  print-uchar
-    100   print-uchar
-    10    print-uchar
+    10 /mod
+    ?dup if print-u16 endif
     NIP print-char
 ;
+
+
 
 : umod DIV2k MUL2 SUB2 ;
 : u/mod DIV2k STH2k MUL2 SUB2 STH2r ;
@@ -49,9 +45,9 @@
 : /
     over over
     EOR2 negative?
-    STH
+    STH2
     swap abs swap abs DIV2
-    STHr
+    STH2r
     if negate endif
     ;
 
@@ -107,4 +103,7 @@
     POP
     POP2
 ;
+
+: ?dup dup 0 != if dup endif ;
+: /mod over over / STH2k MUL2 SUB2 STH2r ;
 
