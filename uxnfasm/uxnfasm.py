@@ -134,14 +134,14 @@ class CompilationUnit():
             false_lbl = gensym('false')
             end_lbl  = gensym('end')
             self.rst.append(['if', false_lbl, end_lbl])
-            self.print(f'( if ) #0000 EQU2 ,&{false_lbl} JCN')
+            self.print(f'( if ) #0000 EQU2 ;&{false_lbl} JCN2')
             self.depth += 1
         elif w == 'else':
             self.print('( else )')
             header, false_lbl, end_lbl = self.rst[-1]
             assert header == 'if'
             self.rst[-1][0] = 'else'
-            self.print(f',&{end_lbl} JMP')
+            self.print(f';&{end_lbl} JMP2')
             self.print(f'&{false_lbl}')
         elif w == 'endif':
             self.print('( endif )')
