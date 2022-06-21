@@ -203,6 +203,8 @@ class CompilationUnit():
             self.read_comment()
         elif w == '\\':
             self.read_line_comment()
+        elif w == 'no-stdlib':
+            self.include_stdlib = False
         elif w[0] == '"':
             self.read_string(w[1:])
         elif w[0] == '%':
