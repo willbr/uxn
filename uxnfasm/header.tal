@@ -40,6 +40,7 @@
 %u/ { DIV2 ctos }
 
 %negative? { #7fff GTH2 ctos }
+%negative-i12? { #07ff GTH2 ctos }
 %negate { #0000 SWP2 SUB2 }
 
 %0= { #0000 = }

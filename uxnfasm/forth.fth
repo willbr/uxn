@@ -113,3 +113,35 @@
     NIP print-char
 ;
 
+: f.
+    dup
+    #04 SFT2 print-i12
+    LIT '. emit
+    #000f AND2
+    print-fraction4
+;
+
+: print-i12 ( i12 -- )
+    dup negative-i12? if
+        LIT '- emit
+        #1000 swap -
+    endif
+    print-u16
+;
+
+
+: print-fraction4
+    dup #0000 = if
+        LIT '0 emit
+    else
+        625 *
+        _r-fraction
+    endif
+;
+
+: _r-fraction
+    10 /mod
+    ?dup if _r-fraction endif
+    ?dup if NIP print-char endif
+;
+
