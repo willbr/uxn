@@ -145,3 +145,4 @@
     ?dup if NIP print-char endif
 ;
 
+: f* * #04 SFT2 ;
