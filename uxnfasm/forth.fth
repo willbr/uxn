@@ -49,7 +49,7 @@
     swap abs swap abs DIV2
     STH2r
     if negate endif
-    ;
+;
 
 
 : ,
@@ -106,4 +106,10 @@
 
 : ?dup dup 0 != if dup endif ;
 : /mod over over / STH2k MUL2 SUB2 STH2r ;
+
+: b. ( u16 -- )
+    2 u/mod
+    ?dup if b. endif
+    NIP print-char
+;
 
