@@ -51,6 +51,12 @@ run: bin/test.rom FORCE
 wcat:
 	watchexec -cr --ignore "*.rom" "make cat"
 
+wsin:
+	watchexec -cr --ignore "*.rom" "make sin-table.fth"
+
+sin-table.fth: sin-table.py
+	python $< $@
+
 cat: bin/test.tal
 	head -25 $<
 
