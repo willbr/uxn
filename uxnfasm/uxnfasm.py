@@ -130,11 +130,14 @@ class CompilationUnit():
             self.print('POP2r POP2r')
             self.rst.pop()
             self.depth -= 1
-        elif w == 'if':
+        elif w in ['if', 'if1']:
             false_lbl = gensym('false')
             end_lbl  = gensym('end')
             self.rst.append(['if', false_lbl, end_lbl])
-            self.print(f'( if ) #0000 EQU2 ;&{false_lbl} JCN2')
+            if w == 'if':
+                self.print(f'( if ) #0000 EQU2 ;&{false_lbl} JCN2')
+            else:
+                self.print(f'( if ) #00 EQU ;&{false_lbl} JCN2')
             self.depth += 1
         elif w == 'else':
             self.print('( else )')
