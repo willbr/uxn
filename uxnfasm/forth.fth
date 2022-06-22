@@ -133,6 +133,7 @@
 : print-fraction4
     dup #0000 = if
         LIT '0 emit
+        drop
     else
         625 *
         _r-fraction
@@ -147,3 +148,13 @@
 
 : f* * #04 SFT2 ;
 : f/ / #40 SFT2 ;
+
+: f>s
+    #04 SFT2
+    dup negative-i12? if
+        #1000 swap -
+        negate
+    endif
+;
+
+: f>u #04 SFT2 ;
