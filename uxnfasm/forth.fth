@@ -163,4 +163,5 @@
 
 : h. print-short ;
 
+~debug.fth
 ~ansi.fth
