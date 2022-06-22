@@ -86,7 +86,7 @@
 
 
 : csi
-    c_esc emit
+    c-esc emit
     LIT '[ emit
 ;
 
