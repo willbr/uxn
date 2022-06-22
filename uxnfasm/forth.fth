@@ -158,3 +158,8 @@
 ;
 
 : f>u #04 SFT2 ;
+: s>f #40 SFT2 ;
+: u>f #40 SFT2 ;
+
+: h. print-short ;
+
