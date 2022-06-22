@@ -1,4 +1,6 @@
 : init
+    page
+    ere
     10 10 *
 
     s>f
@@ -13,8 +15,9 @@
     dup f>u u.  cr
     drop
 
-   cr
+    cr
     halt
+    ere
 brk;
 
 
