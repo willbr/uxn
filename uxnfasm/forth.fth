@@ -29,7 +29,7 @@
 ;
 
 : print-u16 ( u16 -- )
-    10 /mod
+    10 u/mod
     ?dup if print-u16 endif
     NIP print-char
 ;
