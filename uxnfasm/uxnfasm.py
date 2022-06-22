@@ -228,6 +228,8 @@ class CompilationUnit():
             self.include_stdlib = False
         elif w == 'ere':
             self.compile_ere()
+        elif w == 'raw':
+            self.compile_raw_number()
         elif w[0] == '"':
             self.read_string(w[1:])
         elif w[0] == '%':
@@ -244,22 +246,27 @@ class CompilationUnit():
             self.print(f';{w}')
         else:
             try:
-                if w[:2] == '0x':
-                    n = int(w[2:], 16)
-                elif w[:2] == '0b':
-                    n = int(w[2:], 2)
-                elif fixed_prog.match(w):
-                    n = parse_fixed_point(w)
-                else:
-                    n = int(w, 10)
-
-                if n < 0:
-                    n += 0x10000
-
-                n &= 0xffff
+                n = self.parse_number(w)
                 self.print(f"#{n:04x}")
             except ValueError:
                 self.print(f';{w} JSR2')
+
+
+    def parse_number(self, w):
+        if w[:2] == '0x':
+            n = int(w[2:], 16)
+        elif w[:2] == '0b':
+            n = int(w[2:], 2)
+        elif fixed_prog.match(w):
+            n = parse_fixed_point(w)
+        else:
+            n = int(w, 10)
+
+        if n < 0:
+            n += 0x10000
+
+        n &= 0xffff
+        return n
 
 
     def read_tal(self):
@@ -378,6 +385,11 @@ class CompilationUnit():
             #raise ValueError(s)
             self.read_string(s)
             self.print('\n')
+
+    def compile_raw_number(self):
+        w = self.next_word()
+        n = self.parse_number(w)
+        self.print(f"{n:04x}")
 
 
 def read_file(filename):
