@@ -1,9 +1,11 @@
 : init
-    #ffff
+    10 10 *
 
-    u>f
+    s>f
 
     dup f. cr
+    ere
+
     dup b. cr
     dup . cr
     dup u. cr

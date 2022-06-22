@@ -29,8 +29,15 @@ class CompilationUnit():
         self.prev_word = None
         self.sep = ""
         self.depth = 0
+        self.current_file = 0
+        self.current_line = 0
+        self.files = []
+        self.line_pos = 0
+        self.line_pos_stack = []
 
     def compile_file(self, filename):
+        p = Path(filename)
+        self.files.append(p)
         old_body = self.body
         old_rst = self.rst
         self.body = read_file(filename)
@@ -38,15 +45,21 @@ class CompilationUnit():
         self.sep = ""
         self.depth = 0
 
+        self.line_pos_stack.append(self.line_pos)
+        self.line_pos = 1
+
         while True:
             w = self.next_word(keep_newline=True)
             if not w:
                 break
             self.compile(w)
 
+
+        self.line_pos = self.line_pos_stack.pop()
         self.body = old_body
         self.rst = old_rst
-        print()
+
+        self.print('\n')
 
     def next_word(self, keep_newline=False):
         if self.pending_token:
@@ -59,6 +72,8 @@ class CompilationUnit():
             return None
         self.body = self.body[m.end():]
         w = m.group(1)
+        if '\n' in m.group():
+            self.line_pos += m.group().count('\n')
         if keep_newline and '\n' in m.group():
             self.pending_token = w
             return '\n'
@@ -211,6 +226,8 @@ class CompilationUnit():
             self.read_line_comment()
         elif w == 'no-stdlib':
             self.include_stdlib = False
+        elif w == 'ere':
+            self.compile_ere()
         elif w[0] == '"':
             self.read_string(w[1:])
         elif w[0] == '%':
@@ -344,8 +361,23 @@ class CompilationUnit():
             self.body = self.body[m.end():]
 
         s = s.replace(r'\"', '"')
+        s = s.replace(r'\e', '\u001b')
+
         ss = ' 20 '.join('"' + elem for elem in s.split())
         self.print(f"{ss} 00")
+
+    def compile_ere(self):
+        fn = f";_file{len(self.files)}"
+        line_pos = f"#{self.line_pos:04x}"
+        print(f"{fn} {line_pos} ;print-ere JSR2")
+
+    def compile_debug_info(self):
+        for i, p in enumerate(self.files, 1):
+            self.print(f"@_file{i}")
+            s = p.name + '"'
+            #raise ValueError(s)
+            self.read_string(s)
+            self.print('\n')
 
 
 def read_file(filename):
@@ -426,8 +458,11 @@ def main(filename):
     if cu.include_stdlib and cu.stdlib_included == False:
         cu.compile_stdlib()
     cu.compile_variables()
+    cu.print('\n')
+    cu.compile_debug_info()
     cu.compile_file(footer_path)
-    print()
+    cu.print('\n')
+
 
 if __name__ == '__main__':
     main(sys.argv[1])
