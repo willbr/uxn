@@ -73,7 +73,9 @@
 %! { STA2 }
 %c! { STA POP }
 
-%c_esc { #1b }
+%c-esc { #1b }
+%k-esc { #1b }
+%k-c { #63 }
 
 %print-char { ;print-byte/char JSR2 }
 
