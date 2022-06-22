@@ -426,33 +426,65 @@ def parse_fixed_point(s):
     |
     | sign bit
     """
+    #eprint()
+
+    #eprint(s)
 
     lhs, rhs = s.split('.')
+    #eprint(f"{lhs=}, {rhs=}")
 
     i = int(lhs)
-
-    if i < 0:
-        i += 0b1_0000_0000_0000
+    #eprint(f"{i}")
 
     i &= 0b1111_1111_1111
     i <<= 4
 
-    eprint(f"{i}")
-    eprint(f"{i:x}")
-    eprint(f"{i:b}")
     # -1.25
     # 0100
     a = 0b1111
     b = a / 16
     c = int(b * 255)
-    eprint(f"{a} {b} {c} {c:b}")
+    #eprint(f"{a} {b} {c} {c:b}")
 
     f = float('0.' + rhs) * 16
     f = int(f) & 0b1111
 
+
     n = i + f
+    if lhs == '-0':
+        pass
+    #eprint(f"{n=:016b}")
+    #print_fixed_point(n)
+    #eprint()
+    eprint(f"{s} : {n}")
 
     return n
+
+
+def print_fixed_point(n):
+    #eprint(f"{n=:016b}")
+    #eprint(sign)
+    i = n & 0xfff0
+    i >>= 4
+    #eprint(f"{i=} {i=:x}")
+    if i >= 0x7ff:
+        i -= 0x1000
+        pass
+    #eprint(f"{i=}")
+    #eprint(f"{f=}")
+
+    f = n & 0b0000_0000_0000_1111
+    #eprint(f"{f=:016b}")
+    f *= 625
+    f /= 10000
+    #eprint(f"{f=}")
+
+    j = i + f
+
+    s = f"{j}"
+
+    eprint(s)
+    eprint()
 
 
 def main(filename):
@@ -477,5 +509,9 @@ def main(filename):
 
 
 if __name__ == '__main__':
+    #n = 0b1111_1111_1111_1111
+    #n = 0b1000_0000_0000_0001
+    #eprint(-0.0625)
+    #print_fixed_point(n)
     main(sys.argv[1])
 
