@@ -161,10 +161,13 @@ class CompilationUnit():
             self.rst.append(['begin', begin_lbl, end_lbl])
             self.print('( begin )')
             self.print(f'&{begin_lbl}')
-        elif w == 'while':
+        elif w in ['while', 'while1']:
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
-            self.print(f'( while ) #0000 EQU2 ;&{end_lbl} JCN2')
+            if w == 'while':
+                self.print(f'( while ) #0000 EQU2 ;&{end_lbl} JCN2')
+            else:
+                self.print(f'( while ) #00 EQU ;&{end_lbl} JCN2')
         elif w == 'repeat':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
