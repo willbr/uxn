@@ -95,8 +95,8 @@
 : +! LDA2k rot + swap ! ;
 : -! LDA2k rot - swap ! ;
 
-: emit-str ( addr -- )
-    begin LDAk DUP while
+: emit-string ( addr -- )
+    begin LDAk DUP while1
         emit
         INC2
     repeat
