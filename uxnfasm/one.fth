@@ -1,117 +1,72 @@
+\ f. is broken
+\ what is wrong?
+
+no-stdlib
 : init
-    ;on-frame .Screen/vector DEO2
-    ;on-key .Controller/vector DEO2
 
-
-    ( set system colors )
-    #a5ff .System/r DEO2
-    #a50f .System/g DEO2
-    #fe0f .System/b DEO2
-
-brk;
-
-: on-frame ( -> ) 
-    clear-foreground
-
-    .Mouse/x DEI2 .Screen/x DEO2
-    .Mouse/y DEI2 .Screen/y DEO2
-
-    ;s-circle .Screen/addr DEO2
-
-    #41 .Screen/sprite DEO
-brk;
-
-: clear-foreground
-    ;s-back-slash .Screen/addr DEO2
-    #01 .Screen/auto DEO 
-
-    #0000 .Screen/y DEO2
-
-    .Screen/height DEI2 8 /
-    0 do
-        #0000 .Screen/x DEO2
-        .Screen/width DEI2 8 /
-        0 do
-            #41 .Screen/sprite DEO
-        loop
-        .Screen/y DEI2 8 +
-        .Screen/y DEO2
-    loop
-;
-
-: clear-background
-    ;s-forward-slash .Screen/addr DEO2
-    #01 .Screen/auto DEO 
-
-    #0000 .Screen/y DEO2
-
-    .Screen/height DEI2 8 /
-    0 do
-        #0000 .Screen/x DEO2
-        .Screen/width DEI2 8 /
-        0 do
-            #01 .Screen/sprite DEO
-        loop
-        .Screen/y DEI2 8 +
-        .Screen/y DEO2
-    loop
-;
-
-: on-key ( -> ) 
-    .Controller/key DEI
+    -0.5
     debug
-    DUP c-esc EQU if1
-        POP
-        halt
-    endif
-    DUP k-c EQU if1
-        POP
-        clear-background
-    endif
-    POP
+
+    \ dup b. cr cr
+    \ dup u. cr
+    \ dup .  cr
+    \ dup f. cr
+
+    f.
+
+    cr
+
+    debug
+
+    halt
+
 brk;
 
-@s-clear
-sprite-1bpp
-........
-........
-........
-........
-........
-........
-........
-........
+: f.
+    dup
+    #04 SFT2 print-i12
+    LIT '. emit
+    #000f AND2
+    print-fraction4
+;
 
-@s-back-slash
-sprite-1bpp
-x.......
-.x......
-..x.....
-...x....
-....x...
-.....x..
-......x.
-.......x
+: print-i12 ( i12 -- )
+    dup negative-i12? if
+        LIT '- emit
+        #1000 swap -
+    endif
+    print-u16
+;
 
-@s-forward-slash
-sprite-1bpp
-.......x
-......x.
-.....x..
-....x...
-...x....
-..x.....
-.x......
-x.......
 
-@s-circle
-sprite-1bpp
-..xxxx..
-.xxxxxx.
-xxxxxxxx
-xxxxxxxx
-xxxxxxxx
-xxxxxxxx
-.xxxxxx.
-..xxxx..
+: print-fraction4
+    dup #0000 = if
+        LIT '0 emit
+        drop
+    else
+        625 *
+        _r-fraction
+    endif
+;
 
+: _r-fraction
+    10 u/mod
+    ?dup if _r-fraction endif
+    ?dup if NIP print-char endif
+;
+
+: print-u16 ( u16 -- )
+    10 u/mod
+    ?dup if print-u16 endif
+    NIP print-char
+;
+
+: u/mod DIV2k STH2k MUL2 SUB2 STH2r ;
+: ?dup dup 0 != if dup endif ;
+
+: print-byte ( byte -- )
+	DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+;
+
+\ ~sin-table.fth

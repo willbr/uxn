@@ -45,8 +45,7 @@ wrun:
 	watchexec -cr --ignore "*.rom" "make run"
 
 run: bin/test.rom FORCE
-#	$(uxncli) $<
-	$(uxnemu) $<
+	$(uxncli) $<
 
 wcat:
 	watchexec -cr --ignore "*.rom" "make cat"
