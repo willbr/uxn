@@ -12,6 +12,7 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	uxnasm := c:\tools\uxn\uxnasm.exe
 	uxncli := c:\tools\uxn\uxncli.exe
 	uxnemu := c:\tools\uxn\uxnemu.exe
+	uxn32 := c:\tools\uxn32\uxn32.exe
 	turye := c:\tools\uxn32\turye.rom font.uf2
 else
     detected_OS := $(shell uname)  # same as "uname -s"
@@ -45,7 +46,7 @@ wrun:
 
 run: bin/test.rom FORCE
 #	$(uxncli) $<
-	$(uxncli) $<
+	$(uxnemu) $<
 
 wcat:
 	watchexec -cr --ignore "*.rom" "make cat"
