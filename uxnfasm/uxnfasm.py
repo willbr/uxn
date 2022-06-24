@@ -13,8 +13,8 @@ fixed_prog = re.compile(r"(-|\+)?\d+\.\d+")
 
 prefix_chars = '%:.;,@&|$#~\'"'
 
-def eprint(s=""):
-    sys.stderr.write(f"{s}\n")
+def eprint(s="", end="\n"):
+    sys.stderr.write(s + end)
 
 class CompilationUnit():
     def __init__(self):
