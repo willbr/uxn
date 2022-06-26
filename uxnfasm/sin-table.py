@@ -6,7 +6,7 @@ with open(argv[1], 'w') as f:
     j = -1
     step = 0.0625
     for i in range(33):
-        s = f"( {i:2} ) raw {j:2.4f}\n"
+        s = f"( {i:2} {j:+2.4f} ) raw {sin(j):+2.4f}\n"
         #print(s, end="")
         f.write(s)
         j += step
