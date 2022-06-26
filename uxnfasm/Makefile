@@ -32,7 +32,7 @@ else
 
 endif
 
-bin/test.tal: one.fth header.tal forth.fth uxnfasm.py
+bin/test.tal: one.fth header.tal forth.fth uxnfasm.py sin-table.fth
 	- $(mkdir) bin
 #	python uxnfasm.py $<
 	python uxnfasm.py $< > $@
@@ -53,7 +53,7 @@ wcat:
 wsin:
 	watchexec -cr --ignore "*.rom" "make sin-table.fth"
 
-sin-table.fth: sin-table.py
+sin-table.fth: gen-sin-table.py
 	python $< $@
 
 cat: bin/test.tal
