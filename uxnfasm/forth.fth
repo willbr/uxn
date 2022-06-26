@@ -148,9 +148,6 @@
 ;
 
 
-: f* * #04 SFT2 ;
-: f/ / #40 SFT2 ;
-
 : f>s
     #04 SFT2
     dup negative-i12? if
