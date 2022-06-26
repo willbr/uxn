@@ -113,12 +113,25 @@
     NIP print-char
 ;
 
-: f.
-    dup
-    #04 SFT2 print-i12
+: f. ( n -- )
+    dup 0x7fff u> if
+        LIT '- emit
+        0 swap -
+    else
+        LIT '+ emit
+    endif
+
+    dup #04 SFT2
+    print-u16
+    #000f and
+
     LIT '. emit
-    #000f AND2
-    print-fraction4
+    dup 1 = if
+        LIT '0 emit
+    endif
+
+    625 *
+    print-u16
 ;
 
 : print-i12 ( i12 -- )
@@ -129,22 +142,6 @@
     print-u16
 ;
 
-
-: print-fraction4
-    dup #0000 = if
-        LIT '0 emit
-        drop
-    else
-        625 *
-        _r-fraction
-    endif
-;
-
-: _r-fraction
-    10 /mod
-    ?dup if _r-fraction endif
-    ?dup if NIP print-char endif
-;
 
 : f* * #04 SFT2 ;
 : f/ / #40 SFT2 ;
