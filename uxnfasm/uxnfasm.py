@@ -445,8 +445,8 @@ def parse_fixed_point(s):
 
     n &= 0xffff
 
-    eprint(f"{s:>7s} : {n:>5} : {n:016b} : ", end="")
-    print_fixed_point(n)
+    #eprint(f"{s:>7s} : {n:>5} : {n:016b} : ", end="")
+    #print_fixed_point(n)
 
     return n
 
@@ -466,7 +466,7 @@ def print_fixed_point(n):
 
     s = f"{j}"
 
-    eprint(s)
+    #eprint(s)
 
 
 def main(filename):
