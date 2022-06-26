@@ -29,6 +29,11 @@
 %- { SUB2 }
 %* { MUL2 }
 
+
+%<< { NIP #40 SFT SFT2 }
+%>> { NIP SFT2 }
+
+
 %=  { EQU2 ctos }
 %!= { NEQ2 ctos }
 %<  { #8000 ADD2 SWP2 #8000 ADD2 GTH2 ctos }
