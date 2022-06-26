@@ -30,22 +30,29 @@
 
     cr cr cr cr
 
+    0 0 0
+
     \ 300.0 100.0 f/ f. cr
     \ 301.0 100.0 fmod f. cr
     11.125 31.125
     \ 346.2656
 
-    \ how should f* work for 10 30 *
-    over over
-    4 >>
-    *
-    f. cr
-    f. f.
+    10.0 30.0
+    f*
+
+     f.
 
     cr
 
     halt
 brk;
+
+: sf3
+    dup f.
+    over f.
+    rot dup f. rot rot
+    cr
+;
 
 : sin ( n -- sin(n) )
     2 *
@@ -56,7 +63,15 @@ brk;
 
 : fmod over over f/ f* swap - ;
 \ : f* * #04 SFT2 ;
-: f* * #04 SFT2 ;
+: f*
+    over over
+    4 >> *
+    rot rot
+    #000f and
+    * 4 >>
+    +
+;
+
 : f/ / #40 SFT2 ;
 
 
