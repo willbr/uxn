@@ -108,8 +108,12 @@
 : /mod over over / STH2k MUL2 SUB2 STH2r ;
 
 : b. ( u16 -- )
+    print-binary
+    space
+;
+: print-binary ( u16 -- )
     2 u/mod
-    ?dup if b. endif
+    ?dup if print-binary endif
     NIP print-char
 ;
 
@@ -132,6 +136,7 @@
 
     625 *
     print-u16
+    space
 ;
 
 : print-i12 ( i12 -- )
