@@ -59,5 +59,11 @@ sin-table.fth: gen-sin-table.py
 cat: bin/test.tal
 	head -25 $<
 
+wscratch:
+	watchexec -cr --ignore "*.rom" "make scratch"
+
+scratch: FORCE
+	python scratch.py
+
 FORCE: ;
 
