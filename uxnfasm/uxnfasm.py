@@ -451,7 +451,7 @@ def parse_fixed_point(s):
     return n
 
 
-def print_fixed_point(n):
+def fixed_point_to_string(n):
     i = n & 0xfff0
     i >>= 4
     if i >= 0x7ff:
@@ -465,8 +465,12 @@ def print_fixed_point(n):
     j = i + f
 
     s = f"{j}"
+    return s
 
-    #eprint(s)
+
+def print_fixed_point(n):
+    s = fixed_point_to_string(n)
+    eprint(s)
 
 
 def main(filename):
