@@ -162,5 +162,52 @@
 
 : h. print-short ;
 
+: 2pick
+    >r >r
+    dup >r
+
+    SWP2r
+    r>
+    SWP2r
+    r>
+    r>
+;
+
+: 3pick
+    >r >r >r
+    dup >r
+
+    SWP2r
+    r>
+    SWP2r
+    r>
+    SWP2r
+    r>
+    r>
+;
+
+: s1 dup . cr ;
+: s2
+    dup .
+    over .
+    cr
+;
+
+: s3
+    dup .
+    over .
+    2pick .
+    cr
+;
+
+: s4
+    dup .
+    over .
+    2pick .
+    3pick .
+    cr
+;
+
+
 ~debug.fth
 ~ansi.fth
