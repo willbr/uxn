@@ -84,3 +84,8 @@
 
 %print-char { ;print-byte/char JSR2 }
 
+%max_f { #7fff }
+%min_f { #8000 }
+%pi  { 3.125 }
+%2pi { 6.25  }
+
