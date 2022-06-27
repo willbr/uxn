@@ -10,35 +10,46 @@
 %2pie { 6.25  }
 
 : init
-    (
-    -6.25
-    201 0 do
-        i . dup f. dup u. cr
-        0.0625 +
-    loop
-    drop
-    )
-
-    (
     0
-    101 0 do
-        i u. dup f. dup sin f. cr
+    201 0 do
+        i u.
+        dup f.
+        \ dup sin-offset u.
+        dup sin f.
+        cr
         0.0625 +
     loop
     drop
-    )
 
-    cr cr cr cr
+    cr cr
 
-    0 0 0
+    6.25 fmod
 
-    300.0 100.0 f/ f. cr
-    301.0 100.0 fmod f. cr
+
+    f. cr
+    \ 3.14 sin f. cr
+    \ 6.25 sin f. cr
 
     cr
 
     halt
 brk;
+
+: sin-offset ( fp -- u16 )
+        dup 6.25 > if
+            6.25 fmod
+        endif
+        16.0 f*
+        f>u
+;
+
+: sin ( n -- sin(n) )
+    sin-offset
+    2 *
+    ;sin-table
+    +
+    LDA2
+;
 
 
 : sf1
@@ -91,12 +102,6 @@ brk;
     r>
 ;
 
-: sin ( n -- sin(n) )
-    2 *
-    ;sin-table
-    +
-    LDA2
-;
 
 : fmod over over f/ f* - ;
 
