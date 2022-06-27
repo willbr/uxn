@@ -38,11 +38,10 @@
     \ 346.2656
 
     \ (14.25 / 9.5) = 1.5
-    14.25 9.5
-
-    sf2
-    over over
-    sf2
+    \ 14.25 9.5
+    \ 60.5 2.25
+    2046.0 2.0 sf2 f/ f. cr
+    1.0 2.0 sf2 f/ f. cr
 
     \ 4 >> /
     \ rot rot
@@ -50,12 +49,30 @@
     \ / 4 >>
     \ +
 
-     f.
-
     cr
 
     halt
 brk;
+
+
+
+(
+def d5(a, b):
+    if a >= b:
+        i = a << 0
+        j = b << 0
+        k = i / j
+        l = int(k) & 0xffff
+        c = l << 4
+    else:
+        i = a << 1
+        j = b << 0
+        k = i / j
+        #print(i,j,k)
+        l = int(k) & 0xffff
+        c = l << 3
+    pp(a,b,c)
+    )
 
 : sf1
     dup f.
@@ -117,22 +134,23 @@ brk;
 : fmod over over f/ f* swap - ;
 \ : f* * #04 SFT2 ;
 : f*
-    over over
-    4 >> *
-    rot rot
-    #000f and
-    * 4 >>
-    +
+    1 >>
+    swap 1 >>
+    *
+    2 >>
 ;
 
-: f/ ;
-    over over
-    4 >> /
-    rot rot
-    #000f and
-    / 4 >>
-    +
+: f/
+    over over > if
+        /
+        4 <<
+    else
+        swap
+        1 <<
+        swap
+        /
+        3 <<
+    endif
 ;
-
 
 ~sin-table.fth
