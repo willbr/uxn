@@ -32,47 +32,14 @@
 
     0 0 0
 
-    \ 300.0 100.0 f/ f. cr
-    \ 301.0 100.0 fmod f. cr
-    \ 11.125 31.125
-    \ 346.2656
-
-    \ (14.25 / 9.5) = 1.5
-    \ 14.25 9.5
-    \ 60.5 2.25
-    2046.0 2.0 sf2 f/ f. cr
-    1.0 2.0 sf2 f/ f. cr
-
-    \ 4 >> /
-    \ rot rot
-    \ #000f and
-    \ / 4 >>
-    \ +
+    300.0 100.0 f/ f. cr
+    301.0 100.0 fmod f. cr
 
     cr
 
     halt
 brk;
 
-
-
-(
-def d5(a, b):
-    if a >= b:
-        i = a << 0
-        j = b << 0
-        k = i / j
-        l = int(k) & 0xffff
-        c = l << 4
-    else:
-        i = a << 1
-        j = b << 0
-        k = i / j
-        #print(i,j,k)
-        l = int(k) & 0xffff
-        c = l << 3
-    pp(a,b,c)
-    )
 
 : sf1
     dup f.
@@ -131,8 +98,8 @@ def d5(a, b):
     LDA2
 ;
 
-: fmod over over f/ f* swap - ;
-\ : f* * #04 SFT2 ;
+: fmod over over f/ f* - ;
+
 : f*
     1 >>
     swap 1 >>
