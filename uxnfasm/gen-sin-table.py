@@ -1,8 +1,8 @@
-from math import sin
+from math import sin, pi
 from sys import argv
 
 with open(argv[1], 'w') as f:
-    f.write("@sin-table\n")
+    f.write("@fsin-table\n")
 
     step = 1/16
 
@@ -19,5 +19,21 @@ with open(argv[1], 'w') as f:
     for i,j,k in arc5:
         l = round(k, 4)
         s = f"( {i:2} {j:+2.4f} {k:+2.4f} ) raw {l:+2.4f}\n"
+        f.write(s)
+
+    f.write('\n')
+    f.write("@sin-table\n")
+
+    two_pi = pi * 2
+    step = two_pi / 256
+    for i in range(256):
+        j = sin(i*step)
+        k = int(j * 127)
+        if k < 0:
+            l = k + 0x100
+            l &= 0xff
+        else:
+            l = k
+        s = f"( {i:3d} {j:+2.2f} {k:+04d} ) raw-byte 0x{l:02x}\n"
         f.write(s)
 

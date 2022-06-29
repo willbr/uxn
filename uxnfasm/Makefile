@@ -55,6 +55,7 @@ wsin:
 
 sin-table.fth: gen-sin-table.py
 	python $< $@
+	$(cat) $@
 
 cat: bin/test.tal
 	head -25 $<

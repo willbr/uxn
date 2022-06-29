@@ -58,7 +58,7 @@
 : fsin ( n -- sin(n) )
     fsin-offset
     2 *
-    ;sin-table
+    ;fsin-table
     +
     LDA2
 ;
