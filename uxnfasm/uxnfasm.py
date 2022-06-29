@@ -230,6 +230,8 @@ class CompilationUnit():
             self.compile_ere()
         elif w == 'raw':
             self.compile_raw_number()
+        elif w == 'raw-byte':
+            self.compile_raw_byte()
         elif w[0] == '"':
             self.read_string(w[1:])
         elif w[0] == '%':
@@ -390,6 +392,12 @@ class CompilationUnit():
         w = self.next_word()
         n = self.parse_number(w)
         self.print(f"{n:04x}")
+
+    def compile_raw_byte(self):
+        w = self.next_word()
+        n = self.parse_number(w)
+        assert n <= 0xff
+        self.print(f"{n:02x}")
 
 
 def read_file(filename):
