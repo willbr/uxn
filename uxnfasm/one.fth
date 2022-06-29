@@ -46,6 +46,16 @@ brk;
     .Mouse/y DEI2 t @ c-wobble +
     spr
 
+    #43 ;s-circle
+    .Mouse/x DEI2 t @ c-wobble 2 / +
+    .Mouse/y DEI2 t @ s-wobble 2 / +
+    spr
+
+    #45 ;s-circle
+    .Mouse/x DEI2 t @ 2 * c-wobble 2 * +
+    .Mouse/y DEI2 t @ 2 * s-wobble 2 * +
+    spr
+
     1 t +!
 brk;
 
