@@ -111,6 +111,7 @@
     print-binary
     space
 ;
+
 : print-binary ( u16 -- )
     2 u/mod
     ?dup if print-binary endif
