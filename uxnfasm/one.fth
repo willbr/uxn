@@ -9,18 +9,11 @@
     #a50f .System/g DEO2
     #fe0f .System/b DEO2
 
-    (
-    255 0 do
-        i dup . sin 127 +
-        3 >>
-        dup hline space
-        . cr
-    loop
+    ;sin-table .Audio0/addr DEO2
+    #0100 .Audio0/length DEO2
+    #ff .Audio0/volume DEO
+    #ffff .Audio0/adsr
 
-    cr cr
-    halt
-
-    )
 brk;
 
 : u8>s16
@@ -132,8 +125,10 @@ brk;
 ;
 
 : on-key ( --> )
+    #3c .Audio0/pitch DEO
+
     .Controller/key DEI
-    debug
+    \ debug
     DUP c-esc EQU if1
         POP
         halt
