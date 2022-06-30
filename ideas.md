@@ -96,3 +96,40 @@ gameboy only has 16KiB of RAM, unless you have paged memory
     IO
         data 256 bytes
 
+# simple uxnfasm
+
+    numbers default to literals
+    raw raw-byte
+
+    decial hex
+    mode-byte
+    mode-short
+
+    if else elif endif
+    do loop +loop
+    leave
+    begin again
+    begin untl
+    begin while repeat
+
+    \ line comments
+    ( comments )
+
+    incbin
+    variable
+    sprite-1bpp
+
+uxnfasm
+
+    try:
+        n = self.parse_number(w)
+        self.print(f"#{n:04x}")
+    except ValueError:
+        self.print(f';{w} JSR2')
+
+numbers
+
+    decial 12345
+    hex 0xffff
+    fixed 123.563
+
