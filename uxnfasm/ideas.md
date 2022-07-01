@@ -2,6 +2,8 @@
 
 ## todo
 
+    ifnot ifnot1 endif
+        wrapper for JCN2
     base
     allot
     fill ( addr n char -- )
