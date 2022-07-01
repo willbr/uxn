@@ -133,3 +133,29 @@ into
         *   ( m )
     ;
 
+
+# gb assember
+
+    a xor
+    *$4000 a ld
+
+
+## typed stack
+
+values and registers are followed by a type qualifyer
+
+    value type
+
+
+    : a enum_a REG ;
+
+    $4000
+    4000 LIT2
+
+    *$4000
+    4000 PTR2
+
+
+    l dec
+    a add
+
