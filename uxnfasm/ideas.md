@@ -32,3 +32,17 @@ into
     ( default )
     @endcase
 
+or
+
+    10
+    dup 1 NEQ2 ;&case2 JCN2
+        ."one"
+        ;&endcase JMP2
+    &case2
+    dup 2 NEQ2 ;&case3 JCN2
+        ."two"
+        ;&endcase JMP2
+    ;&case3
+        ( default )
+    &endcase
+
