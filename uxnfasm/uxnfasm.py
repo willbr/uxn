@@ -239,7 +239,6 @@ class CompilationUnit():
         elif w == 'endcase':
             header, next_lbl, end_lbl  = self.rst[-1]
             assert header == 'case'
-            self.print('POP2')
             self.print(f'\n&{end_lbl}')
             self.rst.pop()
             self.depth -= 1
