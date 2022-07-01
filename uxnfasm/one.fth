@@ -126,23 +126,32 @@ brk;
 
 : on-key ( --> )
     .Controller/key DEI
+    debug
 
-    #01 SFT
+    DUP c-esc EQU if1
+        halt
+        POP
+        brk;
+    endif
+    DUP k-c EQU if1
+        clear-background
+    endif
+
+
+    DUP #60 GTH if1
+        #40 SUB
+    endif
+
+    DUP #20 LTH if1
+        POP
+        brk;
+    endif
 
     .Audio0/pitch DEO
 
     \ #3c .Audio0/pitch DEO
 
-    .Controller/key DEI
     \ debug
-    DUP c-esc EQU if1
-        POP
-        halt
-    endif
-    DUP k-c EQU if1
-        clear-background
-    endif
-    POP
 brk;
 
 @s-clear
