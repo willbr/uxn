@@ -12,7 +12,7 @@
     ;sin-table .Audio0/addr DEO2
     #0100 .Audio0/length DEO2
     #ff .Audio0/volume DEO
-    #ffff .Audio0/adsr
+    #1111 .Audio0/adsr DEO2
 
 brk;
 
@@ -125,7 +125,13 @@ brk;
 ;
 
 : on-key ( --> )
-    #3c .Audio0/pitch DEO
+    .Controller/key DEI
+
+    #01 SFT
+
+    .Audio0/pitch DEO
+
+    \ #3c .Audio0/pitch DEO
 
     .Controller/key DEI
     \ debug
@@ -134,7 +140,6 @@ brk;
         halt
     endif
     DUP k-c EQU if1
-        POP
         clear-background
     endif
     POP
