@@ -331,6 +331,7 @@ class CompilationUnit():
             return None
         self.body = self.body[m.end():]
         comment = m.group().strip()
+        self.print(f"( {comment} )")
 
 
     def read_comment(self):
