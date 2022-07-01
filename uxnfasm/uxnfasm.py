@@ -212,6 +212,37 @@ class CompilationUnit():
             header, begin_lbl, pred_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
             self.print(f'( leave ) ;&{end_lbl} JMP2')
+        elif w == 'case':
+            self.depth += 1
+            end_lbl  = gensym('end-case')
+            next_lbl  = gensym('next-case')
+            self.rst.append(['case', next_lbl, end_lbl])
+            self.print('( case )')
+            self.print(f'DUP2')
+        elif w == 'of':
+            self.depth += 1
+            header, next_lbl, end_lbl  = self.rst[-1]
+            assert header == 'case'
+            self.print('( of )')
+            self.print(f'NEQ2 ;&{next_lbl} JCN2')
+            self.print('POP2')
+        elif w == 'endof':
+            header, old_next_lbl, end_lbl  = self.rst[-1]
+            assert header == 'case'
+            next_lbl  = gensym('next-case')
+            self.rst[-1][1] = next_lbl
+            self.print('( endof )')
+            self.print(f';&{end_lbl} JMP2')
+            self.print(f'\n&{old_next_lbl}')
+            self.print(f'DUP2')
+            self.depth -= 1
+        elif w == 'endcase':
+            header, next_lbl, end_lbl  = self.rst[-1]
+            assert header == 'case'
+            self.print('POP2')
+            self.print(f'\n&{end_lbl}')
+            self.rst.pop()
+            self.depth -= 1
         elif w == 'tal':
             self.read_tal()
         elif w == 'incbin':
@@ -239,6 +270,7 @@ class CompilationUnit():
         elif w[0] == '~':
             self.compile_file(w[1:])
         elif w in self.macros:
+            self.print(f"( {w} )")
             body = self.macros[w]
             for child in body:
                 self.compile(child)
