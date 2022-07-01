@@ -80,25 +80,10 @@ A 3-INSTRUCTION FORTH FOR EMBEDDED SYSTEMS WORK
         3D display?
         vector display?
 
-# uxngb classic & color
-
-gameboy only has 16KiB of RAM, unless you have paged memory
-
-    RAM reduced from 64KiB to 4KB?
-    working stack
-        data 254 btes
-        error 1 byte
-        pointer 1 byte
-    working stack
-        data 254 btes
-        error 1 byte
-        pointer 1 byte
-    IO
-        data 256 bytes
-
 # simple uxnfasm
 
     numbers default to literals
+    numbers default to short?
     raw raw-byte
 
     decial hex
@@ -119,6 +104,8 @@ gameboy only has 16KiB of RAM, unless you have paged memory
     variable
     sprite-1bpp
 
+    tal endtal
+
 uxnfasm
 
     try:
@@ -132,4 +119,17 @@ numbers
     decial 12345
     hex 0xffff
     fixed 123.563
+
+# editor that traces and adds stack comments
+
+type
+
+    : square ( c -- c^2 ) dup * ;
+
+into
+
+    : square ( c -- c^2 )
+        dup ( c c )
+        *   ( m )
+    ;
 
