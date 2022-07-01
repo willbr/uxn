@@ -1,202 +1,59 @@
 : init ( --> )
-    variable t
-    ;on-frame .Screen/vector DEO2
-    ;on-key .Controller/vector DEO2
+
+    (
+    10
+    case
+    1 of ."one" endof
+    2 of ."two" endof
+    ( default )
+    endcase
+    )
+
+    1
+    case
+    1 of
+        ;&one emit-string cr
+        endof
+    2 of
+        ;&two emit-string cr
+        endof
+        ;&other emit-string cr
+    endcase
 
 
-    ( set system colors )
-    #a5ff .System/r DEO2
-    #a50f .System/g DEO2
-    #fe0f .System/b DEO2
 
-    ;sin-table .Audio0/addr DEO2
-    #0100 .Audio0/length DEO2
-    #ff .Audio0/volume DEO
-    #1111 .Audio0/adsr DEO2
+    cr
+    halt
 
 brk;
 
-: u8>s16
-    dup 0x7f > if
-        0x100 swap -
-        0 swap -
-    endif
-;
+&one
+"one"
+&two
+"two"
+&other
+"other"
 
-: hline
-    0 do
-        LIT '# emit
-    loop
-;
+(
+into
 
-: on-frame ( --> )
-    clear-foreground
+    10
+    dup 1 = if ."one" ;endcase JMP2 endif
+    dup 2 = if ."two" ;endcase JMP2 endif
+    ( default )
+    @endcase
 
-    #41 ;s-circle .Mouse/x DEI2 .Mouse/y DEI2 spr
+or
 
-    #42 ;s-circle
-    .Mouse/x DEI2 t @ s-wobble +
-    .Mouse/y DEI2 t @ c-wobble +
-    spr
-
-    #43 ;s-circle
-    .Mouse/x DEI2 t @ c-wobble 2 / +
-    .Mouse/y DEI2 t @ s-wobble 2 / +
-    spr
-
-    #45 ;s-circle
-    .Mouse/x DEI2 t @ 2 * c-wobble 2 * +
-    .Mouse/y DEI2 t @ 2 * s-wobble 2 * +
-    spr
-
-    1 t +!
-brk;
-
-: mod
-    umod
-;
-
-: sin-offset ( s16 -- u8 )
-    256 mod
-;
-
-: sin ( n -- sin(n) )
-    sin-offset
-    ;sin-table
-    +
-    LDA #00 SWP
-    u8>s16
-;
-
-
-: cos ( s16 -- cos(n) )
-    64 + sin
-;
-
-: s-wobble
-    sin 2 /
-;
-
-: c-wobble
-    cos 2 /
-;
-
-: spr ( u8 addr x16 y16 -- )
-    .Screen/y DEO2
-    .Screen/x DEO2
-    .Screen/addr DEO2
-    .Screen/sprite DEO
-;
-
-: clear-foreground
-    ;s-back-slash .Screen/addr DEO2
-    #01 .Screen/auto DEO 
-
-    #0000 .Screen/y DEO2
-
-    .Screen/height DEI2 8 /
-    0 do
-        #0000 .Screen/x DEO2
-        .Screen/width DEI2 8 /
-        0 do
-            #41 .Screen/sprite DEO
-        loop
-        .Screen/y DEI2 8 +
-        .Screen/y DEO2
-    loop
-;
-
-: clear-background
-    ;s-forward-slash .Screen/addr DEO2
-    #01 .Screen/auto DEO 
-
-    #0000 .Screen/y DEO2
-
-    .Screen/height DEI2 8 /
-    0 do
-        #0000 .Screen/x DEO2
-        .Screen/width DEI2 8 /
-        0 do
-            #01 .Screen/sprite DEO
-        loop
-        .Screen/y DEI2 8 +
-        .Screen/y DEO2
-    loop
-;
-
-: on-key ( --> )
-    .Controller/key DEI
-    debug
-
-    DUP c-esc EQU if1
-        halt
-        POP
-        brk;
-    endif
-    DUP k-c EQU if1
-        clear-background
-    endif
-
-
-    DUP #60 GTH if1
-        #40 SUB
-    endif
-
-    DUP #20 LTH if1
-        POP
-        brk;
-    endif
-
-    .Audio0/pitch DEO
-
-    \ #3c .Audio0/pitch DEO
-
-    \ debug
-brk;
-
-@s-clear
-sprite-1bpp
-........
-........
-........
-........
-........
-........
-........
-........
-
-@s-back-slash
-sprite-1bpp
-x.......
-.x......
-..x.....
-...x....
-....x...
-.....x..
-......x.
-.......x
-
-@s-forward-slash
-sprite-1bpp
-.......x
-......x.
-.....x..
-....x...
-...x....
-..x.....
-.x......
-x.......
-
-@s-circle
-sprite-1bpp
-..xxxx..
-.xxxxxx.
-xxxxxxxx
-xxxxxxxx
-xxxxxxxx
-xxxxxxxx
-.xxxxxx.
-..xxxx..
-
-~fixed.fth
-~sin-table.fth
+    10
+    dup 1 NEQ2 ;&case2 JCN2
+        ."one"
+        ;&endcase JMP2
+    &case2
+    dup 2 NEQ2 ;&case3 JCN2
+        ."two"
+        ;&endcase JMP2
+    ;&case3
+        ( default )
+    &endcase
+)
