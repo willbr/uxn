@@ -83,7 +83,7 @@ class CompilationUnit():
         if self.prev_word == '\n' and w == '\n':
             pass
         elif w == '\n':
-            indent = "  " * self.depth
+            indent = "    " * self.depth
             print()
             self.sep = indent
         else:
