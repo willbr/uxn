@@ -4,7 +4,6 @@ no-stdlib
     3
     dup case1
     dup case2
-    dup case3
     drop
     debug
 
@@ -36,39 +35,17 @@ brk;
 ;
 
 : case2
-    dup 1 = if
-        drop
+    case
+    1 of
         ;one
-    else
-        dup 2 = if
-            drop
-            ;two
-        else
-            drop
-            ;other
-        endif
-    endif
-    emit-string cr
-;
-
-: case3
-    #0001
-    OVR2 NEQ2 ;&case1 JCN2 POP2
-        ;one
-        ;&end JMP2
-    &case1
-    #0002
-    OVR2 NEQ2 ;&case2 JCN2 POP2
+    endof
+    2 of
         ;two
-        ;&end JMP2
-    &case2
-        POP2
+    endof
         ;other
-    &end
-
+    endcase
     emit-string cr
 ;
-
 
 : emit-string ( addr -- )
     begin LDAk DUP while1

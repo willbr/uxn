@@ -216,17 +216,17 @@ class CompilationUnit():
             #self.depth += 1
             end_lbl  = gensym('end-case')
             next_lbl  = gensym('next-case')
-            self.rst.append(['case', next_lbl, end_lbl])
+            self.rst.append(['case', next_lbl, end_lbl, False])
             self.print('( case )')
         elif w == 'of':
             self.depth += 1
-            header, next_lbl, end_lbl  = self.rst[-1]
+            header, next_lbl, end_lbl, otherwise  = self.rst[-1]
             assert header == 'case'
             self.print('\n')
             self.print('( of )')
             self.print(f'OVR2 NEQ2 ;&{next_lbl} JCN2 POP2')
         elif w == 'endof':
-            header, old_next_lbl, end_lbl  = self.rst[-1]
+            header, old_next_lbl, end_lbl, otherwise  = self.rst[-1]
             assert header == 'case'
             next_lbl  = gensym('next-case')
             self.rst[-1][1] = next_lbl
@@ -237,15 +237,20 @@ class CompilationUnit():
             self.print('\n')
             self.print(f'&{old_next_lbl}')
         elif w == 'endcase':
-            header, next_lbl, end_lbl  = self.rst[-1]
+            header, next_lbl, end_lbl, otherwise  = self.rst[-1]
             assert header == 'case'
+            if otherwise == False:
+                self.print('\n')
+                self.print('POP2')
             self.print('\n')
             self.print(f'&{end_lbl}')
             self.rst.pop()
             #self.depth -= 1
         elif w == 'otherwise':
-            header, next_lbl, end_lbl  = self.rst[-1]
+            header, next_lbl, end_lbl, otherwise  = self.rst[-1]
             assert header == 'case'
+            assert otherwise == False
+            self.rst[-1][3] = True
             self.print('\n')
             self.print(f'POP2')
         elif w == 'tal':
