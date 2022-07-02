@@ -152,7 +152,7 @@ class CompilationUnit():
             if w == 'if':
                 self.print(f'( if ) #0000 EQU2 ;&{false_lbl} JCN2')
             else:
-                self.print(f'( if ) #00 EQU ;&{false_lbl} JCN2')
+                self.print(f'( if1 ) #00 EQU ;&{false_lbl} JCN2')
             self.depth += 1
         elif w == 'else':
             self.print('( else )')
@@ -269,6 +269,7 @@ class CompilationUnit():
         elif w[0] == '~':
             self.compile_file(w[1:])
         elif w in self.macros:
+            self.print("\n")
             self.print(f"( {w} )")
             body = self.macros[w]
             for child in body:
