@@ -48,3 +48,12 @@ or
         ( default )
     &endcase
 
+or
+
+    10
+    dup 1 if ."one" else
+    dup 2 if ."two" else
+    ( default )
+    @endcase
+    endif endif
+
