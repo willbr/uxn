@@ -1,11 +1,10 @@
+no-stdlib
 : init ( --> )
 
     3
-
     dup case1
-    \ dup case2
-    \ dup case3
-
+    dup case2
+    dup case3
     drop
     debug
 
@@ -26,10 +25,11 @@ brk;
     case
     1 of
         ;one
-        endof
+    endof
     2 of
         ;two
-        endof
+    endof
+    otherwise
         ;other
     endcase
     emit-string cr
@@ -52,20 +52,29 @@ brk;
 ;
 
 : case3
-    DUP2 #0001 NEQ2 ;&case1 JCN2
-        POP2
+    #0001
+    OVR2 NEQ2 ;&case1 JCN2 POP2
         ;one
         ;&end JMP2
-&case1
-    DUP2 #0002 NEQ2 ;&case2 JCN2
-        POP2
+    &case1
+    #0002
+    OVR2 NEQ2 ;&case2 JCN2 POP2
         ;two
         ;&end JMP2
-&case2
-    POP2
-    ;other
-&end
+    &case2
+        POP2
+        ;other
+    &end
 
     emit-string cr
 ;
 
+
+: emit-string ( addr -- )
+    begin LDAk DUP while1
+        emit
+        INC2
+    repeat
+    POP
+    POP2
+;
