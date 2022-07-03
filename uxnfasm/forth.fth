@@ -237,6 +237,24 @@
     endif
 ;
 
+: fill ( addr n c -- )
+    >r
+    0 do
+        j over c!
+        1 +
+    loop
+    POP2r
+    POP2
+;
+
+: erase ( addr n -- )
+    0 do
+        0 over c!
+        1 +
+    loop
+    POP2
+;
+
 ~debug.fth
 ~ansi.fth
 ~sin-table.fth
