@@ -19,7 +19,7 @@ def eprint(s="", end="\n"):
 class CompilationUnit():
     def __init__(self):
         self.macros = {}
-        self.variables = []
+        self.variables = {}
         self.body = None
         self.rst = []
         self.current_word = None
@@ -258,7 +258,12 @@ class CompilationUnit():
         elif w == 'incbin':
             self.read_binary_file()
         elif w == 'variable':
-            self.create_variable()
+            name = self.next_word()
+            self.create_variable(name, 2)
+        elif w == 'array':
+            name = self.next_word()
+            size = int(self.next_word()) * 2
+            self.create_variable(name, size)
         elif w == 'sprite-1bpp':
             self.compile_sprite_1bpp()
         elif w == '(':
@@ -379,19 +384,19 @@ class CompilationUnit():
 
         self.macros[name] = body
 
-    def create_variable(self):
-        name = self.next_word()
+    def create_variable(self, name, size):
         if name in self.variables:
             raise ValueError(f"Duplicate variable: {name}")
 
         if is_uxntal(name):
             raise ValueError(f"Invalid varialbe name: {name}, it looks like uxntal.")
 
-        self.variables.append(name)
+        self.variables[name] = size
 
     def compile_variables(self):
-        for name in self.variables:
-            self.print(f"@{name} $2")
+        for name, size in self.variables.items():
+            self.print(f"@{name} ${size}")
+            self.print('\n')
 
     def compile_sprite_1bpp(self):
         for i in range(8):

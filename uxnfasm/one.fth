@@ -1,10 +1,28 @@
-no-stdlib
+\ no-stdlib
 : init ( --> )
 
-    3
-    dup case1
-    dup case2
-    drop
+    variable name
+    array points 5
+
+    ;will name !
+    name @ emit-string cr
+
+    ;tim name !
+    name @ emit-string cr
+    cr
+
+     1 points 0 + !
+     2 points 2 + !
+     3 points 4 + !
+     4 points 6 + !
+     5 points 8 + !
+
+     print-points
+     cr
+     \ print-points
+
+
+    cr
     debug
 
     cr
@@ -12,41 +30,20 @@ no-stdlib
 
 brk;
 
-@one
-"one"
-@two
-"two"
-@other
-"other"
+@will
+"Will"
+@tim
+"Tim"
 
-
-: case1
-    case
-    1 of
-        ;one
-    endof
-    2 of
-        ;two
-    endof
-    otherwise
-        ;other
-    endcase
-    emit-string cr
+: print-points
+     points 0 + ? cr
+     points 2 + ? cr
+     points 4 + ? cr
+     points 6 + ? cr
+     points 8 + ? cr
 ;
 
-: case2
-    case
-    1 of
-        ;one
-    endof
-    2 of
-        ;two
-    endof
-        ;other
-    endcase
-    emit-string cr
-;
-
+(
 : emit-string ( addr -- )
     begin LDAk DUP while1
         emit
@@ -55,3 +52,5 @@ brk;
     POP
     POP2
 ;
+)
+
