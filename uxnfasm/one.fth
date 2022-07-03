@@ -2,7 +2,7 @@
 : init ( --> )
 
     variable name
-    array points 5
+    array points 3
 
     ;will name !
     name @ emit-string cr
@@ -11,16 +11,17 @@
     name @ emit-string cr
     cr
 
+     points 6 0xff fill
+     print-points cr
+
      1 points 0 + !
      2 points 2 + !
      3 points 4 + !
-     4 points 6 + !
-     5 points 8 + !
 
-     print-points
-     cr
-     \ print-points
+     print-points cr
 
+     points 6 erase
+     print-points cr
 
     cr
     debug
@@ -39,18 +40,5 @@ brk;
      points 0 + ? cr
      points 2 + ? cr
      points 4 + ? cr
-     points 6 + ? cr
-     points 8 + ? cr
 ;
-
-(
-: emit-string ( addr -- )
-    begin LDAk DUP while1
-        emit
-        INC2
-    repeat
-    POP
-    POP2
-;
-)
 
