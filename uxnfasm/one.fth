@@ -1,44 +1,41 @@
-\ no-stdlib
-: init ( --> )
+\ https://solhsa.com/imgui/index.html
 
-    variable name
-    array points 3
+%key { .Controller/key DEI }
+variable mouse.x
+variable mouse.y
+variable t
 
-    ;will name !
-    name @ emit-string cr
+: init ( -> )
+    640 .Screen/width DEO2
+    480 .Screen/height DEO2
 
-    ;tim name !
-    name @ emit-string cr
-    cr
+    ;on-frame .Screen/vector DEO2
+    ;on-key .Controller/vector DEO2
 
-     points 6 0xff fill
-     print-points cr
 
-     1 points 0 + !
-     2 points 2 + !
-     3 points 4 + !
-
-     print-points cr
-
-     points 6 erase
-     print-points cr
-
-    cr
-    debug
-
-    cr
-    halt
-
+    ( set system colors )
+    #a5ff .System/r DEO2
+    #a50f .System/g DEO2
+    #fe0f .System/b DEO2
 brk;
 
-@will
-"Will"
-@tim
-"Tim"
+: on-frame ( -> )
+    \ clear screen
+    t @ .System/r DEO2
 
-: print-points
-     points 0 + ? cr
-     points 2 + ? cr
-     points 4 + ? cr
-;
+    t @ 1+ t !
+brk;
+
+: on-key ( -> )
+    key
+    debug
+    dup k-esc = if
+        halt
+    endif
+
+    drop
+brk;
+
+: on-mouse ( -> )
+brk;
 
