@@ -82,10 +82,11 @@
 %! { STA2 }
 %c! { STA POP }
 
-%c-esc { #1b }
-%k-esc { #1b }
-%k-c { #63 }
+%c-esc { #001b }
+%k-esc { #001b }
+%k-c { #0063 }
 
+%key { #00 .Controller/key DEI }
 %print-char { ;print-byte/char JSR2 }
 
 %max_f { #7fff }
