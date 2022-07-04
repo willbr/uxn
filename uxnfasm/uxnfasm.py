@@ -265,7 +265,11 @@ class CompilationUnit():
             size = int(self.next_word()) * 2
             self.create_variable(name, size)
         elif w == 'sprite-1bpp':
-            self.compile_sprite_1bpp()
+            w = self.next_word()
+            width = self.parse_number(w)
+            w = self.next_word()
+            height = self.parse_number(w)
+            self.compile_sprite_1bpp(width, height)
         elif w == '(':
             self.read_comment()
         elif w == '\\':
@@ -398,14 +402,52 @@ class CompilationUnit():
             self.print(f"@{name} ${size}")
             self.print('\n')
 
-    def compile_sprite_1bpp(self):
-        for i in range(8):
-            w = self.next_word()
-            s = w
+    def compile_sprite_1bpp(self, width, height):
+        assert width % 8 == 0
+        assert height % 8 == 0
+        w = width // 8
+        h = height // 8
+        #eprint(f"{w}, {h}")
+
+        rows = []
+
+        for i in range(height):
+            word = self.next_word()
+            s = word
+            assert len(s) == width
             s = re.sub('\.', '0', s)
             s = re.sub('[^0]', '1', s)
-            n = int(s, 2)
-            self.print(f"{n:02x}")
+            #eprint(s)
+            chunks = [s[i:i+8] for i in range(0, len(s), 8)]
+            row = [int(c, 2) for c in chunks]
+            rows.append(row)
+
+        assert len(rows) == height
+
+        if (w,h) == (1,1):
+            for i in range(8):
+                n = rows[i][0]
+                self.print(f"{n:02x}")
+            self.print("\n")
+        elif (w,h) == (2,2):
+            for i in range(8):
+                n = rows[i][0]
+                self.print(f"{n:02x}")
+            self.print("\n")
+            for i in range(8):
+                n = rows[i][1]
+                self.print(f"{n:02x}")
+            self.print("\n")
+            for i in range(8,16):
+                n = rows[i][0]
+                self.print(f"{n:02x}")
+            self.print("\n")
+            for i in range(8,16):
+                n = rows[i][1]
+                self.print(f"{n:02x}")
+            self.print("\n")
+        else:
+            assert False
 
 
     def read_string(self, w):
