@@ -193,6 +193,7 @@ class CompilationUnit():
             self.print(f';&{begin_lbl} JMP2')
             self.print(f'&{end_lbl}')
             self.rst.pop()
+            self.depth -= 1
         elif w == 'until':
             header, begin_lbl, end_lbl  = self.rst[-1]
             assert header == 'begin'
