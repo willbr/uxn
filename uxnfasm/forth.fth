@@ -1,5 +1,5 @@
-: cr #0a emit ;
-: spaces 0 do #14 emit loop ;
+: cr #0a emit1 ;
+: spaces 0 do #14 emit1 loop ;
 
 : .  print-i16 space ;
 : u. print-u16 space ;
@@ -22,7 +22,7 @@
 
 : print-i16 ( i16 -- )
     DUP2 negative? if
-        LIT '- emit
+        LIT '- emit1
         abs
     endif
     print-u16
@@ -64,7 +64,7 @@
 
 : type
     0 do
-        LDAk emit
+        LDAk emit1
         INC2
     loop
     POP2
@@ -73,21 +73,21 @@
 : page
     ( move cursor to top )
     csi
-    LIT '0 emit
-    LIT '; emit
-    LIT '0 emit
-    LIT 'H emit
+    LIT '0 emit1
+    LIT '; emit1
+    LIT '0 emit1
+    LIT 'H emit1
 
     ( clear page )
     csi
-    LIT '2 emit
-    LIT 'J emit
+    LIT '2 emit1
+    LIT 'J emit1
 ;
 
 
 : csi
-    c-esc emit
-    LIT '[ emit
+    c-esc emit1
+    LIT '[ emit1
 ;
 
 : ? @ . ;
@@ -97,7 +97,7 @@
 
 : emit-string ( addr -- )
     begin LDAk DUP while1
-        emit
+        emit1
         INC2
     repeat
     POP
@@ -120,19 +120,19 @@
 
 : f. ( n -- )
     dup 0x7fff u> if
-        LIT '- emit
+        LIT '- emit1
         0 swap -
     else
-        LIT '+ emit
+        LIT '+ emit1
     endif
 
     dup #04 SFT2
     print-u16
     #000f and
 
-    LIT '. emit
+    LIT '. emit1
     dup 1 = if
-        LIT '0 emit
+        LIT '0 emit1
     endif
 
     625 *
@@ -142,7 +142,7 @@
 
 : print-i12 ( i12 -- )
     dup negative-i12? if
-        LIT '- emit
+        LIT '- emit1
         #1000 swap -
     endif
     print-u16
