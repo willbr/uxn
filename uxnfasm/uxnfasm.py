@@ -271,11 +271,17 @@ class CompilationUnit():
             self.read_binary_file()
         elif w == 'variable':
             name = self.next_word()
-            self.create_variable(name, 2)
+            w = self.next_word()
+            if is_uxntal(w):
+                initial_value = w
+            else:
+                n = self.parse_number(w)
+                initial_value = f"{n:04x}"
+            self.create_variable(name, 2, initial_value)
         elif w == 'array':
             name = self.next_word()
             size = int(self.next_word()) * 2
-            self.create_variable(name, size)
+            self.create_variable(name, size, None)
         elif w == 'sprite-1bpp':
             w = self.next_word()
             width = self.parse_number(w)
@@ -400,18 +406,21 @@ class CompilationUnit():
 
         self.macros[name] = body
 
-    def create_variable(self, name, size):
+    def create_variable(self, name, size, initial_value):
         if name in self.variables:
             raise ValueError(f"Duplicate variable: {name}")
 
         if is_uxntal(name):
             raise ValueError(f"Invalid varialbe name: {name}, it looks like uxntal.")
 
-        self.variables[name] = size
+        self.variables[name] = (size, initial_value)
 
     def compile_variables(self):
-        for name, size in self.variables.items():
-            self.print(f"@{name} ${size}")
+        for name, (size, initial_value) in self.variables.items():
+            if initial_value != None:
+                self.print(f"@{name} {initial_value}")
+            else:
+                self.print(f"@{name} ${size}")
             self.print('\n')
 
     def compile_sprite_1bpp(self, width, height):

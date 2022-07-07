@@ -1,9 +1,10 @@
 \ https://solhsa.com/imgui/index.html
 
 
-variable mouse.x
-variable mouse.y
-variable t
+variable mouse.x 0
+variable mouse.y 0
+variable t 0
+variable tpos :t
 
 : init ( -> )
     1 if
