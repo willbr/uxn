@@ -21,7 +21,10 @@ fixed_prog = re.compile(r"(-|\+)?\d+\.\d+")
 
 prefix_chars = '%:.;,@&|$#~\'"'
 
-def eprint(s="", end="\n"):
+uxnfasm_dir = Path(__file__).parent.resolve()
+
+def eprint(*args, end="\n"):
+    s = ' '.join(map(str, args))
     sys.stderr.write(s + end)
 
 class CompilationUnit():
@@ -501,7 +504,12 @@ class CompilationUnit():
 
 
 def read_file(filename):
-    with open(filename) as f:
+    p = Path(filename)
+
+    if not p.exists():
+        p = uxnfasm_dir.joinpath(filename)
+
+    with open(p) as f:
         return f.read()
 
 
