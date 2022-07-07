@@ -1,5 +1,10 @@
 # ideas
 
+# uxn emu
+    https://justine.lol/blinkenlights/
+
+# lisp
+
 # 3-INSTRUCTION FORTH
 
 A 3-INSTRUCTION FORTH FOR EMBEDDED SYSTEMS WORK
