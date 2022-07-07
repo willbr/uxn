@@ -11,10 +11,11 @@
 
 %halt  { #01 .System/state DEO }
 %debug { #01 .System/debug DEO cr }
-%emit  { .Console/write DEO }
+%emit  { .Console/write DEO POP }
+%emit1  { .Console/write DEO }
 
-%cr    { #0a emit }
-%space { #20 emit }
+%cr    { #0a emit1 }
+%space { #20 emit1 }
 
 %true  { #0001 }
 %false { #0000 }
