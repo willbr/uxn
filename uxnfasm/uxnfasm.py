@@ -1,10 +1,18 @@
 #! /usr/bin/env python
 
+#from rich.console import Console
+from rich.traceback import install
 from pathlib import Path
 
 import re
 import uxn
 import sys
+
+#console = Console(markup=False)
+#python_print = print
+#print = console.print
+
+install(show_locals=True)
 
 token_prog = re.compile(r"\s*(\)|\S+)")
 line_comment_prog = re.compile(r".*")
