@@ -6,21 +6,25 @@
 
 %\n { #000a }
 
+variable in :tib
+array tib 256
+
 : init
-    LIT 'i emit1 cr
     ;on-console .Console/vector DEO2
 brk;
 
 : on-console ( -> )
     #00 .Console/read DEI
-    \ dup emit
+    dup in @ !
+    1 in +!
     dup \n = if
-    drop
         ;newline emit-string
+        space print-short
     else
-        drop
-
+        dup emit
+        space print-short
     endif
+    cr
 brk;
 
 @newline "newline"
