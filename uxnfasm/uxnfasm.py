@@ -484,7 +484,18 @@ class CompilationUnit():
         s = s.replace(r'\"', '"')
         s = s.replace(r'\e', '\u001b')
 
-        ss = ' 20 '.join('"' + elem for elem in s.split())
+        #eprint(repr(s))
+        elems = []
+        for elem in s.split(' '):
+            if elem == '':
+                elems.append(elem)
+            else:
+                elems.append('"' + elem)
+        ss = ' '.join(elems)
+        ss = ss.replace(' ', ' 20 ')
+        ss = ss.replace('  ', ' ')
+        #eprint(repr(ss))
+        #eprint()
         self.print(f"{ss} 00")
 
     def compile_ere(self):
