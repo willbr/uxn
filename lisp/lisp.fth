@@ -2,7 +2,7 @@
 \ read
 \ getobject
 \ gettoken
-\ getchar 
+\ getchar
 
 %\n { #000a }
 
@@ -10,21 +10,19 @@ variable in :tib
 array tib 256
 
 : init
+    ;prompt emit-string
     ;on-console .Console/vector DEO2
 brk;
 
 : on-console ( -> )
+    \ in @ print-short space
     #00 .Console/read DEI
-    dup in @ !
+    dup in @ c!
     1 in +!
-    dup \n = if
-        ;newline emit-string
-        space print-short
-    else
-        dup emit
-        space print-short
+    \n = if
+        ;tib emit-string cr
     endif
-    cr
 brk;
 
 @newline "newline"
+@prompt ">>> "
