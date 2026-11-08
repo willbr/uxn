@@ -295,6 +295,18 @@ DebugAction debugger_frame(DebuggerUI *ui, SDL_Renderer *ren, const Varvara *v, 
 	igEnd();
 	ui->relayout = 0;
 
+	/* opening the debugger leaves the keyboard with the ROM: the panels that
+	 * just appeared (and took focus doing so) give it up */
+	if (ui->unfocus) {
+		igSetWindowFocus_Str(NULL);
+		ui->unfocus = 0;
+		focused = 0;
+	}
+	ui->panel_keys = igIsWindowFocused(ImGuiFocusedFlags_AnyWindow) || io->WantTextInput;
+	ui->panel_mouse = io->WantCaptureMouse;
+	/* the ROM draws its own pointer */
+	if (info->mouse_on_screen && !io->WantCaptureMouse) igSetMouseCursor(ImGuiMouseCursor_None);
+
 	if (focused && io->KeyCtrl && !io->KeyShift && !io->KeyAlt && act.kind == DA_NONE) {
 		if (igIsKeyPressed_Bool(ImGuiKey_S, false)) act.kind = DA_STEP;
 		else if (igIsKeyPressed_Bool(ImGuiKey_N, false)) act.kind = DA_STEP_OVER;

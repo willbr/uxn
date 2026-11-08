@@ -36,6 +36,7 @@ typedef struct Host {
 	int zoom;    /* requested zoom (Zoom menu): sets the window size */
 	int integer; /* integer scaling */
 	LayoutView view; /* where the screen was drawn last frame */
+	int cursor_hidden; /* system pointer hidden by us (debugger closed); -1 unknown */
 	Varvara *v;
 	KeyState keys;
 	int debugger_open; /* toggled by Right Ctrl */
@@ -279,7 +280,7 @@ static void host_release_buttons(Host *h)
 
 /* Leave the paused state. Releases that were dropped while paused are sent
  * now: Controller buttons the ROM has down that the host no longer holds, and
- * any Mouse button the ROM has down (the debugger owns the mouse). */
+ * any Mouse button the ROM has down (input is dropped while paused). */
 static void host_unpause(Host *h)
 {
 	ux_u8 stuck, mouse;
@@ -315,6 +316,29 @@ static int layout_has_altgr(void)
 	return 0;
 }
 
+/* Whether a window point (SDL event coordinates) is on the Varvara screen. */
+static int host_on_screen(const Host *h, float x, float y)
+{
+	float rx = x, ry = y;
+
+	if (h->view.w <= 0) return 0;
+	SDL_RenderCoordinatesFromWindow(h->ren, x, y, &rx, &ry);
+	return rx >= h->view.x && ry >= h->view.y && rx < h->view.x + h->view.w && ry < h->view.y + h->view.h;
+}
+
+/* Input routing. With the debugger hidden the ROM gets everything. With it
+ * open, the ROM keeps the keyboard unless a debugger panel has focus, and
+ * gets the mouse while it is over the screen and not over a panel. */
+static int host_rom_keys(const Host *h)
+{
+	return !h->debugger_open || !h->ui.panel_keys;
+}
+
+static int host_rom_mouse(const Host *h, float x, float y)
+{
+	return !h->debugger_open || (!h->ui.panel_mouse && host_on_screen(h, x, y));
+}
+
 static void host_key(Host *h, const SDL_KeyboardEvent *k)
 {
 	ux_u8 changed, ch;
@@ -325,7 +349,7 @@ static void host_key(Host *h, const SDL_KeyboardEvent *k)
 		/* auto-repeat repeats characters (Backspace, Ctrl+letter) and the
 		 * direction and Home buttons (Left moves on each Controller vector
 		 * call), not the modifier buttons */
-		if (!h->debugger_open) {
+		if (host_rom_keys(h)) {
 			keymap_repeat(&h->keys, k->key, typed, k->mod, &changed, &ch);
 			if (changed) host_input(h, IQ_BUTTON, changed, 1);
 			if (ch) host_input(h, IQ_KEY, ch, 0);
@@ -335,12 +359,15 @@ static void host_key(Host *h, const SDL_KeyboardEvent *k)
 	if (keymap_event(&h->keys, k->key, typed, k->mod, k->down, &changed, &ch) == KEY_TOGGLE_DEBUGGER) {
 		h->debugger_open = !h->debugger_open;
 		host_release_buttons(h);
+		if (h->debugger_open) h->ui.unfocus = 1; /* the keyboard stays with the ROM */
+		h->ui.panel_keys = h->ui.panel_mouse = 0;
+		h->cursor_hidden = -1;
 		host_layout(h);
 		if (!h->debugger_open) host_unpause(h); /* a hidden debugger must not hold the ROM */
 		return;
 	}
-	if (h->debugger_open) {
-		/* the debugger owns the keyboard, but a release must still reach the ROM */
+	if (!host_rom_keys(h)) {
+		/* a debugger panel has the keyboard, but a release must still reach the ROM */
 		if (changed && !k->down) host_input(h, IQ_BUTTON, changed, 0);
 		return;
 	}
@@ -385,7 +412,7 @@ void host_event(Host *h, const SDL_Event *e)
 		break;
 	case SDL_EVENT_TEXT_INPUT:
 		/* not while a chord is held: keymap_event already sent its character */
-		if (!h->debugger_open && keymap_text_allowed(&h->keys, SDL_GetModState())) {
+		if (host_rom_keys(h) && keymap_text_allowed(&h->keys, SDL_GetModState())) {
 			const unsigned char *p = (const unsigned char *)e->text.text;
 			for (; *p; p++) host_input(h, IQ_KEY, *p, 0); /* UTF-8 bytes pass through */
 		}
@@ -397,7 +424,7 @@ void host_event(Host *h, const SDL_Event *e)
 		h->ui.relayout = 1; /* the debugger panels follow the window */
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
-		if (!h->debugger_open) host_mouse_pos(h, e->motion.x, e->motion.y);
+		if (host_rom_mouse(h, e->motion.x, e->motion.y)) host_mouse_pos(h, e->motion.x, e->motion.y);
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 	case SDL_EVENT_MOUSE_BUTTON_UP: {
@@ -407,13 +434,13 @@ void host_event(Host *h, const SDL_Event *e)
 			: e->button.button == SDL_BUTTON_RIGHT ? 0x04 : 0;
 
 		/* a release always reaches the ROM so no mouse button sticks */
-		if (h->debugger_open && down) break;
+		if (down && !host_rom_mouse(h, e->button.x, e->button.y)) break;
 		host_mouse_pos(h, e->button.x, e->button.y);
 		host_input(h, IQ_MOUSE_BUTTON, mask, down);
 		break;
 	}
 	case SDL_EVENT_MOUSE_WHEEL:
-		if (!h->debugger_open && (e->wheel.integer_x || e->wheel.integer_y))
+		if (host_rom_mouse(h, e->wheel.mouse_x, e->wheel.mouse_y) && (e->wheel.integer_x || e->wheel.integer_y))
 			host_input(h, IQ_SCROLL, (int)e->wheel.integer_x, (int)e->wheel.integer_y);
 		break;
 	default:
@@ -503,9 +530,31 @@ void host_draw(Host *h)
 		info.view = h->view;
 		info.win_w = out_w;
 		info.win_h = out_h;
-		info.can_reload = h->rom_path[0] != '\0';
-		host_action(h, debugger_frame(&h->ui, h->ren, h->v, &info));
-	} else if (h->rn.busy) {
+		{
+			float mx, my;
+			int keys_before = host_rom_keys(h);
+
+			SDL_GetMouseState(&mx, &my);
+			info.mouse_on_screen = SDL_GetMouseFocus() == h->win && host_on_screen(h, mx, my);
+			info.can_reload = h->rom_path[0] != '\0';
+			host_action(h, debugger_frame(&h->ui, h->ren, h->v, &info));
+			/* a panel took the keyboard: release what the ROM holds */
+			if (keys_before && !host_rom_keys(h)) host_release_buttons(h);
+		}
+	} else {
+		/* the ROM draws its own pointer: hide the system one over the screen */
+		float mx, my;
+		int hide;
+
+		SDL_GetMouseState(&mx, &my);
+		hide = SDL_GetMouseFocus() == h->win && host_on_screen(h, mx, my);
+		if (hide != h->cursor_hidden) {
+			if (hide) SDL_HideCursor();
+			else SDL_ShowCursor();
+			h->cursor_hidden = hide;
+		}
+	}
+	if (!h->debugger_open && h->rn.busy) {
 		SDL_SetRenderDrawColor(h->ren, 255, 255, 0, 255);
 		SDL_RenderDebugText(h->ren, 8, 8, "ROM busy");
 	}
@@ -531,6 +580,7 @@ int main(int argc, char **argv)
 	memset(&host, 0, sizeof host);
 	host.zoom = 2;
 	host.integer = 1;
+	host.cursor_hidden = -1;
 	while (first < argc && strncmp(argv[first], "--", 2) == 0) {
 		if (strcmp(argv[first], "--root") == 0 && first + 1 < argc) {
 			snprintf(host.root, sizeof host.root, "%s", argv[first + 1]);

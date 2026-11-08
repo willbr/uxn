@@ -88,6 +88,12 @@ show the disassembly, stacks, memory, and breakpoints. Shortcuts work only
 while a debugger panel has focus: Ctrl+S step, Ctrl+N step over, Ctrl+G
 continue, Ctrl+P pause. There are no function-key shortcuts.
 
+With the debugger open the ROM keeps running and keeps the keyboard; the
+mouse reaches it while the pointer is over the screen. Click a panel to give
+it the keyboard (for the shortcuts and the address box), and click the screen
+to give the keyboard back to the ROM. Over the screen the system pointer is
+hidden, since ROMs draw their own.
+
 ### Trying it (Left)
 
 ```

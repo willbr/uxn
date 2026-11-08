@@ -30,6 +30,7 @@ typedef struct DebugInfo {
 	int integer;     /* integer scaling on */
 	LayoutView view; /* where the screen is drawn this frame */
 	int win_w, win_h; /* render output size */
+	int mouse_on_screen; /* the pointer is over the Varvara screen */
 	int can_reload;  /* a ROM path is known */
 } DebugInfo;
 
@@ -38,6 +39,13 @@ typedef struct DebuggerUI {
 	char con[DBG_CON_SIZE]; /* captured Console output (stdout and stderr), newest last */
 	int con_len;
 	int relayout;           /* force the default panel positions for one frame */
+	/* Input routing with the debugger open, set by debugger_frame: the ROM
+	 * gets the keyboard unless a panel has focus (click a panel to focus it,
+	 * click the screen to give the keyboard back), and the mouse when it is
+	 * over the screen rather than a panel. */
+	int panel_keys;         /* a panel has keyboard focus */
+	int panel_mouse;        /* imgui wants the mouse (over or dragging a panel) */
+	int unfocus;            /* host: drop panel focus on the next frame (debugger just opened) */
 	unsigned mem_addr;
 	char mem_text[8];
 } DebuggerUI;
