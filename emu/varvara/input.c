@@ -8,8 +8,9 @@ static void run_vector(Varvara *v, unsigned port)
 {
 	unsigned vec = (unsigned)v->u.dev[port] << 8 | v->u.dev[port + 1];
 
+	v->limit_hit = 0;
 	if (vec) {
-		uxn_eval(&v->u, (ux_u16)vec, v->max_steps);
+		v->limit_hit = uxn_eval(&v->u, (ux_u16)vec, v->max_steps) == UXN_LIMIT;
 		v->u.fault = 0;
 	}
 }

@@ -26,6 +26,10 @@ typedef struct Varvara {
 	 * varvara_boot and varvara_frame take their own max_steps argument and do
 	 * not use this field. The SDL host sets both to 2,000,000. */
 	unsigned long max_steps;
+	/* Set by the last input function (button, key, mouse): nonzero if its
+	 * vector stopped at max_steps. The vector is then suspended with u.pc
+	 * as the resume address; a host may continue it with uxn_eval. */
+	int limit_hit;
 	VarvaraFile file[2];
 	ux_u8 *banks; /* banks 1-15 (15 x 64K), NULL if allocation failed; freed by varvara_close */
 	int has_root;

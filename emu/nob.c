@@ -695,7 +695,7 @@ static bool run_keymap_tests(void)
 	if (!mkdir_if_not_exists(TEST_DIR)) return false;
 	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-Werror", "-O0", "-D_CRT_SECURE_NO_WARNINGS",
 		"-Ivendor/sdl3/include", "-Icore", "-Ihost", "-o", "build/keymap_test.exe",
-		"tests/keymap_test.c", "host/keymap.c");
+		"tests/keymap_test.c", "host/keymap.c", "host/input_queue.c");
 	if (!cmd_run(&cmd)) return false;
 	cmd_append(&cmd, "build/keymap_test.exe");
 	return cmd_run(&cmd);
@@ -792,7 +792,7 @@ static bool build_emu(void)
 	if (!build_sdl3() || !build_imgui() || !build_fs_obj()) return false;
 	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-O2", "-D_CRT_SECURE_NO_WARNINGS",
 		"-Icore", "-Ivarvara", "-Ivendor/sdl3/include", "-Ivendor/cimgui", "-Ihost",
-		"-o", "build/emu.exe", "host/main.c", "host/keymap.c", FS_OBJ);
+		"-o", "build/emu.exe", "host/main.c", "host/keymap.c", "host/input_queue.c", FS_OBJ);
 	for (i = 0; i < sizeof VARVARA_SRCS / sizeof VARVARA_SRCS[0]; i++) cmd_append(&cmd, VARVARA_SRCS[i]);
 	link_gui(&cmd);
 	return cmd_run(&cmd);

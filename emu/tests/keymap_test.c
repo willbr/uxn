@@ -1,6 +1,7 @@
 /* Keymap unit tests. Links SDL3 headers only; calls no SDL functions. */
 #include <stdio.h>
 #include "keymap.h"
+#include "input_queue.h"
 
 static int failed = 0, total = 0, bad_tests = 0;
 #define CHECK(c) do { if (!(c)) { printf("%s:%d: CHECK failed: %s\n", __FILE__, __LINE__, #c); failed++; } } while (0)
@@ -76,12 +77,53 @@ static void keymap_release_on_focus_loss(void)
 	CHECK(keymap_release_all(&ks) == 0);
 }
 
+static InputEv ev(int a)
+{
+	InputEv e;
+	e.kind = IQ_KEY; e.a = a; e.b = 0;
+	return e;
+}
+
+static void queue_fifo_order(void)
+{
+	InputQueue q; InputEv e; int i;
+	iq_init(&q);
+	for (i = 0; i < 5; i++) CHECK(iq_push(&q, ev(i)));
+	for (i = 0; i < 5; i++) { CHECK(iq_pop(&q, &e)); CHECK(e.a == i); }
+	CHECK(!iq_pop(&q, &e));
+	/* wraps around */
+	for (i = 0; i < 3 * IQ_CAP; i++) { CHECK(iq_push(&q, ev(i))); CHECK(iq_pop(&q, &e) && e.a == i); }
+	CHECK(!q.overflowed);
+}
+
+static void queue_overflow_drops(void)
+{
+	InputQueue q; InputEv e; int i;
+	iq_init(&q);
+	for (i = 0; i < IQ_CAP; i++) CHECK(iq_push(&q, ev(i)));
+	CHECK(!q.overflowed);
+	CHECK(!iq_push(&q, ev(999)));
+	CHECK(q.overflowed && q.count == IQ_CAP);
+	for (i = 0; i < IQ_CAP; i++) { CHECK(iq_pop(&q, &e)); CHECK(e.a == i); }
+	CHECK(!iq_pop(&q, &e));
+}
+
+static void queue_stuck_release_after_overflow(void)
+{
+	/* the ROM saw A and Up go down; the host has since seen Up released (dropped) */
+	CHECK(iq_stuck_buttons(0x11, 0x01) == 0x10);
+	CHECK(iq_stuck_buttons(0x11, 0x11) == 0);
+	CHECK(iq_stuck_buttons(0x00, 0x11) == 0);
+	CHECK(iq_stuck_buttons(0x11, 0x00) == 0x11);
+}
+
 int main(void)
 {
 	int before;
 #define T(f) do { total++; before = failed; f(); if (failed != before) printf("FAIL %s\n", #f); } while (0)
 	T(rctrl_toggles_not_A); T(lctrl_is_A); T(other_buttons); T(tab_is_char_9);
 	T(ctrl_letter); T(keymap_release_on_focus_loss);
+	T(queue_fifo_order); T(queue_overflow_drops); T(queue_stuck_release_after_overflow);
 #undef T
 	printf("keymap: %d passed, %d failed\n", total - bad_tests, bad_tests);
 	return failed ? 1 : 0;

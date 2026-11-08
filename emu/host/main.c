@@ -14,6 +14,7 @@
 
 #include "varvara.h"
 #include "keymap.h"
+#include "input_queue.h"
 
 #define FRAME_NS (1000000000 / 60)
 /* Per vector call. Also stored in v->max_steps, which the input vectors use. */
@@ -29,7 +30,9 @@ typedef struct Host {
 	Varvara *v;
 	KeyState keys;
 	int debugger_open; /* toggled by Right Ctrl; the debugger panel will draw from this */
-	int busy;          /* the Screen vector hit STEP_LIMIT; resume at u.pc next frame */
+	int busy;          /* a vector hit STEP_LIMIT and is suspended; resume at resume_pc */
+	unsigned resume_pc;
+	InputQueue iq;     /* input held back while busy; replayed when the vector ends */
 	int quit;
 	int exit_code;
 	char root[1024];
@@ -103,6 +106,7 @@ int host_load_rom(Host *h, const char *path)
 	}
 	h->v = nv;
 	h->busy = 0;
+	iq_init(&h->iq);
 	host_set_title(h, path);
 	return 0;
 }
@@ -159,6 +163,59 @@ static int host_sync_screen(Host *h)
 
 /* ---- input ---- */
 
+/* Input never runs a vector while another is suspended: an input vector would
+ * overwrite u.pc and share the stacks. host_input() runs the call at once, or
+ * queues it while busy; host_replay() drains the queue once the vector ends. */
+static void host_dispatch(Host *h, const InputEv *e)
+{
+	Varvara *v = h->v;
+
+	switch (e->kind) {
+	case IQ_BUTTON: varvara_button(v, (ux_u8)e->a, e->b); break;
+	case IQ_KEY: varvara_key(v, (ux_u8)e->a); break;
+	case IQ_MOUSE_MOVE: varvara_mouse_move(v, e->a, e->b); break;
+	case IQ_MOUSE_BUTTON: varvara_mouse_button(v, (ux_u8)e->a, e->b); break;
+	case IQ_SCROLL: varvara_mouse_scroll(v, e->a, e->b); break;
+	}
+	if (v->limit_hit) {
+		h->busy = 1;
+		h->resume_pc = v->u.pc;
+	}
+}
+
+static void host_input(Host *h, IqKind kind, int a, int b)
+{
+	InputEv e;
+
+	e.kind = kind;
+	e.a = a;
+	e.b = b;
+	if (h->busy || h->iq.count) iq_push(&h->iq, e);
+	else host_dispatch(h, &e);
+}
+
+/* Replay queued input in order; stops if a call leaves the machine busy again.
+ * After an overflow, release Controller buttons the ROM has down that the
+ * host no longer holds, so nothing sticks. */
+static void host_replay(Host *h)
+{
+	InputEv e;
+
+	while (!h->busy && iq_pop(&h->iq, &e)) host_dispatch(h, &e);
+	if (!h->busy && h->iq.overflowed) {
+		ux_u8 stuck = iq_stuck_buttons(h->v->u.dev[0x82], h->keys.buttons);
+		int b;
+
+		for (b = 0; b < 8 && !h->busy; b++)
+			if (stuck & (1 << b)) {
+				InputEv r;
+				r.kind = IQ_BUTTON; r.a = 1 << b; r.b = 0;
+				host_dispatch(h, &r);
+			}
+		if (!h->busy) h->iq.overflowed = 0;
+	}
+}
+
 /* Send every held Controller button as released. Used on focus loss and when
  * the debugger takes the keyboard, so no button stays stuck in the ROM. */
 static void host_release_buttons(Host *h)
@@ -167,7 +224,7 @@ static void host_release_buttons(Host *h)
 	int b;
 
 	for (b = 0; b < 8; b++)
-		if (mask & (1 << b)) varvara_button(h->v, (ux_u8)(1 << b), 0);
+		if (mask & (1 << b)) host_input(h, IQ_BUTTON, 1 << b, 0);
 }
 
 static void host_key(Host *h, const SDL_KeyboardEvent *k)
@@ -177,7 +234,7 @@ static void host_key(Host *h, const SDL_KeyboardEvent *k)
 	if (k->repeat) {
 		/* auto-repeat repeats characters (Backspace, Ctrl+letter), not buttons */
 		if (!h->debugger_open && keymap_event(&h->keys, k->key, k->mod, 1, &changed, &ch) == KEY_NONE && ch)
-			varvara_key(h->v, ch);
+			host_input(h, IQ_KEY, ch, 0);
 		return;
 	}
 	if (keymap_event(&h->keys, k->key, k->mod, k->down, &changed, &ch) == KEY_TOGGLE_DEBUGGER) {
@@ -187,16 +244,16 @@ static void host_key(Host *h, const SDL_KeyboardEvent *k)
 	}
 	if (h->debugger_open) {
 		/* the debugger owns the keyboard, but a release must still reach the ROM */
-		if (changed && !k->down) varvara_button(h->v, changed, 0);
+		if (changed && !k->down) host_input(h, IQ_BUTTON, changed, 0);
 		return;
 	}
-	if (changed) varvara_button(h->v, changed, k->down);
-	if (ch) varvara_key(h->v, ch);
+	if (changed) host_input(h, IQ_BUTTON, changed, k->down);
+	if (ch) host_input(h, IQ_KEY, ch, 0);
 }
 
 static void host_mouse_pos(Host *h, float x, float y)
 {
-	varvara_mouse_move(h->v, (int)floorf(x / (float)h->zoom), (int)floorf(y / (float)h->zoom));
+	host_input(h, IQ_MOUSE_MOVE, (int)floorf(x / (float)h->zoom), (int)floorf(y / (float)h->zoom));
 }
 
 void host_event(Host *h, const SDL_Event *e)
@@ -217,7 +274,7 @@ void host_event(Host *h, const SDL_Event *e)
 	case SDL_EVENT_TEXT_INPUT:
 		if (!h->debugger_open) {
 			const unsigned char *p = (const unsigned char *)e->text.text;
-			for (; *p; p++) varvara_key(h->v, *p); /* UTF-8 bytes pass through */
+			for (; *p; p++) host_input(h, IQ_KEY, *p, 0); /* UTF-8 bytes pass through */
 		}
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
@@ -236,12 +293,12 @@ void host_event(Host *h, const SDL_Event *e)
 		/* a release always reaches the ROM so no mouse button sticks */
 		if (h->debugger_open && down) break;
 		host_mouse_pos(h, e->button.x, e->button.y);
-		varvara_mouse_button(h->v, mask, down);
+		host_input(h, IQ_MOUSE_BUTTON, mask, down);
 		break;
 	}
 	case SDL_EVENT_MOUSE_WHEEL:
 		if (!h->debugger_open && (e->wheel.integer_x || e->wheel.integer_y))
-			varvara_mouse_scroll(h->v, e->wheel.integer_x, e->wheel.integer_y);
+			host_input(h, IQ_SCROLL, (int)e->wheel.integer_x, (int)e->wheel.integer_y);
 		break;
 	default:
 		break;
@@ -254,14 +311,15 @@ void host_event(Host *h, const SDL_Event *e)
 
 /* ---- frame ---- */
 
-/* One 60 Hz tick: run the Screen vector, or resume a half-finished one at
- * u.pc (varvara_frame always restarts at the vector, so the host calls
- * uxn_eval itself; the stacks live in the Uxn so a resume is exact), then
- * upload the screen. Returns nonzero on an SDL error. */
+/* One 60 Hz tick: run the Screen vector, or resume a suspended vector at
+ * resume_pc (varvara_frame always restarts at the vector, so the host calls
+ * uxn_eval itself; the stacks live in the Uxn so a resume is exact). When the
+ * vector ends, queued input is replayed. Then upload the screen. Returns
+ * nonzero on an SDL error. */
 int host_frame(Host *h)
 {
 	Varvara *v = h->v;
-	unsigned start = h->busy ? v->u.pc : ((unsigned)v->u.dev[0x20] << 8 | v->u.dev[0x21]);
+	unsigned start = h->busy ? h->resume_pc : ((unsigned)v->u.dev[0x20] << 8 | v->u.dev[0x21]);
 
 	h->busy = 0;
 	if (start) {
@@ -269,7 +327,9 @@ int host_frame(Host *h)
 
 		v->u.fault = 0;
 		h->busy = (r == UXN_LIMIT);
+		if (h->busy) h->resume_pc = v->u.pc;
 	}
+	host_replay(h);
 	if (varvara_halted(v)) {
 		h->exit_code = varvara_exit_code(v);
 		h->quit = 1;
