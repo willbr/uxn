@@ -66,12 +66,88 @@ static bool build_ref(void)
 	return true;
 }
 
+/* Core checks: strict C89 + freestanding builds, no undefined symbols, no includes. */
+#define CORE_CHECK "build/core-check"
+
+static bool file_has_foreign_include(const char *path, bool allow_uxn_h)
+{
+	String_Builder sb = {0};
+	const char *p;
+	bool bad = false;
+
+	if (!read_entire_file(path, &sb)) return true;
+	sb_append_null(&sb);
+	for (p = strstr(sb.items, "#include"); p; p = strstr(p + 1, "#include")) {
+		if (allow_uxn_h && strncmp(p, "#include \"uxn.h\"", 16) == 0) continue;
+		nob_log(ERROR, "%s: forbidden %.20s", path, p);
+		bad = true;
+	}
+	sb_free(sb);
+	return bad;
+}
+
+static bool nm_is_empty(const char *obj)
+{
+	Cmd cmd = {0};
+	String_Builder sb = {0};
+	const char *out = CORE_CHECK "/nm.txt";
+	bool ok = false;
+
+	cmd_append(&cmd, "llvm-nm", "--undefined-only", obj);
+	if (!cmd_run(&cmd, .stdout_path = out)) return false;
+	if (read_entire_file(out, &sb)) {
+		size_t i;
+		ok = true;
+		for (i = 0; i < sb.count; i++) {
+			if (sb.items[i] != '\n' && sb.items[i] != '\r' && sb.items[i] != ' ') ok = false;
+		}
+		if (!ok) nob_log(ERROR, "%s has undefined symbols:\n%.*s", obj, (int)sb.count, sb.items);
+	}
+	sb_free(sb);
+	return ok;
+}
+
+static bool check_core(void)
+{
+	Cmd cmd = {0};
+	if (!mkdir_if_not_exists("build")) return false;
+	if (!mkdir_if_not_exists(CORE_CHECK)) return false;
+
+	cmd_append(&cmd, "clang", "-std=c89", "-pedantic", "-Wall", "-Wextra", "-Werror",
+		"-ffreestanding", "-fno-builtin", "-O2", "-c", "core/uxn.c", "-o", CORE_CHECK "/uxn_O2.o");
+	if (!cmd_run(&cmd)) return false;
+	cmd_append(&cmd, "clang", "-std=c89", "-pedantic", "-Wall", "-Wextra", "-Werror",
+		"-ffreestanding", "-fno-builtin", "-O0", "-c", "core/uxn.c", "-o", CORE_CHECK "/uxn_O0.o");
+	if (!cmd_run(&cmd)) return false;
+	cmd_append(&cmd, "tcc", "-c", "core/uxn.c", "-o", CORE_CHECK "/uxn_tcc.o");
+	if (!cmd_run(&cmd)) return false;
+
+	if (!nm_is_empty(CORE_CHECK "/uxn_O2.o")) return false;
+	if (!nm_is_empty(CORE_CHECK "/uxn_O0.o")) return false;
+	if (file_has_foreign_include("core/uxn.h", false)) return false;
+	if (file_has_foreign_include("core/uxn.c", true)) return false;
+	return true;
+}
+
+static bool build_run_core_test(void)
+{
+	Cmd cmd = {0};
+	if (!mkdir_if_not_exists("build")) return false;
+	cmd_append(&cmd, "clang", "-std=c89", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O0",
+		"-o", "build/core_test.exe", "tests/core_test.c", "core/uxn.c");
+	if (!cmd_run(&cmd)) return false;
+	cmd_append(&cmd, "build/core_test.exe");
+	return cmd_run(&cmd);
+}
+
 int main(int argc, char **argv)
 {
 	const char *target;
 	NOB_GO_REBUILD_URSELF(argc, argv);
 	target = argc > 1 ? argv[1] : "";
 	if (strcmp(target, "ref") == 0) return build_ref() ? 0 : 1;
-	nob_log(ERROR, "usage: nob <target>   targets: ref");
+	if (strcmp(target, "check-core") == 0) return check_core() ? 0 : 1;
+	if (strcmp(target, "test") == 0) return build_run_core_test() ? 0 : 1;
+	nob_log(ERROR, "usage: nob <target>   targets: ref check-core test");
 	return 1;
 }
