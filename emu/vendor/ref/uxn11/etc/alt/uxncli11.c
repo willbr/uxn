@@ -1,0 +1,713 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+/*
+Copyright (c) 2021-2025 Devine Lu Linvega, Andrew Alderwick,
+Andrew Richards, Eiríkr Åsheim, Sigrid Solveig Haflínudóttir
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE.
+
+cc -DNDEBUG -O2 -g0 -s src/uxncli.c -lutil -o bin/uxncli
+*/
+
+typedef unsigned char Uint8;
+typedef unsigned short Uint16;
+
+/* clang-format off */
+
+#define BANKS 0x10
+#define BANKS_CAP BANKS * 0x10000
+
+#define PEEK2(d) (*(d) << 8 | (d)[1])
+#define NEXT if(--cycles) goto step; else return 0;
+
+#define OPC(opc, A, B) {\
+	case 0x00|opc: {const int _2=0,_r=0;A B;} NEXT\
+	case 0x20|opc: {const int _2=1,_r=0;A B;} NEXT\
+	case 0x40|opc: {const int _2=0,_r=1;A B;} NEXT\
+	case 0x60|opc: {const int _2=1,_r=1;A B;} NEXT\
+	case 0x80|opc: {const int _2=0,_r=0;int k=ptr[0];A ptr[0]=k;B;} NEXT\
+	case 0xa0|opc: {const int _2=1,_r=0;int k=ptr[0];A ptr[0]=k;B;} NEXT\
+	case 0xc0|opc: {const int _2=0,_r=1;int k=ptr[1];A ptr[1]=k;B;} NEXT\
+	case 0xe0|opc: {const int _2=1,_r=1;int k=ptr[1];A ptr[1]=k;B;} NEXT\
+}
+
+#define REM ptr[_r] -= 1 + _2;
+#define DEC(m) stk[m][--ptr[m]]
+#define INC(m) stk[m][ptr[m]++]
+#define IMM(r) { r = ram[pc++] << 8, r |= ram[pc++]; }
+#define MOV(x) { if(_2) pc = x; else pc += (signed char)x; }
+#define PO1(o) o = DEC(_r);
+#define PO2(o) { o = DEC(_r), o |= DEC(_r) << 8; }
+#define POx(o) if(_2) PO2(o) else PO1(o)
+#define GOT(o) if(_2) PO1(o[1]) PO1(o[0])
+#define DEO(o,r) emu_deo(o, r[0]); if(_2) emu_deo(o + 1, r[1]);
+#define POK(o,r,m) ram[o] = r[0]; if(_2) ram[(o + 1) & m] = r[1];
+#define RP1(i) INC(!_r) = i;
+#define PU1(i) INC(_r) = i;
+#define PUx(i) if(_2) { c = (i); PU1(c >> 8) PU1(c) } else PU1(i)
+#define PUT(i) PU1(i[0]) if(_2) PU1(i[1])
+#define DEI(i,r) r[0] = emu_dei(i); if(_2) r[1] = emu_dei(i + 1); PUT(r)
+#define PEK(i,r,m) r[0] = ram[i]; if(_2) r[1] = ram[(i + 1) & m]; PUT(r)
+
+Uint8 *ram, dev[0x100], ptr[2], stk[2][0x100], emu_dei(const Uint8 port);
+void emu_deo(const Uint8 port, const Uint8 value);
+
+unsigned int
+uxn_eval(unsigned short pc)
+{
+	unsigned int a, b, c, x[2], y[2], z[2], cycles = 0x80000000;
+step:
+	switch(ram[pc++]) {
+	/* BRK */ case 0x00: return 1;
+	/* JCI */ case 0x20: if(DEC(0)) { IMM(c) pc += c; } else pc += 2; NEXT
+	/* JMI */ case 0x40: IMM(c) pc += c; NEXT
+	/* JSI */ case 0x60: IMM(c) INC(1) = pc >> 8, INC(1) = pc, pc += c; NEXT
+	/* LI2 */ case 0xa0: INC(0) = ram[pc++]; /* fall-through */
+	/* LIT */ case 0x80: INC(0) = ram[pc++]; NEXT
+	/* L2r */ case 0xe0: INC(1) = ram[pc++]; /* fall-through */
+	/* LIr */ case 0xc0: INC(1) = ram[pc++]; NEXT
+	/* INC */ OPC(0x01,POx(a),PUx(a + 1))
+	/* POP */ OPC(0x02,REM,{})
+	/* NIP */ OPC(0x03,GOT(x) REM,PUT(x))
+	/* SWP */ OPC(0x04,GOT(x) GOT(y),PUT(x) PUT(y))
+	/* ROT */ OPC(0x05,GOT(x) GOT(y) GOT(z),PUT(y) PUT(x) PUT(z))
+	/* DUP */ OPC(0x06,GOT(x),PUT(x) PUT(x))
+	/* OVR */ OPC(0x07,GOT(x) GOT(y),PUT(y) PUT(x) PUT(y))
+	/* EQU */ OPC(0x08,POx(a) POx(b),PU1(b == a))
+	/* NEQ */ OPC(0x09,POx(a) POx(b),PU1(b != a))
+	/* GTH */ OPC(0x0a,POx(a) POx(b),PU1(b > a))
+	/* LTH */ OPC(0x0b,POx(a) POx(b),PU1(b < a))
+	/* JMP */ OPC(0x0c,POx(a),MOV(a))
+	/* JCN */ OPC(0x0d,POx(a) PO1(b),if(b) MOV(a))
+	/* JSR */ OPC(0x0e,POx(a),RP1(pc >> 8) RP1(pc) MOV(a))
+	/* STH */ OPC(0x0f,GOT(x),RP1(x[0]) if(_2) RP1(x[1]))
+	/* LDZ */ OPC(0x10,PO1(a),PEK(a, x, 0xff))
+	/* STZ */ OPC(0x11,PO1(a) GOT(y),POK(a, y, 0xff))
+	/* LDR */ OPC(0x12,PO1(a),PEK(pc + (signed char)a, x, 0xffff))
+	/* STR */ OPC(0x13,PO1(a) GOT(y),POK(pc + (signed char)a, y, 0xffff))
+	/* LDA */ OPC(0x14,PO2(a),PEK(a, x, 0xffff))
+	/* STA */ OPC(0x15,PO2(a) GOT(y),POK(a, y, 0xffff))
+	/* DEI */ OPC(0x16,PO1(a),DEI(a, x))
+	/* DEO */ OPC(0x17,PO1(a) GOT(y),DEO(a, y))
+	/* ADD */ OPC(0x18,POx(a) POx(b),PUx(b + a))
+	/* SUB */ OPC(0x19,POx(a) POx(b),PUx(b - a))
+	/* MUL */ OPC(0x1a,POx(a) POx(b),PUx(b * a))
+	/* DIV */ OPC(0x1b,POx(a) POx(b),PUx(a ? b / a : 0))
+	/* AND */ OPC(0x1c,POx(a) POx(b),PUx(b & a))
+	/* ORA */ OPC(0x1d,POx(a) POx(b),PUx(b | a))
+	/* EOR */ OPC(0x1e,POx(a) POx(b),PUx(b ^ a))
+	/* SFT */ OPC(0x1f,PO1(a) POx(b),PUx(b >> (a & 0xf) << (a >> 4)))
+	}
+	return 0;
+}
+
+/* clang-format on */
+
+/*
+@|System ------------------------------------------------------------ */
+
+static char *system_boot_path;
+
+static void
+system_print(char *name, int r)
+{
+	Uint8 i;
+	fprintf(stderr, "%s ", name);
+	for(i = ptr[r] - 8; i != ptr[r]; i++)
+		fprintf(stderr, "%02x%c", stk[r][i], i == 0xff ? '|' : ' ');
+	fprintf(stderr, "<%02x\n", ptr[r]);
+}
+
+static unsigned int
+system_load(const char *rom_path)
+{
+	FILE *f = fopen(rom_path, "rb");
+	if(f) {
+		unsigned int i = 0, l = fread(ram + 0x100, 0x10000 - 0x100, 1, f);
+		while(l && ++i < BANKS)
+			l = fread(ram + i * 0x10000, 0x10000, 1, f);
+		fclose(f);
+	}
+	return !!f;
+}
+
+static unsigned int
+system_boot(char *rom_path, const unsigned int has_args)
+{
+	ram = (Uint8 *)calloc(BANKS_CAP, sizeof(Uint8));
+	system_boot_path = rom_path;
+	dev[0x17] = has_args;
+	return ram && system_load(rom_path);
+}
+
+static void
+system_expansion(const Uint16 exp)
+{
+	Uint8 *aptr = ram + exp;
+	unsigned short length = PEEK2(aptr + 1), limit;
+	unsigned int bank = PEEK2(aptr + 3) * 0x10000;
+	unsigned int addr = PEEK2(aptr + 5);
+	if(ram[exp] == 0x0) {
+		unsigned int dst_value = ram[exp + 7];
+		unsigned short a = addr;
+		if(bank < BANKS_CAP)
+			for(limit = a + length; a != limit; a++)
+				ram[bank + a] = dst_value;
+	} else if(ram[exp] == 0x1) {
+		unsigned int dst_bank = PEEK2(aptr + 7) * 0x10000;
+		unsigned int dst_addr = PEEK2(aptr + 9);
+		unsigned short a = addr, c = dst_addr;
+		if(bank < BANKS_CAP && dst_bank < BANKS_CAP)
+			for(limit = a + length; a != limit; c++, a++)
+				ram[dst_bank + c] = ram[bank + a];
+	} else if(ram[exp] == 0x2) {
+		unsigned int dst_bank = PEEK2(aptr + 7) * 0x10000;
+		unsigned int dst_addr = PEEK2(aptr + 9);
+		unsigned short a = addr + length - 1, c = dst_addr + length - 1;
+		if(bank < BANKS_CAP && dst_bank < BANKS_CAP)
+			for(limit = addr - 1; a != limit; a--, c--)
+				ram[dst_bank + c] = ram[bank + a];
+	} else
+		fprintf(stderr, "Unknown command: %s\n", &ram[exp]);
+}
+
+/*
+@|Console ----------------------------------------------------------- */
+
+#define CONSOLE_STD 0x1
+#define CONSOLE_ARG 0x2
+#define CONSOLE_EOA 0x3
+#define CONSOLE_END 0x4
+
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112L
+
+#include <signal.h>
+#include <sys/select.h>
+#include <sys/wait.h>
+
+#ifdef __linux
+#include <pty.h>
+#include <sys/prctl.h>
+#endif
+
+#ifdef __NetBSD__
+#include <sys/ioctl.h>
+#include <util.h>
+#endif
+
+static unsigned int console_vector;
+
+/* subprocess support */
+static char *fork_args[4] = {"/bin/sh", "-c", "", NULL};
+static int child_mode;
+static int to_child_fd[2];
+static int from_child_fd[2];
+static int saved_in;
+static int saved_out;
+static pid_t child_pid;
+
+/* child_mode:
+* 0x01: writes to child's stdin
+* 0x02: reads from child's stdout
+* 0x04: reads from child's stderr
+* 0x08: kill previous process (if any) but do not start
+* (other bits ignored for now )
+*/
+
+#define CMD_LIVE 0x15 /* 0x00 not started, 0x01 running, 0xff dead */
+#define CMD_EXIT 0x16 /* if dead, exit code of process */
+#define CMD_ADDR 0x1c /* address to read command args from */
+#define CMD_MODE 0x1e /* mode to execute, 0x00 to 0x07 */
+
+/* call after we're sure the process has exited */
+
+static void
+clean_after_child(void)
+{
+	child_pid = 0;
+	if(child_mode & 0x01) {
+		close(to_child_fd[1]);
+		dup2(saved_out, 1);
+	}
+	if(child_mode & (0x04 | 0x02)) {
+		close(from_child_fd[0]);
+		dup2(saved_in, 0);
+	}
+	child_mode = 0;
+	saved_in = -1;
+	saved_out = -1;
+}
+
+static void
+start_fork_pipe(void)
+{
+	pid_t pid;
+	pid_t parent_pid = getpid();
+	int addr = PEEK2(&dev[CMD_ADDR]);
+	fflush(stdout);
+	if(child_mode & 0x08) {
+		dev[CMD_EXIT] = dev[CMD_LIVE] = 0x00;
+		return;
+	}
+	if(child_mode & 0x01) {
+		/* parent writes to child's stdin */
+		if(pipe(to_child_fd) == -1) {
+			dev[CMD_EXIT] = dev[CMD_LIVE] = 0xff;
+			fprintf(stderr, "Pipe error to child.\n");
+			return;
+		}
+	}
+	if(child_mode & (0x04 | 0x02)) {
+		/* parent reads from child's stdout and/or stderr */
+		if(pipe(from_child_fd) == -1) {
+			dev[CMD_EXIT] = dev[CMD_LIVE] = 0xff;
+			fprintf(stderr, "Pipe error from child.\n");
+			return;
+		}
+	}
+
+	fork_args[2] = (char *)&ram[addr];
+	pid = fork();
+	if(pid < 0) { /* failure */
+		dev[CMD_EXIT] = dev[CMD_LIVE] = 0xff;
+		fprintf(stderr, "Fork failure.\n");
+	} else if(pid == 0) { /* child */
+
+#ifdef __linux__
+		int r = prctl(PR_SET_PDEATHSIG, SIGTERM);
+		if(r == -1) {
+			perror(0);
+			exit(6);
+		}
+		if(getppid() != parent_pid) exit(13);
+#endif
+
+		if(child_mode & 0x01) {
+			dup2(to_child_fd[0], 0);
+			close(to_child_fd[1]);
+		}
+		if(child_mode & (0x04 | 0x02)) {
+			if(child_mode & 0x02) dup2(from_child_fd[1], 1);
+			if(child_mode & 0x04) dup2(from_child_fd[1], 2);
+			close(from_child_fd[0]);
+		}
+		fflush(stdout);
+		execvp(fork_args[0], fork_args);
+		exit(1);
+	} else { /*parent*/
+		child_pid = pid;
+		dev[CMD_LIVE] = 0x01;
+		dev[CMD_EXIT] = 0x00;
+		if(child_mode & 0x01) {
+			saved_out = dup(1);
+			dup2(to_child_fd[1], 1);
+			close(to_child_fd[0]);
+		}
+		if(child_mode & (0x04 | 0x02)) {
+			saved_in = dup(0);
+			dup2(from_child_fd[0], 0);
+			close(from_child_fd[1]);
+		}
+	}
+}
+
+static void
+check_child(void)
+{
+	int wstatus;
+	if(child_pid) {
+		if(waitpid(child_pid, &wstatus, WNOHANG)) {
+			dev[CMD_LIVE] = 0xff;
+			dev[CMD_EXIT] = WEXITSTATUS(wstatus);
+			clean_after_child();
+		} else {
+			dev[CMD_LIVE] = 0x01;
+			dev[CMD_EXIT] = 0x00;
+		}
+	}
+}
+
+static void
+kill_child(void)
+{
+	int wstatus;
+	if(child_pid) {
+		kill(child_pid, 9);
+		if(waitpid(child_pid, &wstatus, WNOHANG)) {
+			dev[CMD_LIVE] = 0xff;
+			dev[CMD_EXIT] = WEXITSTATUS(wstatus);
+			clean_after_child();
+		}
+	}
+}
+
+static void
+start_fork(void)
+{
+	fflush(stderr);
+	kill_child();
+	child_mode = dev[CMD_MODE];
+	start_fork_pipe();
+}
+
+static void
+console_input(int c, unsigned int type)
+{
+	dev[0x12] = c, dev[0x17] = type;
+	if(console_vector && !dev[0x0f])
+		uxn_eval(console_vector);
+}
+
+/*
+@|File -------------------------------------------------------------- */
+
+#include <dirent.h>
+#include <sys/stat.h>
+#include <string.h>
+
+typedef struct {
+	FILE *f;
+	DIR *dir;
+	char *filepath;
+	enum { IDLE,
+		FILE_READ,
+		FILE_WRITE,
+		DIR_READ,
+		DIR_WRITE
+	} state;
+} UxnFile;
+
+static UxnFile ufs[2];
+static Uint8 dirbuf[0x10000], *_dirbuf = dirbuf;
+static unsigned int rL1, rL2;
+
+static void
+make_pathfile(char *pathbuf, const char *filepath, const char *basename)
+{
+	char c = '/';
+	while(*filepath)
+		c = *filepath++, *pathbuf = c, pathbuf++;
+	if(c != '/')
+		*pathbuf = '/', pathbuf++;
+	while(*basename)
+		*pathbuf = *basename++, pathbuf++;
+	*pathbuf = 0;
+}
+
+static unsigned int
+put_fill(Uint8 *dest, unsigned int len, char c)
+{
+	unsigned int i;
+	for(i = 0; i < len; i++)
+		*dest = c, dest++;
+	return len;
+}
+
+static unsigned int
+put_size(Uint8 *dest, unsigned int len, unsigned int size)
+{
+	unsigned int i;
+	for(i = 0, dest += len; i < len; i++, size >>= 4)
+		*(--dest) = "0123456789abcdef"[(Uint8)(size & 0xf)];
+	return len;
+}
+
+static unsigned int
+put_text(Uint8 *dest, const char *text)
+{
+	Uint8 *anchor = dest;
+	while(*text)
+		*dest = *text++, dest++;
+	*dest = 0;
+	return dest - anchor;
+}
+
+static unsigned int
+put_stat(Uint8 *dest, unsigned int len, unsigned int size, unsigned int err, unsigned int dir, unsigned int capsize)
+{
+	if(err) return put_fill(dest, len, '!');
+	if(dir) return put_fill(dest, len, '-');
+	if(capsize && size >= 0x10000) return put_fill(dest, len, '?');
+	return put_size(dest, len, size);
+}
+
+static unsigned int
+put_statfile(Uint8 *dest, const char *filepath, const char *basename)
+{
+	unsigned int err, dir;
+	struct stat st;
+	Uint8 *anchor = dest;
+	char pathbuf[0x2000];
+	make_pathfile(pathbuf, filepath, basename);
+	err = stat(pathbuf, &st);
+	dir = S_ISDIR(st.st_mode);
+	dest += put_stat(dest, 4, st.st_size, err, dir, 1);
+	dest += put_text(dest, " ");
+	dest += put_text(dest, basename);
+	dest += put_text(dest, dir ? "/\n" : "\n");
+	return dest - anchor;
+}
+
+static unsigned int
+put_fdir(Uint8 *dest, unsigned int len, const char *filepath, DIR *dir)
+{
+	unsigned int i;
+	struct dirent *de = readdir(dir);
+	for(_dirbuf = dirbuf; de != NULL; de = readdir(dir)) {
+		const char *name = de->d_name;
+		if(name[0] == '.' && (name[1] == '.' || name[1] == '\0'))
+			continue;
+		else
+			_dirbuf += put_statfile(_dirbuf, filepath, name);
+	}
+	for(i = 0; i < len && dirbuf[i]; i++)
+		dest[i] = dirbuf[i];
+	dest[i] = 0;
+	return i;
+}
+
+static unsigned int
+is_dir_path(char *p)
+{
+	char c;
+	unsigned int saw_slash = 0;
+	while((c = *p++)) saw_slash = c == '/';
+	return saw_slash;
+}
+
+static unsigned int
+is_dir_real(char *p)
+{
+	struct stat st;
+	return stat(p, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+static unsigned int
+file_write_dir(char *p)
+{
+	unsigned int ok = 1;
+	char c, *s = p;
+	for(; ok && (c = *p); p++) {
+		if(c == '/') {
+			*p = '\0';
+			ok = is_dir_real(s) || (mkdir(s, 0755) == 0);
+			*p = c;
+		}
+	}
+	return ok;
+}
+
+static void
+file_reset(unsigned int id)
+{
+	if(ufs[id].f != NULL) fclose(ufs[id].f), ufs[id].f = NULL;
+	if(ufs[id].dir != NULL) closedir(ufs[id].dir), ufs[id].dir = NULL;
+	ufs[id].state = IDLE;
+}
+
+static unsigned int
+file_init(unsigned int id, Uint16 addr)
+{
+	file_reset(id);
+	ufs[id].filepath = (char *)&ram[addr];
+	return 0;
+}
+
+static unsigned int
+file_not_ready(unsigned int id)
+{
+	if(ufs[id].filepath == 0) {
+		fprintf(stderr, "File %d is uninitialized\n", id);
+		return 1;
+	} else
+		return 0;
+}
+
+static unsigned int
+file_read(unsigned int id, Uint16 addr, unsigned int len)
+{
+	void *dest = &ram[addr];
+	if(file_not_ready(id))
+		return 0;
+	if(addr + len > 0x10000)
+		len = 0x10000 - addr;
+	if(ufs[id].state != FILE_READ && ufs[id].state != DIR_READ) {
+		file_reset(id);
+		if((ufs[id].dir = opendir(ufs[id].filepath)) != NULL)
+			ufs[id].state = DIR_READ;
+		else if((ufs[id].f = fopen(ufs[id].filepath, "rb")) != NULL)
+			ufs[id].state = FILE_READ;
+	}
+	if(ufs[id].state == FILE_READ)
+		return fread(dest, 1, len, ufs[id].f);
+	if(ufs[id].state == DIR_READ)
+		return put_fdir(dest, len, ufs[id].filepath, ufs[id].dir);
+	return 0;
+}
+
+static unsigned int
+file_write(unsigned int id, Uint16 addr, unsigned int len, Uint8 flags)
+{
+	unsigned int ret = 0;
+	if(file_not_ready(id))
+		return 0;
+	if(addr + len > 0x10000)
+		len = 0x10000 - addr;
+	file_write_dir(ufs[id].filepath);
+	if(ufs[id].state != FILE_WRITE && ufs[id].state != DIR_WRITE) {
+		file_reset(id);
+		if(is_dir_path(ufs[id].filepath))
+			ufs[id].state = DIR_WRITE;
+		else if((ufs[id].f = fopen(ufs[id].filepath, (flags & 0x01) ? "ab" : "wb")) != NULL)
+			ufs[id].state = FILE_WRITE;
+	}
+	if(ufs[id].state == FILE_WRITE)
+		if((ret = fwrite(&ram[addr], 1, len, ufs[id].f)) > 0 && fflush(ufs[id].f) != 0)
+			ret = 0;
+	if(ufs[id].state == DIR_WRITE)
+		ret = is_dir_real(ufs[id].filepath);
+	return ret;
+}
+
+static unsigned int
+file_stat(unsigned int id, Uint16 addr, unsigned int len)
+{
+	unsigned int err, dir;
+	struct stat st;
+	if(file_not_ready(id))
+		return 0;
+	if(addr + len > 0x10000)
+		len = 0x10000 - addr;
+	err = stat(ufs[id].filepath, &st);
+	dir = S_ISDIR(st.st_mode);
+	return put_stat(&ram[addr], len, st.st_size, err, dir, 0);
+}
+
+static unsigned int
+file_delete(unsigned int id)
+{
+	if(file_not_ready(id))
+		return 0;
+	return !unlink(ufs[id].filepath);
+}
+
+static void
+file_success(unsigned int port, unsigned int value)
+{
+	dev[port] = value >> 8, dev[port + 1] = value;
+}
+
+/*
+@|Datetime ---------------------------------------------------------- */
+
+#include <time.h>
+
+time_t datetime_seconds;
+struct tm *datetime_t, datetime_zt = {0};
+
+void
+datetime_update(void)
+{
+	datetime_seconds = time(NULL);
+	datetime_t = localtime(&datetime_seconds);
+	if(datetime_t == NULL)
+		datetime_t = &datetime_zt;
+}
+
+/*
+@|Core -------------------------------------------------------------- */
+
+Uint8
+emu_dei(const Uint8 port)
+{
+	switch(port) {
+	/* System */
+	case 0x04: return ptr[0];
+	case 0x05: return ptr[1];
+	/* Console */
+	case CMD_LIVE:
+	case CMD_EXIT: check_child(); break;
+	/* DateTime */
+	case 0xc0: datetime_update(); return (datetime_t->tm_year + 1900) >> 8;
+	case 0xc1: datetime_update(); return (datetime_t->tm_year + 1900);
+	case 0xc2: datetime_update(); return datetime_t->tm_mon;
+	case 0xc3: datetime_update(); return datetime_t->tm_mday;
+	case 0xc4: datetime_update(); return datetime_t->tm_hour;
+	case 0xc5: datetime_update(); return datetime_t->tm_min;
+	case 0xc6: datetime_update(); return datetime_t->tm_sec;
+	case 0xc7: datetime_update(); return datetime_t->tm_wday;
+	case 0xc8: datetime_update(); return datetime_t->tm_yday >> 8;
+	case 0xc9: datetime_update(); return datetime_t->tm_yday;
+	case 0xca: datetime_update(); return datetime_t->tm_isdst;
+	}
+	return dev[port];
+}
+
+void
+emu_deo(const Uint8 port, const Uint8 value)
+{
+	dev[port] = value;
+	switch(port) {
+	/* System */
+	case 0x03: system_expansion(PEEK2(dev + 2)); break;
+	case 0x04: ptr[0] = dev[4]; break;
+	case 0x05: ptr[1] = dev[5]; break;
+	case 0x0e: system_print("WST", 0), system_print("RST", 1); break;
+	/* Console */
+	case 0x11: console_vector = PEEK2(&dev[0x10]); return;
+	case 0x18: fputc(dev[0x18], stdout), fflush(stdout); break;
+	case 0x19: fputc(dev[0x19], stderr), fflush(stderr); break;
+	case 0x1a: fprintf(stderr, "%02x", dev[0x1a]); break;
+	case 0x1b: fprintf(stderr, "%02x", dev[0x1b]); break;
+	case 0x1f: start_fork(); break;
+	/* File 1 */
+	case 0xab: rL1 = PEEK2(&dev[0xaa]); break;
+	case 0xa5: file_success(0xa2, file_stat(0, PEEK2(&dev[0xa4]), rL1)); break;
+	case 0xa6: file_success(0xa2, file_delete(0)); break;
+	case 0xa9: file_success(0xa2, file_init(0, PEEK2(&dev[0xa8]))); break;
+	case 0xad: file_success(0xa2, file_read(0, PEEK2(&dev[0xac]), rL1)); break;
+	case 0xaf: file_success(0xa2, file_write(0, PEEK2(&dev[0xae]), rL1, dev[0xa7])); break;
+	/* File 2 */
+	case 0xbb: rL2 = PEEK2(&dev[0xba]); break;
+	case 0xb5: file_success(0xb2, file_stat(1, PEEK2(&dev[0xb4]), rL2)); break;
+	case 0xb6: file_success(0xb2, file_delete(1)); break;
+	case 0xb9: file_success(0xb2, file_init(1, PEEK2(&dev[0xb8]))); break;
+	case 0xbd: file_success(0xb2, file_read(1, PEEK2(&dev[0xbc]), rL2)); break;
+	case 0xbf: file_success(0xb2, file_write(1, PEEK2(&dev[0xbe]), rL2, dev[0xb7])); break;
+	}
+}
+
+int
+main(int argc, char **argv)
+{
+	int i = 1;
+	if(argc == 2 && argv[1][0] == '-' && argv[1][1] == 'v')
+		return !fprintf(stdout, "Uxn11 - Varvara Emulator(cli), 23 Dec 2025.\n");
+	else if(argc == 1)
+		return !fprintf(stdout, "usage: %s [-v] file.rom [args..]\n", argv[0]);
+	else if(!system_boot(argv[i++], argc > 2))
+		return !fprintf(stdout, "Could not load %s.\n", argv[i - 1]);
+	if(uxn_eval(0x100) && console_vector) {
+		for(; i < argc; i++) {
+			char c, *p = argv[i];
+			while(!dev[0x0f] && (c = *p++))
+				console_input(c, CONSOLE_ARG);
+			console_input('\n', i == argc - 1 ? CONSOLE_END : CONSOLE_EOA);
+		}
+		while(!dev[0x0f]) {
+			char c = fgetc(stdin);
+			if(feof(stdin)) break;
+			console_input(c, CONSOLE_STD);
+		}
+		console_input(0, CONSOLE_END);
+	}
+	return dev[0x0f] & 0x7f;
+}

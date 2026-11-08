@@ -132,3 +132,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+emu/nob.exe
+emu/nob.exe.old
+emu/nob.pdb
+emu/nob.ilk

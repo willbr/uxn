@@ -1,0 +1,24 @@
+environment:
+  BUILD_SUBMITTER: git.sr.ht
+  SITE: rabbits.srht.site/uxn11
+image: debian/stable
+packages:
+- curl
+- libx11-dev
+shell: false
+oauth: pages.sr.ht/PAGES:RW
+sources:
+- https://git.sr.ht/~rabbits/uxn11
+tasks:
+- build: |
+    mkdir bin/
+    cc -DNDEBUG -O2 -g0 -s uxn11/src/uxn11.c -lX11 -lutil -o bin/uxn11
+- upload: |
+    tar -czf out.tar.gz bin/
+    acurl() {
+        set +x
+        curl -H "Authorization: Bearer ${OAUTH2_TOKEN}" "${@}"
+        set -x
+    }
+    acurl -fsS "https://pages.sr.ht/publish/${SITE}" -Fcontent=@out.tar.gz
+

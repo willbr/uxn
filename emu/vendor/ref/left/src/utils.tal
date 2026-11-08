@@ -1,0 +1,310 @@
+( Utils )
+
+@manifest/scan ( but key -- fn* )
+	ORAk ?{ POP2 #ffff JMP2r }
+	,&bk STR2
+	;&dat
+	&>cat
+		LDA2k OVR2 #0004 ADD2
+		&>opt
+			LDA2k [ LIT2 &bk $2 ] NEQ2 ?{
+				NIP2 NIP2 INC2 INC2 LDA2 JMP2r }
+			#0006 ADD2 GTH2k ?/>opt
+		POP2 POP2 LDA2 LDAk ?/>cat
+	POP2 #ffff JMP2r
+
+@<draw-times> ( color times addr* auto -- )
+	.Screen/auto DEO
+	.Screen/addr DEO2
+	SWP STH
+	[ LITr -Screen/sprite ]
+	&>l
+		DEOkr
+		INC DUP ?/>l
+	POP POP2r JMP2r
+
+(
+@|cursor )
+
+@cursor/<update> ( color -- )
+	Mouse/<update-focus>
+	( >> )
+
+@cursor/<update-trap> ( color -- )
+	[ LIT2 15 -Screen/auto ] DEO
+	;fill-icn .Screen/addr DEO2
+	#40 /<draw>
+	;&sprite-icn .Screen/addr DEO2
+	.Mouse/x DEI2 ,&x STR2
+	.Mouse/y DEI2 ,&y STR2
+	( >> )
+
+@cursor/<draw> ( color -- )
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
+	.Screen/sprite DEO
+	JMP2r
+
+@cursor/sprite-icn [ 80c0 e0f0 f8fc feff f8d8 8c0c 0606 0000 ]
+
+(
+@|Pict )
+
+@pict/<draw> ( str* -- )
+	/<set>
+	/is-valid ?{ JMP2r }
+	/get-size INC2k ORA ?{ POP2 JMP2r }
+	/<draw-icn>
+	[ LIT2 25 -Screen/auto ] DEO
+	JMP2r
+	&mem $8
+
+@pict/<draw-icn> ( w h -- )
+	#00 SWP SUB ,&height STR
+	#00 SWP SUB ,&width STR
+	( | setup )
+	( file ) ;&buf .File/name DEO2
+	( depth ) #0008 .File/length DEO2
+	( addr ) ;&mem .Screen/addr DEO2
+	( | screen )
+	( y ) .Screen/y DEI2 DUP2 #0020 ADD2 .Screen/y DEO2
+	STH2
+	( x ) .Screen/x DEI2 DUP2 #0010 ADD2 ,&anchor STR2
+	STH2
+	[ LIT2 01 -Screen/auto ] DEO
+	[ LIT2r 01 -Screen/sprite ]
+	( | draw )
+	[ LIT &height $1 ]
+	&>v
+		[ LIT2 &anchor $2 ] .Screen/x DEO2
+		[ LIT &width $1 ]
+		&>h
+			;&mem .File/read DEO2
+			.File/success-lb DEI ?{ POP2 !/end }
+			DEOkr
+			INC DUP ?/>h
+		POP .Screen/y DEI2 #0008 ADD2 .Screen/y DEO2
+		INC DUP ?/>v
+	POP
+	&end ( sprite )
+	POP2r [ LITr -Screen/x ] DEO2r
+	[ LITr -Screen/y ] DEO2r
+	JMP2r
+
+@pict/get-size ( -- w h )
+	,&+ptr LDR2 #0009 SUB2
+	( w ) LDA2k /read-byte STH
+	( x ) INC2 INC2 LDAk [ LIT "x ] NEQ ?{
+		( h ) INC2 LDA2 /read-byte STHr SWP JMP2r }
+	POPr POP2 #ffff JMP2r
+
+@pict/read-byte ( a b -- byte )
+	chr/hex SWP chr/hex #40 SFT ORA JMP2r
+
+@pict/<set> ( str* -- )
+	;&buf ,&+ptr STR2
+	&>w
+		LDAk DUP #20 GTH ?{ POP POP2 JMP2r }
+		#00 [ LIT2 &+ptr =&buf ] INC2k
+		( | clamp )
+		DUP2 ;&bufend NEQ2 ?{ POP2 ;&buf }
+		,&+ptr STR2
+		STA2
+		INC2 !/>w
+
+@pict/is-valid ( -- t )
+	,&+ptr LDR2 #0007 SUB2 LDAk LIT "x EQU ?{ POP2 #00 JMP2r }
+	INC2 INC2 INC2 #0004 ;dict/icn-ext !mem/cmp
+
+(
+@|theme )
+
+@theme/<reset> ( -- )
+	#e048 #e0a7 #e097
+	( >> )
+
+@theme/<set> ( r* g* b* -- )
+	.System/b DEO2
+	.System/g DEO2
+	.System/r DEO2
+	JMP2r
+
+@theme/<load> ( -- )
+	;&path .File/name DEO2
+	#0002 .File/length DEO2
+	;&+r .File/read DEO2
+	;&+g .File/read DEO2
+	;&+b .File/read DEO2
+	.File/success-lb DEI ?{ !/<reset> }
+	[ LIT2 &+r $2 ] [ LIT2 &+g $2 ] [ LIT2 &+b $2 ] !/<set>
+
+	&path ".theme $1
+
+(
+@|window )
+
+@window/<set-default-size> ( -- )
+	#0550 #02cc
+	( >> )
+
+@window/<set-size> ( w* h* -- )
+	.Screen/height DEO2
+	.Screen/width DEO2
+	( | cache )
+	.Screen/height DEI2 #0028 SUB2
+	( ) DUP2 #0018 DIV2 .textarea/rows STZ
+	POP
+	( ) .scrollbar/height STZ2
+	( | responsive )
+	.Screen/width DEI2 #0300 GTH2 .nav/visible STZ
+	.Screen/height DEI2 #0028 SUB2 .scrollbar/height STZ2 !<redraw-all>
+
+@window/toggle-expand ( -- )
+	.Screen/width DEI2 #0550 EQU2 ?{ !/<set-default-size> }
+	#0680 #038c !/<set-size>
+
+(
+@|ank )
+
+%ank/get-width ( addr* -- addr* width* ) {
+	LDAk #09 NEQ #0018 ROT SFT2 }
+
+@ank/get-addr ( addr* -- addr* glyph* )
+	LDAk #80 LTH ?/get-ascii
+	LDAk #c3 EQU ?/get-latin
+	;&blank JMP2r
+
+	&get-ascii ( addr* -- addr* glyph* )
+	[ LIT &rune $1 ] ?{
+		LDAk #00 SWP #0030 MUL2 ;&glyphs ADD2 JMP2r }
+	[ LIT2 00 _&rune ] LDR #0030 MUL2 ;&runes ADD2 [ LIT2 00 _&rune ] STR
+	JMP2r
+
+	&get-latin ( addr* -- addr* glyph* )
+	LDA2k #c380 SUB2 #0030 MUL2 ;&latin-high ADD2 JMP2r
+
+@ank/get-strw ( str* -- width* )
+	[ LIT2r 0000 ]
+	&>w
+		LDAk ?{ POP2 STH2r JMP2r }
+		/get-width STH2
+		ADD2r INC2 !/>w
+
+@ank/<draw-range-color> ( to* from* color -- )
+	,&color-utf8 STR
+	[ LIT2 25 -Screen/auto ] DEO
+	EQU2k ?{
+		&>l
+			/draw-utf8 utf8/next GTH2k ?/>l }
+	POP2 POP2 JMP2r
+
+@ank/<draw-left-color> ( str* color -- )
+	,&color-utf8 STR
+	[ LIT2 25 -Screen/auto ] DEO
+	&>wd
+		LDAk ?{ POP2 JMP2r }
+		/draw-utf8 utf8/next !/>wd
+
+@ank/draw-utf8 ( addr* -- addr* )
+	[ LITr -Screen/x ] DEI2r /get-width STH2
+	( glyph* ) /get-addr .Screen/addr DEO2
+	( draw2 ) [ LIT2r &color-utf8 01 -Screen/sprite ] DEOkr
+	( tab width ) LDAk #09 NEQ [ DEOkr? DEOr ] ADD2r [ LITr -Screen/x ] DEO2r
+	JMP2r
+
+@ank/draw-utf8ul ( addr* color -- addr* )
+	,&color-ul STR
+	[ LITr -Screen/x ] DEI2r /get-width STH2
+	( glyph* ) /get-addr .Screen/addr DEO2
+	( draw2 ) [ LIT2r &color-ul 01 -Screen/sprite ] DEOkr
+	( tab width ) LDAk #09 NEQ [ DEOkr? DEOr ]
+	( | underline )
+	[ LIT &no-underline $1 ] ?{
+		OVR2r [ LITr -Screen/x ] DEO2r
+		;&underline .Screen/addr DEO2
+		[ LIT2 05 -Screen/sprite ] DEOk DEO }
+	ADD2r [ LITr -Screen/x ] DEO2r
+	JMP2r
+
+@ank/<draw-dec> ( short* color -- )
+	,&color-ascii STR
+	[ LIT2 25 -Screen/auto ] DEO
+	#000a SWP2 [ LITr ff ]
+	&>get
+		SWP2k DIV2k MUL2 SUB2 STH
+		POP OVR2 DIV2 ORAk ?/>get
+	POP2 POP2
+	&>put
+		STHr INCk ?{ POP JMP2r }
+		[ LIT "0 ] ADD /<draw-ascii> !/>put
+
+@ank/<draw-ascii> ( char -- )
+	[ LITr -Screen/x ] DEI2r [ LIT2r 000c ] ADD2r
+	( glyph* ) #00 SWP #0030 MUL2 ;&glyphs ADD2 .Screen/addr DEO2
+	( draw2 ) [ LIT2 &color-ascii 01 -Screen/sprite ] DEOk DEO
+	[ LITr -Screen/x ] DEO2r
+	JMP2r
+
+@ank/<draw-button> ( c -- )
+	DUP #04 NEQ ?{ POP #01 !/<draw-ascii> }
+	#03 AND DUP #01 NEQ ?/<draw-ascii>
+	POP #02 !/<draw-ascii>
+
+@ank/<draw-key> ( c -- )
+	DUP #20 NEQ ?{ POP #03 }
+	DUP #1b NEQ ?{ POP #04 }
+	DUP #09 NEQ ?{ POP #05 }
+	DUP #0d NEQ ?{ POP #06 }
+	!/<draw-ascii>
+
+@ank/<draw-lb> ( -- )
+	.Screen/y DEI2k #0018 ADD2 ROT DEO2
+	JMP2r
+
+@touch-to-addr ( -- addr* )
+	highlight/<reset>
+	( goto y ) ( b ) .Mouse/y DEI2 #0028 SUB2
+	( clamp y ) DUP2 #8000 LTH2 ?{ POP2 #0000 }
+	#0018 DIV2 [ STH POP ]
+	( a ) [ LITr 00 ] .textarea/eof LDZ2 get-scroll-addr
+	&>ver
+		EQUkr STHr ?{
+			LDAk #0a NEQ [ JMP INCr ] utf8/next GTH2k ?/>ver }
+	POP2r
+	( goto x ) ( b ) .Mouse/x DEI2 textarea/get-anchor SUB2
+	( clamp x ) DUP2 #8000 LTH2 ?{ POP2 #0000 }
+	STH2
+	( a ) LIT2r 0000
+	&>hor
+		LDAk #0a EQU ?{
+			ank/get-width STH2
+			ADD2r LTH2kr STHr ?{ utf8/next GTH2k ?/>hor } }
+	POP2r POP2r NIP2
+	( clean highlight ) #0000 .highlight/comment STZ2
+	JMP2r
+
+(
+@|snarf )
+
+@snarf/<copy> ( -- )
+	sel/has-length ?{ JMP2r }
+	;&path-txt .File/name DEO2
+	sel/get-to-from SUB2 .File/length DEO2
+	sel/get-from .File/write DEO2
+	JMP2r
+
+@snarf/<cut> ( -- )
+	sel/has-length ?{ JMP2r }
+	/<copy>
+	sel/<erase> !sel/<reset>
+
+@snarf/<paste> ( -- )
+	;&path-txt !file/<inject>
+
+@snarf/<paste-binary> ( -- )
+	;&path-txt !file/<inject-binary>
+
+@snarf/path-txt ".snarf $1
+
+~src/assets.tal
+
