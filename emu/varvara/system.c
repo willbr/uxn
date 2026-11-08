@@ -70,7 +70,7 @@ void system_deo(Varvara *v, ux_u8 port)
 	/* The core already stored the byte in dev[]. Like uxnmin, halting (state,
 	 * 0x0f) does not abort the vector that wrote it; the host checks
 	 * varvara_halted. Short ports arrive on their low byte. The palette
-	 * (0x08-0x0d) is only stored; there is no screen to colorize. */
+	 * (0x08-0x0d) is only stored; varvara_render reads it from dev[]. */
 	switch (port) {
 	case 0x03: expansion(v); break;
 	case 0x04: v->u.wst.ptr = v->u.dev[4]; break;

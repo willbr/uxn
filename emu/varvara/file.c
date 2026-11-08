@@ -124,6 +124,7 @@ void varvara_close(Varvara *v)
 	file_reset(&v->file[1]);
 	free(v->banks);
 	v->banks = NULL;
+	screen_free(v);
 }
 
 static int file_open(VarvaraFile *f, const char *path, int want_write, ux_u8 flags)

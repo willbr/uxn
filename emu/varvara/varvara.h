@@ -26,9 +26,21 @@ typedef struct Varvara {
 	ux_u8 *banks; /* banks 1-15 (15 x 64K), NULL if allocation failed; freed by varvara_close */
 	int has_root;
 	char root[1024]; /* absolute normalized confinement root, when has_root */
+	/* Screen (0x20). fg and bg hold one colour index (0-3) per pixel,
+	 * width*height bytes each, row-major. The size is kept in 1..1024 x
+	 * 1..1024; fg and bg are NULL (and the size 0x0) only if allocation
+	 * failed. Freed by varvara_close. */
+	int width, height;
+	ux_u8 *fg, *bg;
+	int scr_x, scr_y;   /* Screen/x, Screen/y registers (signed) */
+	unsigned scr_addr;  /* Screen/addr register */
+	int scr_auto_x, scr_auto_y; /* Screen/auto: step in pixels (0 or 8) */
+	int scr_auto_a;     /* Screen/auto: address step per 1bpp tile (0 or 8) */
+	int scr_auto_len;   /* Screen/auto: extra sprites per write (0-15) */
 } Varvara;
 
-/* Zero the machine and wire dei/deo. Returns 0. */
+/* Zero the machine, wire dei/deo, and allocate the memory banks and the
+ * default 512x320 screen. Returns 0. */
 int varvara_init(Varvara *v);
 /* Load a ROM at 0x0100. Returns 0, or nonzero after printing one line to
  * stderr (missing, empty, or longer than 0xff00 bytes). */
@@ -49,9 +61,35 @@ const char *varvara_port_name(ux_u8 port);
 /* Confine every File path to dir. Returns 0 if dir exists, nonzero (and no
  * root set) otherwise. Without a root, paths are used as given. */
 int varvara_set_root(Varvara *v, const char *dir);
-/* Close any open File device handles and free the extra memory banks. Call
- * before exiting or removing files; varvara_init may follow. */
+/* Close any open File device handles and free the extra memory banks and
+ * the screen layers. Call before exiting or removing files; varvara_init
+ * may follow. */
 void varvara_close(Varvara *v);
+
+/* Run the Screen vector once, if set (one frame). Returns 0 if there is no
+ * vector or it reached BRK, nonzero if it hit max_steps or a fault (a fault
+ * is cleared). */
+int varvara_frame(Varvara *v, unsigned long max_steps);
+/* Composite the screen (fg over bg, fg colour 0 transparent) through the
+ * System palette into rgba: width*height*4 bytes, R G B A (A = 255). */
+void varvara_render(const Varvara *v, ux_u8 *rgba);
+/* Input events. Each stores the port value and runs that device's vector,
+ * if set, with v->max_steps (a fault is cleared), as uxn11 does. */
+/* Controller/button: 0x01 A (Ctrl), 0x02 B (Alt), 0x04 Select (Shift),
+ * 0x08 Start (Home), 0x10 Up, 0x20 Down, 0x40 Left, 0x80 Right. A mask of 0
+ * does nothing. */
+void varvara_button(Varvara *v, ux_u8 mask, int down);
+/* Controller/key: the byte is set for the vector and cleared after it. 0
+ * does nothing. */
+void varvara_key(Varvara *v, ux_u8 ch);
+/* Mouse/x, Mouse/y in screen pixels. */
+void varvara_mouse_move(Varvara *v, int x, int y);
+/* Mouse/state: 0x01 left, 0x02 middle, 0x04 right. */
+void varvara_mouse_button(Varvara *v, ux_u8 mask, int down);
+/* One scroll event, in X11/SDL wheel sense (dy > 0 is away from the user).
+ * As in uxn11, Mouse/scrollx gets dx and Mouse/scrolly gets -dy for the
+ * vector; both are zeroed after it. */
+void varvara_mouse_scroll(Varvara *v, int dx, int dy);
 
 /* Per-device handlers, dispatched on (port & 0xf0). Internal. */
 ux_u8 system_dei(Varvara *v, ux_u8 port);
@@ -66,5 +104,13 @@ const char *file_port_name(ux_u8 port);
 const char *datetime_port_name(ux_u8 port);
 const char *system_port_name(ux_u8 port);
 const char *console_port_name(ux_u8 port);
+ux_u8 screen_dei(Varvara *v, ux_u8 port);
+void screen_deo(Varvara *v, ux_u8 port);
+const char *screen_port_name(ux_u8 port);
+/* Allocate the default 512x320 screen (called by varvara_init) / free it. */
+void screen_init(Varvara *v);
+void screen_free(Varvara *v);
+const char *controller_port_name(ux_u8 port);
+const char *mouse_port_name(ux_u8 port);
 
 #endif

@@ -2,6 +2,7 @@
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #include "vendor/nob/nob.h"
+#include "tools/sha256.h"
 
 #define BUILD_REF "build/ref"
 #define REF_UXNMIN "vendor/ref/uxnmin"
@@ -324,7 +325,8 @@ static bool cli_rejects_bad_roms(void)
  * Win32 headers under -std=c89 -pedantic), so it needs no -std=c99 exemption. */
 static const char *const VARVARA_SRCS[] = {
 	"varvara/varvara.c", "varvara/system.c", "varvara/console.c",
-	"varvara/datetime.c", "varvara/file.c", "core/uxn.c"
+	"varvara/datetime.c", "varvara/file.c", "varvara/screen.c", "varvara/input.c",
+	"core/uxn.c"
 };
 
 static bool build_fs_obj(void)
@@ -599,6 +601,49 @@ done:
 	return ok;
 }
 
+/* Runs uxn11's etc/tests/<name>.tal headless for 2 frames, dumps the screen
+ * as a P6 PPM, and compares its SHA-256 with tests/expected/<name>.sha. The
+ * .sha files were written only after each image was checked by eye. */
+static bool snapshot_matches(const char *name)
+{
+	const char *tal[1];
+	const char *rom = temp_sprintf(TEST_DIR "/%s.rom", name);
+	const char *ppm = temp_sprintf(TEST_DIR "/%s.ppm", name);
+	const char *sha = temp_sprintf("tests/expected/%s.sha", name);
+	const char *args[6];
+	String_Builder img = {0}, want = {0};
+	char got[65];
+	bool ok = false;
+	int code;
+
+	tal[0] = temp_sprintf(REF_UXN11 "/etc/tests/%s.tal", name);
+	if (!assemble(UXNMIN, tal, 1, rom)) return false;
+	args[0] = UXNCLI; args[1] = "--frames"; args[2] = "2";
+	args[3] = "--dump"; args[4] = ppm; args[5] = rom;
+	code = run_code(args, 6, TEST_DIR "/empty.txt", TEST_DIR "/snapshot.out", NULL);
+	if (code != 0) { nob_log(ERROR, "%s: exit code %d", name, code); goto done; }
+	if (!slurp(ppm, &img)) goto done;
+	sha256_hex(img.items, img.count, got);
+	if (!slurp(sha, &want) || want.count < 64 || memcmp(want.items, got, 64) != 0) {
+		nob_log(ERROR, "%s: snapshot sha256 %s does not match %s", name, got, sha);
+		goto done;
+	}
+	ok = true;
+done:
+	sb_free(img);
+	sb_free(want);
+	return ok;
+}
+
+static bool screen_snapshots(void)
+{
+	bool ok = snapshot_matches("screen");
+	ok = snapshot_matches("screen.auto") && ok;
+	ok = snapshot_matches("screen.bounds") && ok;
+	ok = snapshot_matches("screen.pixel") && ok;
+	return ok;
+}
+
 static bool build_run_varvara_test(void)
 {
 	Cmd cmd = {0};
@@ -636,6 +681,7 @@ static bool run_varvara_cli_tests(void)
 	VT(file_matches_uxn11);
 	VT(datetime_runs);
 	VT(file_listing_edge_cases);
+	VT(screen_snapshots);
 #undef VT
 	printf("varvara-cli: %d passed, %d failed\n", total - failures, failures);
 	return failures == 0;
