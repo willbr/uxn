@@ -21,14 +21,20 @@ typedef struct Varvara {
 	ux_u8 ram[0x10000];
 	void (*on_console)(void *ctx, int fd, int c); /* fd 1 (write) or 2 (error) */
 	void *ctx;
-	/* Step limit per uxn_eval call made by the input functions (varvara_button,
-	 * varvara_key, varvara_mouse_*, varvara_console_input); 0 = unlimited.
-	 * varvara_boot and varvara_frame take their own max_steps argument and do
-	 * not use this field. The SDL host sets both to 2,000,000. */
+	/* Step limit for each vector that an event starts: the input functions
+	 * (varvara_button, varvara_key, varvara_mouse_*), varvara_console_input
+	 * and varvara_args_deliver (one console vector per argument byte);
+	 * 0 = unlimited. varvara_frame takes its own max_steps argument and does
+	 * not use this field. varvara_boot sets this field to its max_steps
+	 * argument, then uses it for the reset vector and the arguments (uxncli
+	 * passes --max-steps, 0 by default). The SDL host sets it to STEP_LIMIT
+	 * (2,000,000) and runs the reset vector itself, resumably, with the same
+	 * limit (host/runner.c). */
 	unsigned long max_steps;
-	/* Set by the last input function (button, key, mouse): nonzero if its
-	 * vector stopped at max_steps. The vector is then suspended with u.pc
-	 * as the resume address; a host may continue it with uxn_eval. */
+	/* Set by the last input function (button, key, mouse, console input,
+	 * argument delivery): nonzero if its vector stopped at max_steps. The
+	 * vector is then suspended with u.pc as the resume address; a host may
+	 * continue it with uxn_eval. */
 	int limit_hit;
 	/* Optional vector runner. NULL means plain uxn_eval. Every vector the
 	 * input functions, varvara_frame and varvara_console_input start goes
@@ -63,10 +69,43 @@ int varvara_init(Varvara *v);
 /* Load a ROM at 0x0100. Returns 0, or nonzero after printing one line to
  * stderr (missing, empty, or longer than 0xff00 bytes). */
 int varvara_load(Varvara *v, const char *path);
-/* Run the ROM's reset vector, then deliver console arguments, with argc/argv
- * laid out as for uxnmin: argv[0] is the program, argv[1] the ROM, arguments
- * start at argv[2]. Returns 0 if the reset vector reached BRK, nonzero if it
- * hit max_steps or a fault (a fault is cleared). */
+/* Booting is two steps: run the reset vector at VARVARA_RESET, then, if it
+ * reached BRK, deliver the console arguments. varvara_boot does both in one
+ * call; a host that must not block (the SDL host) runs the reset vector
+ * itself, resuming it across calls, and then delivers the arguments with
+ * varvara_args_deliver, again resuming any console vector that stops early. */
+#define VARVARA_RESET 0x0100
+
+/* Cursor over the console arguments still to deliver. */
+typedef struct VarvaraArgs {
+	char **arg;  /* the ROM's arguments (argv[2..] in uxnmin's layout); not copied */
+	int n;
+	int i;       /* argument being delivered */
+	int pos;     /* next byte of arg[i] */
+	int started; /* the Console vector has been checked */
+} VarvaraArgs;
+
+/* Step 1, before the reset vector runs: point *a at the n arguments and set
+ * Console/type to 1 if there are any (0 otherwise), as uxnmin does. */
+void varvara_args_begin(Varvara *v, VarvaraArgs *a, int n, char **arg);
+/* Step 2, once the reset vector has reached BRK (never while a vector is
+ * suspended). Delivers argument bytes (type 2) and argument ends (a '\n' of
+ * type 3, or 4 for the last), one console vector run each, with
+ * v->max_steps per run. Once the machine halts the remaining bytes are
+ * skipped but the ends are still sent, as in uxnmin. Nothing is delivered if
+ * the Console vector was 0 when delivery started. Returns 1 when everything
+ * has been delivered. Returns 0 if a console vector stopped early
+ * (v->limit_hit, u.pc is the resume address): resume that vector to BRK
+ * (then varvara_vector_done) and call again to deliver the rest; the byte
+ * that vector was given is not sent again. */
+int varvara_args_deliver(Varvara *v, VarvaraArgs *a);
+/* Both steps in one call, with argc/argv laid out as for uxnmin: argv[0] is
+ * the program, argv[1] the ROM, arguments start at argv[2]. Sets
+ * v->max_steps = max_steps (0 = unlimited) and uses it for the reset vector
+ * and for each argument's console vector. Returns 0 if the reset vector
+ * reached BRK and every argument was delivered; nonzero if the reset vector
+ * hit max_steps or a fault (a fault is cleared; no arguments are delivered),
+ * or if a console vector hit max_steps (delivery stops there). */
 int varvara_boot(Varvara *v, int argc, char **argv, unsigned long max_steps);
 /* Deliver one console event: type 1 stdin byte, 2 argument byte, 3 argument
  * end, 4 last argument end / end of input. Runs the console vector if set. */

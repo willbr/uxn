@@ -73,6 +73,12 @@ continue, Ctrl+P pause. There are no function-key shortcuts.
 build/emu.exe build/ref/left.rom notes.txt
 ```
 
+Left's reset vector takes about 2.1 million steps, more than the host's
+2,000,000-step limit per vector run, so it finishes on the first frame; the
+arguments (`notes.txt`) are delivered after it. Reset and Reload in the
+debugger restart the ROM with the same arguments; a ROM opened from the
+dialog gets none.
+
 Check that you can:
 
 1. Open a file from Left's file browser.

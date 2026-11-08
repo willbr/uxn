@@ -66,23 +66,52 @@ int varvara_load(Varvara *v, const char *path)
 	return 0;
 }
 
+void varvara_args_begin(Varvara *v, VarvaraArgs *a, int n, char **arg)
+{
+	a->arg = arg;
+	a->n = n > 0 ? n : 0;
+	a->i = 0;
+	a->pos = 0;
+	a->started = 0;
+	v->u.dev[0x17] = (ux_u8)(a->n > 0);
+}
+
+int varvara_args_deliver(Varvara *v, VarvaraArgs *a)
+{
+	v->limit_hit = 0;
+	if (!a->started) {
+		a->started = 1;
+		if (!(v->u.dev[0x10] | v->u.dev[0x11])) a->i = a->n; /* no Console vector */
+	}
+	while (a->i < a->n) {
+		const char *s = a->arg[a->i];
+
+		/* advance before running, so a resumed byte is never sent twice */
+		if (!varvara_halted(v) && s[a->pos]) {
+			varvara_console_input(v, (unsigned char)s[a->pos++], 2);
+		} else {
+			int last = a->i == a->n - 1;
+
+			a->i++;
+			a->pos = 0;
+			varvara_console_input(v, '\n', 3 + last);
+		}
+		if (v->limit_hit) return 0;
+	}
+	return 1;
+}
+
 int varvara_boot(Varvara *v, int argc, char **argv, unsigned long max_steps)
 {
-	int i, r;
+	VarvaraArgs a;
+	int r;
 
 	v->max_steps = max_steps;
-	v->u.dev[0x17] = (ux_u8)(argc > 2);
-	r = uxn_eval(&v->u, 0x100, max_steps);
+	varvara_args_begin(v, &a, argc - 2, argc > 2 ? argv + 2 : NULL);
+	r = varvara_run(v, VARVARA_RESET, max_steps);
 	v->u.fault = 0;
 	if (r != UXN_BRK) return 1;
-	if (!(v->u.dev[0x10] | v->u.dev[0x11])) return 0;
-	for (i = 2; i < argc; i++) {
-		const char *p = argv[i];
-		while (!varvara_halted(v) && *p)
-			varvara_console_input(v, (unsigned char)*p++, 2);
-		varvara_console_input(v, '\n', 3 + (i == argc - 1));
-	}
-	return 0;
+	return !varvara_args_deliver(v, &a);
 }
 
 int varvara_halted(const Varvara *v)

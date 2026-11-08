@@ -14,10 +14,13 @@
 #include "varvara.h"
 #include "keymap.h"
 #include "input_queue.h"
+#include "runner.h"
 #include "debugger.h"
 
 #define FRAME_NS (1000000000 / 60)
-/* Per vector call. Also stored in v->max_steps, which the input vectors use. */
+/* Steps per vector run, for every vector including the reset vector (the
+ * runner stores it in v->max_steps too). A vector that uses it up stays
+ * suspended and resumes on the next frame. */
 #define STEP_LIMIT 2000000UL
 
 typedef struct Host {
@@ -32,12 +35,14 @@ typedef struct Host {
 	int debugger_open; /* toggled by Right Ctrl */
 	DebuggerUI ui;     /* panels, console capture and the DebugSession (ui.sess.paused) */
 	char rom_path[1024];
-	/* A vector is suspended (at STEP_LIMIT, a breakpoint or a debugger step)
-	 * and resumes at resume_pc. This, not v->u.pc, is the resume point: other
-	 * code may run uxn_eval on the machine. */
-	int busy;
-	unsigned resume_pc;
-	InputQueue iq;     /* input held back while busy; replayed when the vector ends */
+	/* The ROM's own arguments (argv after the ROM on the command line), kept
+	 * for Reset and Reload of that ROM. A ROM opened from the dialog has none. */
+	char **rom_args;
+	int rom_nargs;
+	/* Vector runs: busy/resume_pc (a vector suspended at STEP_LIMIT, a
+	 * breakpoint or a debugger step), the input queue, and the boot (reset
+	 * vector, then the arguments). See runner.h. */
+	Runner rn;
 	int quit;
 	int exit_code;
 	char root[1024];
@@ -45,11 +50,9 @@ typedef struct Host {
 	Uint32 open_event; /* custom event: open-ROM dialog finished (data1 = SDL_strdup'd path) */
 } Host;
 
-static int host_run_hook(Varvara *v, ux_u16 pc, unsigned long max_steps);
-
 static void on_console(void *ctx, int fd, int c)
 {
-	debugger_console_put(&((Host *)ctx)->ui, fd, c);
+	debugger_console_put(&((Host *)((Runner *)ctx)->user)->ui, fd, c);
 	fputc(c, fd == 2 ? stderr : stdout);
 }
 
@@ -61,25 +64,34 @@ static int host_fail(const char *what)
 
 /* ---- machine management ---- */
 
-/* Build a fresh machine from a ROM. On failure returns NULL. argv[0] is the
- * program, argv[1] the ROM, then the ROM's arguments. */
-static Varvara *machine_new(const Host *h, const char *rom, int argc, char **argv)
+/* Build a fresh machine with the ROM loaded, not yet booted. On failure
+ * returns NULL. */
+static Varvara *machine_new(const Host *h, const char *rom)
 {
 	Varvara *v = (Varvara *)malloc(sizeof *v);
 
 	if (!v) return NULL;
 	varvara_init(v);
 	v->on_console = on_console;
-	v->ctx = (void *)h;
-	v->run = host_run_hook;
-	v->max_steps = STEP_LIMIT;
 	if ((h->has_root && varvara_set_root(v, h->root)) || varvara_load(v, rom)) {
 		varvara_close(v);
 		free(v);
 		return NULL;
 	}
-	varvara_boot(v, argc, argv, STEP_LIMIT);
 	return v;
+}
+
+/* Make v the running machine and boot it: the reset vector runs like any
+ * other vector (resumable at STEP_LIMIT, breakpoints honoured, including one
+ * on its entry), and the arguments follow once it reaches BRK, before any
+ * queued input. Breakpoints stay; a pause ends. */
+static void host_start(Host *h, Varvara *v, int nargs, char **args)
+{
+	h->v = v;
+	h->ui.sess.paused = 0;
+	h->rn.user = h;
+	runner_init(&h->rn, v, &h->ui.sess, STEP_LIMIT);
+	runner_boot(&h->rn, nargs, args);
 }
 
 static void host_set_title(Host *h, const char *rom)
@@ -94,18 +106,17 @@ static void host_set_title(Host *h, const char *rom)
 	SDL_SetWindowTitle(h->win, title);
 }
 
-/* Replace the running ROM (close, init, load, boot), keeping --root. If the
- * new ROM fails to load the old one keeps running. Returns 0 on success. */
-int host_load_rom(Host *h, const char *path)
+/* Replace the running ROM (close, init, load, boot), keeping --root, and
+ * give it nargs arguments, kept for later Resets (they must outlive the
+ * Host). If the new ROM fails to load the old one keeps running. Returns 0
+ * on success. */
+int host_load_rom(Host *h, const char *path, int nargs, char **args)
 {
-	char *argv[2];
 	char keep[sizeof h->rom_path];
 	Varvara *nv;
 
 	snprintf(keep, sizeof keep, "%s", path); /* path may be h->rom_path itself */
-	argv[0] = (char *)"emu";
-	argv[1] = (char *)path;
-	nv = machine_new(h, path, 2, argv);
+	nv = machine_new(h, path);
 	if (!nv) {
 		fprintf(stderr, "emu: cannot load %s\n", path);
 		return 1;
@@ -115,12 +126,11 @@ int host_load_rom(Host *h, const char *path)
 		varvara_close(h->v);
 		free(h->v);
 	}
-	h->v = nv;
-	h->busy = 0;
-	h->ui.sess.paused = 0; /* breakpoints stay */
-	iq_init(&h->iq);
 	memcpy(h->rom_path, keep, sizeof keep);
+	h->rom_nargs = nargs;
+	h->rom_args = args;
 	host_set_title(h, path);
+	host_start(h, nv, nargs, args);
 	return 0;
 }
 
@@ -185,14 +195,7 @@ static int host_sync_screen(Host *h)
 	return 0;
 }
 
-/* ---- input ---- */
-
-/* ---- running vectors ---- */
-
-static unsigned screen_vector(const Varvara *v)
-{
-	return (unsigned)v->u.dev[0x20] << 8 | v->u.dev[0x21];
-}
+/* ---- running vectors and input ---- */
 
 static void host_check_halt(Host *h)
 {
@@ -202,99 +205,12 @@ static void host_check_halt(Host *h)
 	}
 }
 
-/* Record how a vector run ended. A vector that did not finish stays suspended
- * at resume_pc; one that did gets Varvara's deferred port clears applied. */
-static void host_vector_result(Host *h, int r)
-{
-	h->busy = (r == UXN_LIMIT);
-	if (h->busy) h->resume_pc = h->v->u.pc;
-	else varvara_vector_done(h->v);
-}
-
-/* The Varvara run hook: every vector Varvara starts (input, Screen) is a fresh
- * start, so a breakpoint on its first instruction fires. With no breakpoints
- * this is plain uxn_eval. */
-static int host_run_hook(Varvara *v, ux_u16 pc, unsigned long max_steps)
-{
-	Host *h = (Host *)v->ctx;
-
-	if (h->ui.sess.nbp > 0) return dbg_run(&h->ui.sess, v, pc, max_steps);
-	return uxn_eval(&v->u, pc, max_steps);
-}
-
-/* Run a vector from pc until BRK, STEP_LIMIT or a breakpoint. fresh: pc is a
- * vector's entry (a breakpoint there fires before anything runs); otherwise
- * it resumes a suspended vector and runs one instruction before checking. */
-static void host_run(Host *h, unsigned pc, int fresh)
-{
-	Varvara *v = h->v;
-	int r;
-
-	if (h->ui.sess.nbp > 0) {
-		if (fresh) r = dbg_run(&h->ui.sess, v, (ux_u16)pc, STEP_LIMIT);
-		else {
-			v->u.pc = (ux_u16)pc;
-			r = dbg_continue(&h->ui.sess, v, STEP_LIMIT);
-		}
-	} else {
-		r = uxn_eval(&v->u, (ux_u16)pc, STEP_LIMIT);
-	}
-	v->u.fault = 0;
-	host_vector_result(h, r);
-}
-
-/* Input never runs a vector while another is suspended: an input vector would
- * overwrite u.pc and share the stacks. host_input() runs the call at once, or
- * queues it while busy; host_replay() drains the queue once the vector ends. */
-static void host_dispatch(Host *h, const InputEv *e)
-{
-	Varvara *v = h->v;
-	switch (e->kind) {
-	case IQ_BUTTON: varvara_button(v, (ux_u8)e->a, e->b); break;
-	case IQ_KEY: varvara_key(v, (ux_u8)e->a); break;
-	case IQ_MOUSE_MOVE: varvara_mouse_move(v, e->a, e->b); break;
-	case IQ_MOUSE_BUTTON: varvara_mouse_button(v, (ux_u8)e->a, e->b); break;
-	case IQ_SCROLL: varvara_mouse_scroll(v, e->a, e->b); break;
-	}
-	if (v->limit_hit) {
-		h->busy = 1;
-		h->resume_pc = v->u.pc;
-	}
-}
-
+/* Input never runs a vector while another is suspended, or before the boot
+ * (reset vector, then arguments) is over: the runner queues it and replays
+ * it in order once the machine is free. Dropped while paused. */
 static void host_input(Host *h, IqKind kind, int a, int b)
 {
-	InputEv e;
-
-	/* While the debugger has the machine paused, input is dropped. */
-	if (h->ui.sess.paused) return;
-	e.kind = kind;
-	e.a = a;
-	e.b = b;
-	if (h->busy || h->iq.count) iq_push(&h->iq, e);
-	else host_dispatch(h, &e);
-}
-
-/* Replay queued input in order; stops if a call leaves the machine busy again.
- * After an overflow, release Controller buttons the ROM has down that the
- * host no longer holds, so nothing sticks. */
-static void host_replay(Host *h)
-{
-	InputEv e;
-
-	while (!h->busy && iq_pop(&h->iq, &e)) host_dispatch(h, &e);
-	if (!h->busy && h->iq.overflowed) {
-		ux_u8 stuck = iq_stuck_buttons(h->v->u.dev[0x82], h->keys.buttons);
-		int b;
-
-		for (b = 0; b < 8 && !h->busy; b++)
-			if (stuck & (1 << b)) {
-				InputEv r;
-				r.kind = IQ_BUTTON; r.a = 1 << b; r.b = 0;
-				host_dispatch(h, &r);
-			}
-		if (!h->busy) h->iq.overflowed = 0;
-	}
+	runner_input(&h->rn, kind, a, b);
 }
 
 /* Send every held Controller button as released. Used on focus loss and when
@@ -360,7 +276,7 @@ static void host_mouse_pos(Host *h, float x, float y)
 void host_event(Host *h, const SDL_Event *e)
 {
 	if (e->type == h->open_event) {
-		host_load_rom(h, (const char *)e->user.data1);
+		host_load_rom(h, (const char *)e->user.data1, 0, NULL); /* no arguments */
 		SDL_free(e->user.data1);
 		return;
 	}
@@ -404,32 +320,22 @@ void host_event(Host *h, const SDL_Event *e)
 	default:
 		break;
 	}
-	if (varvara_halted(h->v)) {
-		h->exit_code = varvara_exit_code(h->v);
-		h->quit = 1;
-	}
+	host_check_halt(h);
 }
 
 /* ---- frame ---- */
 
-/* One 60 Hz tick: run the Screen vector, or resume a suspended vector at
- * resume_pc (varvara_frame always restarts at the vector, so the host calls
- * uxn_eval itself; the stacks live in the Uxn so a resume is exact). When the
- * vector ends, queued input is replayed. Then upload the screen. Returns
- * nonzero on an SDL error. */
+/* One 60 Hz tick (runner_tick): deliver owed boot arguments, then run the
+ * Screen vector or resume a suspended vector at resume_pc (varvara_frame
+ * always restarts at the vector, so the runner calls uxn_eval itself; the
+ * stacks live in the Uxn so a resume is exact). When the vector ends, queued
+ * input is replayed. Paused in the debugger, nothing runs and queued input
+ * waits. Then upload the screen. Returns nonzero on an SDL error. */
 int host_frame(Host *h)
 {
 	Varvara *v = h->v;
 
-	/* Paused in the debugger: nothing runs and queued input waits. */
-	if (!h->ui.sess.paused) {
-		int fresh = !h->busy;
-		unsigned start = fresh ? screen_vector(v) : h->resume_pc;
-
-		h->busy = 0;
-		if (start) host_run(h, start, fresh);
-		if (!h->ui.sess.paused) host_replay(h);
-	}
+	runner_tick(&h->rn, h->keys.buttons);
 	host_check_halt(h);
 	if (host_sync_screen(h)) return 1;
 	varvara_render(v, h->rgba);
@@ -440,26 +346,11 @@ int host_frame(Host *h)
 
 /* ---- debugger actions ---- */
 
-/* One debugger step. If no vector is suspended, the next one to run is the
- * Screen vector, so stepping walks through the frame. The session runs from
- * resume_pc, which is the only record of where the vector stands. */
+/* One debugger step (runner_step). If no vector is suspended, the next one
+ * to run is the Screen vector, so stepping walks through the frame. */
 static void host_step(Host *h, int over)
 {
-	Varvara *v = h->v;
-	int r;
-
-	h->ui.sess.paused = 1;
-	if (!h->busy) {
-		unsigned sv = screen_vector(v);
-
-		if (!sv) return;
-		h->busy = 1;
-		h->resume_pc = sv;
-	}
-	v->u.pc = (ux_u16)h->resume_pc;
-	r = over ? dbg_step_over(&h->ui.sess, v) : dbg_step(&h->ui.sess, v);
-	v->u.fault = 0;
-	host_vector_result(h, r);
+	runner_step(&h->rn, over);
 	host_check_halt(h);
 }
 
@@ -473,7 +364,8 @@ static void host_action(Host *h, DebugAction a)
 	case DA_STEP_OVER: host_step(h, 1); break;
 	case DA_RESET:
 	case DA_RELOAD:
-		if (h->rom_path[0]) host_load_rom(h, h->rom_path);
+		/* the same ROM, with the arguments it was started with */
+		if (h->rom_path[0]) host_load_rom(h, h->rom_path, h->rom_nargs, h->rom_args);
 		break;
 	case DA_OPEN: host_open_rom_dialog(h); break;
 	case DA_ZOOM:
@@ -500,12 +392,12 @@ void host_draw(Host *h)
 		DebugInfo info;
 
 		info.paused = h->ui.sess.paused;
-		info.in_vector = h->busy;
-		info.pc = h->busy ? h->resume_pc : screen_vector(h->v);
+		info.in_vector = h->rn.busy;
+		info.pc = h->rn.busy ? h->rn.resume_pc : runner_screen_vector(&h->rn);
 		info.zoom = h->zoom;
 		info.can_reload = h->rom_path[0] != '\0';
 		host_action(h, debugger_frame(&h->ui, h->ren, h->v, &info));
-	} else if (h->busy) {
+	} else if (h->rn.busy) {
 		SDL_SetRenderDrawColor(h->ren, 255, 255, 0, 255);
 		SDL_RenderDebugText(h->ren, 8, 8, "ROM busy");
 	}
@@ -524,9 +416,9 @@ int main(int argc, char **argv)
 	Host host;
 	Host *h = &host;
 	const char *rom;
-	char **rom_argv;
-	int i, rom_argc, first = 1;
+	int first = 1;
 	Uint64 next;
+	Varvara *v;
 
 	memset(&host, 0, sizeof host);
 	host.zoom = 2;
@@ -546,22 +438,22 @@ int main(int argc, char **argv)
 	}
 	if (first >= argc) { usage(); return 2; }
 	rom = argv[first];
-	/* argv for the ROM: [0] program, [1] ROM, then its arguments */
-	rom_argc = argc - first + 1;
-	rom_argv = (char **)malloc(sizeof(char *) * (size_t)(rom_argc + 1));
-	if (!rom_argv) return 1;
-	rom_argv[0] = (char *)"emu";
-	for (i = first; i < argc; i++) rom_argv[i - first + 1] = argv[i];
-	rom_argv[rom_argc] = NULL;
+	/* the ROM's own arguments follow it; main's argv outlives the Host */
+	host.rom_args = argv + first + 1;
+	host.rom_nargs = argc - first - 1;
 
 	if (!SDL_Init(SDL_INIT_VIDEO)) return host_fail("SDL_Init");
 	host.open_event = SDL_RegisterEvents(1);
-	host.v = machine_new(&host, rom, rom_argc, rom_argv);
-	if (!host.v) {
+	v = machine_new(&host, rom);
+	if (!v) {
 		fprintf(stderr, "emu: cannot load %s\n", rom);
 		SDL_Quit();
 		return 1;
 	}
+	snprintf(host.rom_path, sizeof host.rom_path, "%s", rom); /* Reset and Reload use it */
+	/* Boot before the window opens, so it opens at the ROM's screen size. A
+	 * reset vector that outlasts STEP_LIMIT finishes over the first frames. */
+	host_start(&host, v, host.rom_nargs, host.rom_args);
 	host.win = SDL_CreateWindow("emu", host.v->width * host.zoom, host.v->height * host.zoom, 0);
 	if (!host.win) return host_fail("SDL_CreateWindow");
 	host.ren = SDL_CreateRenderer(host.win, NULL);
@@ -569,12 +461,8 @@ int main(int argc, char **argv)
 	host_set_title(&host, rom);
 	if (debugger_init(host.win, host.ren)) return host_fail("debugger_init");
 	host.ui.mem_addr = 0x100;
-	snprintf(host.rom_path, sizeof host.rom_path, "%s", rom); /* Reset and Reload use it */
 	if (!SDL_StartTextInput(host.win)) return host_fail("SDL_StartTextInput");
-	if (varvara_halted(host.v)) {
-		host.exit_code = varvara_exit_code(host.v);
-		host.quit = 1;
-	}
+	host_check_halt(&host);
 
 	next = SDL_GetTicksNS();
 	while (!host.quit) {
@@ -603,6 +491,5 @@ int main(int argc, char **argv)
 	SDL_DestroyRenderer(host.ren);
 	SDL_DestroyWindow(host.win);
 	SDL_Quit();
-	free(rom_argv);
 	return host.exit_code;
 }

@@ -717,12 +717,30 @@ static bool run_debug_tests(void)
 	return cmd_run(&cmd);
 }
 
+/* The host's resumable vector path (host/runner.c), headless: no SDL. It is
+ * the same C as the host, so it is built as C99 like the host. */
+static bool run_runner_tests(void)
+{
+	Cmd cmd = {0};
+	size_t i;
+
+	if (!mkdir_if_not_exists("build")) return false;
+	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-Werror", "-O0", "-D_CRT_SECURE_NO_WARNINGS",
+		"-Icore", "-Ivarvara", "-Idebug", "-Ihost", "-o", "build/runner_test.exe",
+		"tests/runner_test.c", "host/runner.c", "host/input_queue.c", "debug/session.c", FS_OBJ);
+	for (i = 0; i < sizeof VARVARA_SRCS / sizeof VARVARA_SRCS[0]; i++) cmd_append(&cmd, VARVARA_SRCS[i]);
+	if (!build_fs_obj() || !cmd_run(&cmd)) return false;
+	cmd_append(&cmd, "build/runner_test.exe", BUILD_REF "/left.rom");
+	return cmd_run(&cmd);
+}
+
 static bool run_tests(void)
 {
 	bool ok = build_run_core_test();
 	ok = build_run_varvara_test() && ok;
 	ok = run_varvara_cli_tests() && ok;
 	ok = run_debug_tests() && ok;
+	ok = run_runner_tests() && ok;
 	return run_keymap_tests() && ok;
 }
 
@@ -809,7 +827,7 @@ static bool build_emu(void)
 	if (!build_sdl3() || !build_imgui() || !build_fs_obj()) return false;
 	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-O2", "-D_CRT_SECURE_NO_WARNINGS",
 		"-Icore", "-Ivarvara", "-Idebug", "-Ivendor/sdl3/include", "-Ivendor/cimgui", "-Ihost",
-		"-o", "build/emu.exe", "host/main.c", "host/debugger.c", "host/keymap.c", "host/input_queue.c",
+		"-o", "build/emu.exe", "host/main.c", "host/debugger.c", "host/keymap.c", "host/input_queue.c", "host/runner.c",
 		"debug/disasm.c", "debug/session.c", FS_OBJ);
 	for (i = 0; i < sizeof VARVARA_SRCS / sizeof VARVARA_SRCS[0]; i++) cmd_append(&cmd, VARVARA_SRCS[i]);
 	link_gui(&cmd);
