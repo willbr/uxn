@@ -136,3 +136,8 @@ emu/nob.exe
 emu/nob.exe.old
 emu/nob.pdb
 emu/nob.ilk
+
+# Vendored third-party sources are committed in full (SDL has dist/, *.hlsl, etc.)
+!emu/vendor/**
+# ...but never their build output
+emu/build/

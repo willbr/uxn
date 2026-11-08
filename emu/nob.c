@@ -694,6 +694,82 @@ static bool run_tests(void)
 	return run_varvara_cli_tests() && ok;
 }
 
+/* ---- GUI dependencies: SDL3 (CMake) and Dear ImGui + cimgui (clang++) ---- */
+#define SDL3_BUILD "build/sdl3"
+#define SDL3_LIB SDL3_BUILD "/SDL3-static.lib"
+#define IMGUI_BUILD "build/imgui"
+#define IMGUI_DIR "vendor/cimgui/imgui"
+
+static bool build_sdl3(void)
+{
+	Cmd cmd = {0};
+	if (file_exists(SDL3_LIB) == 1) return true;
+	if (!mkdir_if_not_exists("build")) return false;
+	cmd_append(&cmd, "cmake", "-S", "vendor/sdl3", "-B", SDL3_BUILD, "-G", "Ninja",
+		"-DCMAKE_C_COMPILER=clang", "-DCMAKE_CXX_COMPILER=clang++", "-DCMAKE_BUILD_TYPE=Release",
+		"-DSDL_SHARED=OFF", "-DSDL_STATIC=ON", "-DSDL_TESTS=OFF", "-DSDL_EXAMPLES=OFF",
+		"-DSDL_TEST_LIBRARY=OFF", "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded");
+	if (!cmd_run(&cmd)) return false;
+	cmd_append(&cmd, "cmake", "--build", SDL3_BUILD);
+	return cmd_run(&cmd);
+}
+
+static const char *const IMGUI_CORE[] = {
+	IMGUI_DIR "/imgui.cpp", IMGUI_DIR "/imgui_draw.cpp", IMGUI_DIR "/imgui_tables.cpp",
+	IMGUI_DIR "/imgui_widgets.cpp", IMGUI_DIR "/imgui_demo.cpp", "vendor/cimgui/cimgui.cpp"
+};
+static const char *const IMGUI_BACKENDS[] = {
+	IMGUI_DIR "/backends/imgui_impl_sdl3.cpp", IMGUI_DIR "/backends/imgui_impl_sdlrenderer3.cpp"
+};
+#define N_ARR(a) (sizeof (a) / sizeof (a)[0])
+
+static const char *obj_for(const char *src)
+{
+	const char *base = strrchr(src, '/');
+	base = base ? base + 1 : src;
+	return temp_sprintf(IMGUI_BUILD "/%.*s.obj", (int)(strlen(base) - 4), base);
+}
+
+static bool build_imgui(void)
+{
+	Cmd cmd = {0};
+	size_t i;
+	if (!mkdir_if_not_exists("build")) return false;
+	if (!mkdir_if_not_exists(IMGUI_BUILD)) return false;
+	for (i = 0; i < N_ARR(IMGUI_CORE) + N_ARR(IMGUI_BACKENDS); i++) {
+		bool backend = i >= N_ARR(IMGUI_CORE);
+		const char *src = backend ? IMGUI_BACKENDS[i - N_ARR(IMGUI_CORE)] : IMGUI_CORE[i];
+		cmd_append(&cmd, "clang++", "-std=c++17", "-O2", "-D_CRT_SECURE_NO_WARNINGS",
+			"-Ivendor/sdl3/include", "-I" IMGUI_DIR, "-Ivendor/cimgui");
+		if (backend) cmd_append(&cmd, "-DIMGUI_IMPL_API=extern \"C\"");
+		cmd_append(&cmd, "-c", "-o", obj_for(src), src);
+		if (!cmd_run(&cmd)) return false;
+	}
+	return true;
+}
+
+/* Append the imgui objects, SDL3 and the Windows system libraries. Task 7 uses this. */
+static void link_gui(Nob_Cmd *cmd)
+{
+	size_t i;
+	for (i = 0; i < N_ARR(IMGUI_CORE); i++) cmd_append(cmd, obj_for(IMGUI_CORE[i]));
+	for (i = 0; i < N_ARR(IMGUI_BACKENDS); i++) cmd_append(cmd, obj_for(IMGUI_BACKENDS[i]));
+	cmd_append(cmd, SDL3_LIB);
+	cmd_append(cmd, "-luser32", "-lgdi32", "-lwinmm", "-limm32", "-lole32", "-loleaut32",
+		"-lversion", "-luuid", "-ladvapi32", "-lsetupapi", "-lshell32", "-lcfgmgr32");
+}
+
+static bool build_smoke(void)
+{
+	Cmd cmd = {0};
+	if (!build_sdl3() || !build_imgui()) return false;
+	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-O2", "-D_CRT_SECURE_NO_WARNINGS",
+		"-Ivendor/sdl3/include", "-Ivendor/cimgui", "-Ihost", "-o", "build/smoke.exe", "host/smoke.c");
+	link_gui(&cmd);
+	/* C++ runtime for the imgui objects comes from the MSVC libs clang links by default */
+	return cmd_run(&cmd);
+}
+
 int main(int argc, char **argv)
 {
 	const char *target;
@@ -704,6 +780,9 @@ int main(int argc, char **argv)
 	if (strcmp(target, "check-core") == 0) return check_core() ? 0 : 1;
 	if (strcmp(target, "cli") == 0) return build_cli() ? 0 : 1;
 	if (strcmp(target, "test") == 0) return run_tests() ? 0 : 1;
-	nob_log(ERROR, "usage: nob <target>   targets: ref check-core cli test");
+	if (strcmp(target, "sdl3") == 0) return build_sdl3() ? 0 : 1;
+	if (strcmp(target, "imgui") == 0) return build_imgui() ? 0 : 1;
+	if (strcmp(target, "smoke") == 0) return build_smoke() ? 0 : 1;
+	nob_log(ERROR, "usage: nob <target>   targets: ref check-core cli test sdl3 imgui smoke");
 	return 1;
 }

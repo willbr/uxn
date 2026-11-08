@@ -1,0 +1,9 @@
+SDL3 3.4.20
+Upstream: https://github.com/libsdl-org/SDL
+Tag: release-3.4.20 (REVISION.txt: release-3.4.20-0-gf00dc919c)
+Source: release archive SDL3-3.4.20.tar.gz (no git history)
+Removed to save space (configure and build verified without them):
+  test/ docs/ VisualC/ VisualC-GDK/ Xcode/ android-project/ examples/
+  CLAUDE.md AGENTS.md (upstream agent-instruction files)
+License: LICENSE.txt (zlib)
+Built by `./nob.exe sdl3` (CMake + Ninja, static, static CRT).

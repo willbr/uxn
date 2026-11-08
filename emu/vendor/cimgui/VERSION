@@ -1,0 +1,14 @@
+cimgui
+  Upstream: https://github.com/cimgui/cimgui
+  Commit: 2a6a93fccd10f275ee9206167dc9698f6f00fac1 (master)
+  Files kept: cimgui.h cimgui.cpp cimgui_impl.h cimconfig.h LICENSE
+  cimgui_impl.cpp is not vendored: backends are compiled with IMGUI_IMPL_API=extern "C"
+  and called directly. cimgui_impl.h has no SDLRenderer3 section; see host/imgui_backends.h.
+
+Dear ImGui (imgui/)
+  Upstream: https://github.com/ocornut/imgui
+  Commit: 6d32174508fb8c518e7a832cc1d571fadd5cba76 (v1.93.0-1-g6d3217450, IMGUI_VERSION 1.93.0)
+  Pinned as the submodule of the cimgui commit above.
+  Files kept: core .cpp/.h, imconfig.h, imstb_*.h, LICENSE.txt,
+  backends/imgui_impl_sdl3.{cpp,h}, backends/imgui_impl_sdlrenderer3.{cpp,h}
+  Dropped: docs/ examples/ misc/ and all other backends.
