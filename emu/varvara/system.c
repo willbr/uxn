@@ -4,9 +4,9 @@
 #include <string.h>
 #include "varvara.h"
 
-/* Memory is one 64K bank, so commands naming any other bank do nothing, as
- * uxn11 does for banks beyond its own. Reads of the command block wrap at
- * the end of RAM instead of running off it. */
+/* Memory is 16 banks of 64K: bank 0 is v->ram, banks 1-15 live in v->banks.
+ * Commands naming a bank beyond 15 do nothing, as in uxn11. Reads of the
+ * command block wrap at the end of RAM instead of running off it. */
 static unsigned rd8(const Varvara *v, unsigned a)
 {
 	return v->ram[a & 0xffff];
@@ -17,24 +17,31 @@ static unsigned rd16(const Varvara *v, unsigned a)
 	return rd8(v, a) << 8 | rd8(v, a + 1);
 }
 
+static ux_u8 *bank_base(Varvara *v, unsigned bank)
+{
+	if (bank == 0) return v->ram;
+	if (bank < 16 && v->banks) return v->banks + (size_t)(bank - 1) * 0x10000;
+	return NULL;
+}
+
 static void expansion(Varvara *v)
 {
-	unsigned exp, cmd, length, bank, addr;
+	unsigned exp, cmd, length, addr;
+	ux_u8 *src;
 
 	exp = (unsigned)v->u.dev[2] << 8 | v->u.dev[3];
 	cmd = rd8(v, exp);
 	length = rd16(v, exp + 1);
-	bank = rd16(v, exp + 3);
+	src = bank_base(v, rd16(v, exp + 3));
 	addr = rd16(v, exp + 5);
 	if (length > 0x10000 - addr) length = 0x10000 - addr;
 	if (cmd == 0x0) {
-		if (bank == 0) memset(v->ram + addr, (int)rd8(v, exp + 7), length);
+		if (src) memset(src + addr, (int)rd8(v, exp + 7), length);
 	} else if (cmd == 1 || cmd == 2) {
-		unsigned dst_bank = rd16(v, exp + 7);
+		ux_u8 *dst = bank_base(v, rd16(v, exp + 7));
 		unsigned dst_addr = rd16(v, exp + 9);
 		if (length > 0x10000 - dst_addr) length = 0x10000 - dst_addr;
-		if (bank == 0 && dst_bank == 0)
-			memmove(v->ram + dst_addr, v->ram + addr, length);
+		if (src && dst) memmove(dst + dst_addr, src + addr, length);
 	} else {
 		fprintf(stderr, "Unknown command: %02x\n", rd8(v, exp));
 	}

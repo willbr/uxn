@@ -8,6 +8,7 @@
 static int tests_failed = 0;
 static int checks_failed = 0;
 static const char *scratch;
+static char scratch_abs[1024];
 
 #define CHECK(cond) \
 	do { if (!(cond)) { printf("%s:%d: CHECK failed: %s\n", __FILE__, __LINE__, #cond); checks_failed++; } } while (0)
@@ -114,7 +115,8 @@ static int root_confines(void)
 	CHECK(memcmp(vv.ram + 0x400, "hello", 5) == 0);
 
 	/* a relative path escaping the root is rejected, and nothing is created */
-	put_string(&vv, 0x200, "../escape.txt");
+	path_to(p, "root/../escape.txt");
+	put_string(&vv, 0x200, p);
 	f_name(&vv, 0xb0, 0x200);
 	f_length(&vv, 0xb0, 3);
 	put_string(&vv, 0x300, "abc");
@@ -129,7 +131,8 @@ static int root_confines(void)
 	f_write(&vv, 0xb0, 0x300);
 	CHECK(success(&vv, 0xb0) == 0);
 	CHECK(!exists("rootX/e.txt"));
-	put_string(&vv, 0x200, "../rootX/e.txt");
+	path_to(p, "root/../rootX/e.txt");
+	put_string(&vv, 0x200, p);
 	f_name(&vv, 0xb0, 0x200);
 	f_write(&vv, 0xb0, 0x300);
 	CHECK(success(&vv, 0xb0) == 0);
@@ -144,22 +147,37 @@ static int root_confines(void)
 	CHECK(!exists("escape2.txt"));
 
 	/* stat and delete are confined as well */
-	put_string(&vv, 0x200, "../rootX");
+	path_to(p, "root/../rootX");
+	put_string(&vv, 0x200, p);
 	f_name(&vv, 0xb0, 0x200);
+	f_length(&vv, 0xb0, 4);
 	deo2(&vv, 0xb4, 0x500);
 	CHECK(success(&vv, 0xb0) == 0);
 	make_file("outside.txt", "x");
-	put_string(&vv, 0x200, "../outside.txt");
+	CHECK(exists("outside.txt"));
+	path_to(p, "root/../outside.txt");
+	put_string(&vv, 0x200, p);
 	f_name(&vv, 0xb0, 0x200);
 	vv.u.dev[0xb6] = 1;
 	vv.u.deo(&vv.u, 0xb6);
 	CHECK(success(&vv, 0xb0) == 0);
 	CHECK(exists("outside.txt"));
 
+	/* control: the same delete on a file inside the root succeeds */
+	make_file("root/del.txt", "x");
+	path_to(p, "root/del.txt");
+	put_string(&vv, 0x200, p);
+	f_name(&vv, 0xb0, 0x200);
+	vv.u.dev[0xb6] = 1;
+	vv.u.deo(&vv.u, 0xb6);
+	CHECK(success(&vv, 0xb0) == 1);
+	CHECK(!exists("root/del.txt"));
+
 	/* paths that stay inside work, including ones that wander through '..' */
 	path_to(p, "root/sub/../in.txt");
 	put_string(&vv, 0x200, p);
 	f_name(&vv, 0xb0, 0x200);
+	f_length(&vv, 0xb0, 3);
 	f_write(&vv, 0xb0, 0x300);
 	CHECK(success(&vv, 0xb0) == 3);
 	CHECK(exists("root/in.txt"));
@@ -281,6 +299,53 @@ static int system_expansion(void)
 	return checks_failed == 0;
 }
 
+static void exp_cmd(Varvara *v, unsigned at, unsigned cmd, unsigned len,
+	unsigned bank, unsigned addr, unsigned a, unsigned b)
+{
+	/* fill: a = value. copy: a = destination bank, b = destination address */
+	ux_u8 *m = v->ram + at;
+	m[0] = (ux_u8)cmd; m[1] = (ux_u8)(len >> 8); m[2] = (ux_u8)len;
+	m[3] = (ux_u8)(bank >> 8); m[4] = (ux_u8)bank;
+	m[5] = (ux_u8)(addr >> 8); m[6] = (ux_u8)addr;
+	if (cmd == 0) {
+		m[7] = (ux_u8)a;
+	} else {
+		m[7] = (ux_u8)(a >> 8); m[8] = (ux_u8)a;
+		m[9] = (ux_u8)(b >> 8); m[10] = (ux_u8)b;
+	}
+	deo2(v, 0x02, at);
+}
+
+static int system_banks(void)
+{
+	fresh();
+	memcpy(vv.ram + 0x1000, "ABCD", 4);
+	/* copy bank 0 -> bank 1, fill bank 2, then copy both back */
+	exp_cmd(&vv, 0x2000, 1, 4, 0, 0x1000, 1, 0x0020);
+	exp_cmd(&vv, 0x2000, 0, 3, 2, 0x0010, 0x77, 0);
+	exp_cmd(&vv, 0x2000, 1, 4, 1, 0x0020, 0, 0x3000);
+	exp_cmd(&vv, 0x2000, 2, 3, 2, 0x0010, 0, 0x3100);
+	CHECK(memcmp(vv.ram + 0x3000, "ABCD", 4) == 0);
+	CHECK(memcmp(vv.ram + 0x3100, "www", 3) == 0);
+	CHECK(vv.ram[0x3103] == 0);
+	/* bank 0 itself is unchanged by writes to other banks */
+	CHECK(vv.ram[0x1000] == 'A' && vv.ram[0x0010] == 0);
+	/* copy within one bank, overlapping */
+	exp_cmd(&vv, 0x2000, 1, 4, 1, 0x0020, 1, 0x0022);
+	exp_cmd(&vv, 0x2000, 1, 4, 1, 0x0020, 0, 0x3200);
+	CHECK(memcmp(vv.ram + 0x3200, "ABAB", 4) == 0);
+	/* banks beyond 15 do nothing */
+	exp_cmd(&vv, 0x2000, 1, 4, 0, 0x1000, 16, 0x0000);
+	exp_cmd(&vv, 0x2000, 0, 4, 16, 0x1000, 0x55, 0);
+	CHECK(vv.ram[0x1000] == 'A' && vv.ram[0x0000] == 0);
+	/* a copy that runs off the end of a bank is clamped */
+	exp_cmd(&vv, 0x2000, 1, 0x20, 0, 0x1000, 1, 0xfff8);
+	exp_cmd(&vv, 0x2000, 1, 8, 1, 0xfff8, 0, 0x3300);
+	CHECK(memcmp(vv.ram + 0x3300, "ABCD", 4) == 0);
+	varvara_close(&vv);
+	return checks_failed == 0;
+}
+
 static int system_stack_pointers(void)
 {
 	fresh();
@@ -321,6 +386,7 @@ int main(int argc, char **argv)
 		{ "dir_cutoff", dir_cutoff },
 		{ "read_clamps_to_ram", read_clamps_to_ram },
 		{ "system_expansion", system_expansion },
+		{ "system_banks", system_banks },
 		{ "system_stack_pointers", system_stack_pointers },
 		{ "datetime_ports", datetime_ports }
 	};
@@ -330,7 +396,11 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: varvara_test SCRATCH_DIR\n");
 		return 2;
 	}
-	scratch = argv[1];
+	if (fs_fullpath(argv[1], scratch_abs, sizeof scratch_abs) != 0) {
+		fprintf(stderr, "varvara_test: bad scratch dir\n");
+		return 2;
+	}
+	scratch = scratch_abs;
 	for (i = 0; i < total; i++) {
 		checks_failed = 0;
 		if (!tests[i].fn()) {

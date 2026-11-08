@@ -473,23 +473,73 @@ static bool datetime_runs(void)
 }
 
 #define LIST_FILES 300
+#define LIST_MAX (LIST_FILES + 3)
+
+/* Assembles tests/roms/listing.tal with PAGE (File/length of each read) and
+ * PAGES (maximum number of reads) defined. */
+static bool build_listing_rom(unsigned page, unsigned pages, const char *rom)
+{
+	const char *tal[2];
+	const char *macros = TEST_DIR "/listing_macros.tal";
+	const char *text = temp_sprintf("%%PAGE { #%04x }\n%%PAGES { #%04x }\n", page, pages);
+
+	if (!write_entire_file(macros, text, strlen(text))) return false;
+	tal[0] = macros;
+	tal[1] = "tests/roms/listing.tal";
+	return assemble(UXNMIN, tal, 2, rom);
+}
+
+/* Every line of the file must be one of expect[0..n), each exactly once, and
+ * the file must end with a newline. */
+static bool lines_are_each_once(const char *path, char expect[][64], size_t n, const char *what)
+{
+	static char used[LIST_MAX];
+	String_Builder sb = {0};
+	const char *line;
+	size_t nlines = 0;
+	bool ok = false;
+
+	memset(used, 0, sizeof used);
+	if (!slurp(path, &sb)) goto done;
+	sb_append_null(&sb);
+	for (line = sb.items; *line; nlines++) {
+		const char *nl = strchr(line, '\n');
+		size_t len, k;
+		bool found = false;
+		if (!nl) { nob_log(ERROR, "%s: partial last line", what); goto done; }
+		len = (size_t)(nl - line) + 1;
+		for (k = 0; k < n && !found; k++) {
+			if (strlen(expect[k]) == len && memcmp(expect[k], line, len) == 0) {
+				if (used[k]) { nob_log(ERROR, "%s: duplicate %s", what, expect[k]); goto done; }
+				used[k] = 1;
+				found = true;
+			}
+		}
+		if (!found) { nob_log(ERROR, "%s: unexpected line %.*s", what, (int)len - 1, line); goto done; }
+		line = nl + 1;
+	}
+	if (nlines != n) {
+		nob_log(ERROR, "%s: %d lines, wanted %d", what, (int)nlines, (int)n);
+		goto done;
+	}
+	ok = true;
+done:
+	sb_free(sb);
+	return ok;
+}
 
 static bool file_listing_edge_cases(void)
 {
-	const char *tal[] = { "tests/roms/listing.tal" };
-	static char expect[LIST_FILES + 3][64];
-	static char used[LIST_FILES + 3];
-	String_Builder sb = {0};
-	char name[64], data[64];
-	const char *line;
-	size_t n_expect = 0, nlines = 0, i;
+	static char expect[LIST_MAX][64];
+	String_Builder full = {0}, cut = {0};
+	char name[96], data[64];
+	size_t n_expect = 0, i;
 	bool ok = false;
 	int code;
 
-	if (!assemble(UXNMIN, tal, 1, TEST_DIR "/listing.rom")) return false;
+	memset(data, 'x', sizeof data);
 	if (!fresh_dir(TEST_DIR "/listdir")) return false;
 	if (!mkdir_if_not_exists(TEST_DIR "/listdir/sub")) return false;
-	memset(data, 'x', sizeof data);
 	for (i = 0; i < LIST_FILES; i++) {
 		sprintf(name, TEST_DIR "/listdir/f%03d.txt", (int)i);
 		if (!write_file_utf8(name, data, i % 40)) return false;
@@ -501,33 +551,40 @@ static bool file_listing_edge_cases(void)
 	strcpy(expect[n_expect++], "000a\t\xc3\xbcn\xc3\xaf.txt\n");
 	strcpy(expect[n_expect++], "----\tsub/\n");
 
+	/* one big read: every name once, in the uxn11 format */
+	if (!build_listing_rom(0x3000, 0x100, TEST_DIR "/listing.rom")) return false;
 	code = run_rom(NULL, TEST_DIR "/listing.rom", TEST_DIR "/listdir", TEST_DIR "/listing.out");
-	if (code != 0 || !slurp(TEST_DIR "/listing.out", &sb)) {
-		nob_log(ERROR, "listing: exit code %d", code);
+	if (code != 0) { nob_log(ERROR, "listing: exit code %d", code); return false; }
+	if (!lines_are_each_once(TEST_DIR "/listing.out", expect, n_expect, "listing")) return false;
+
+	/* a read shorter than the listing fills the buffer exactly and stops mid-entry, like uxn11 */
+	if (!build_listing_rom(0x40, 1, TEST_DIR "/listing_cut.rom")) return false;
+	code = run_rom(NULL, TEST_DIR "/listing_cut.rom", TEST_DIR "/listdir", TEST_DIR "/listing_cut.out");
+	if (code != 0) { nob_log(ERROR, "listing cut: exit code %d", code); return false; }
+	if (!slurp(TEST_DIR "/listing.out", &full) || !slurp(TEST_DIR "/listing_cut.out", &cut)) goto done;
+	if (cut.count != 0x40 || memcmp(cut.items, full.items, 0x40) != 0) {
+		nob_log(ERROR, "listing cut: got %d bytes, wanted the first 64 of the full listing", (int)cut.count);
 		goto done;
 	}
-	sb_append_null(&sb);
-	/* every line must be one expected entry, each exactly once, none cut short */
-	for (line = sb.items; *line; nlines++) {
-		const char *nl = strchr(line, '\n');
-		size_t len, k;
-		bool found = false;
-		if (!nl) { nob_log(ERROR, "listing: partial last line"); goto done; }
-		len = (size_t)(nl - line) + 1;
-		for (k = 0; k < n_expect && !found; k++) {
-			if (strlen(expect[k]) == len && memcmp(expect[k], line, len) == 0) {
-				if (used[k]) { nob_log(ERROR, "listing: duplicate %s", expect[k]); goto done; }
-				used[k] = 1;
-				found = true;
-			}
-		}
-		if (!found) { nob_log(ERROR, "listing: unexpected line %.*s", (int)len - 1, line); goto done; }
-		line = nl + 1;
-	}
-	if (nlines != n_expect) {
-		nob_log(ERROR, "listing: %d lines, wanted %d", (int)nlines, (int)n_expect);
+	if (cut.items[0x3f] == '\n') {
+		nob_log(ERROR, "listing cut: test is vacuous, the cut fell on a line end");
 		goto done;
 	}
+
+	/* many small reads: with uniform entries a page holds whole entries, and no
+	 * entry may be dropped at a page boundary */
+	if (!fresh_dir(TEST_DIR "/pagedir")) goto done;
+	n_expect = 0;
+	for (i = 0; i < LIST_FILES; i++) {
+		sprintf(name, TEST_DIR "/pagedir/p%03d.txt", (int)i);
+		if (!write_file_utf8(name, data, 1)) goto done;
+		sprintf(expect[n_expect++], "0001\tp%03d.txt\n", (int)i);
+	}
+	if (!build_listing_rom(140, 0x100, TEST_DIR "/listing_pages.rom")) goto done;
+	code = run_rom(NULL, TEST_DIR "/listing_pages.rom", TEST_DIR "/pagedir", TEST_DIR "/listing_pages.out");
+	if (code != 0) { nob_log(ERROR, "listing pages: exit code %d", code); goto done; }
+	if (!lines_are_each_once(TEST_DIR "/listing_pages.out", expect, n_expect, "listing pages")) goto done;
+
 	/* listing ".." from a filesystem root must not crash */
 #ifdef _WIN32
 	code = run_rom(NULL, TEST_DIR "/listing.rom", "C:/..", TEST_DIR "/listing_up.out");
@@ -537,7 +594,8 @@ static bool file_listing_edge_cases(void)
 	if (code != 0) { nob_log(ERROR, "listing ..: exit code %d", code); goto done; }
 	ok = true;
 done:
-	sb_free(sb);
+	sb_free(full);
+	sb_free(cut);
 	return ok;
 }
 
@@ -546,6 +604,8 @@ static bool build_run_varvara_test(void)
 	Cmd cmd = {0};
 	size_t i;
 
+	if (!mkdir_if_not_exists("build")) return false;
+	if (!mkdir_if_not_exists(TEST_DIR)) return false;
 	if (!build_fs_obj()) return false;
 	cmd_append(&cmd, "clang", "-std=c89", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O0",
 		"-D_CRT_SECURE_NO_WARNINGS", "-Icore", "-Ivarvara", "-o", "build/varvara_test.exe",

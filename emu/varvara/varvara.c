@@ -1,5 +1,6 @@
 /* Varvara glue: init, ROM loading, boot, device dispatch, port names. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "varvara.h"
 
@@ -33,6 +34,7 @@ int varvara_init(Varvara *v)
 	v->u.dei = varvara_dei;
 	v->u.deo = varvara_deo;
 	v->u.user = v;
+	v->banks = (ux_u8 *)calloc(15, 0x10000);
 	return 0;
 }
 

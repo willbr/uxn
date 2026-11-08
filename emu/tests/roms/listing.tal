@@ -1,8 +1,12 @@
-( lists the directory named by the first argument to stdout, in one File/read )
+( lists the directory named by the first argument to stdout.
+  The test harness prepends two macros: PAGE is the File/length
+  for each read and PAGES the most reads to make. Each read's
+  bytes, as counted by File/success, are copied to stdout; it stops early at
+  the first read that returns 0. )
 
 |10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
-|2f00 @len $2 @done $1
+|2f00 @len $2 @done $1 @pages $2
 |3000 @path
 |4000 @buf
 
@@ -21,12 +25,16 @@
 	;done LDA ?&done ( the CLI repeats the final event at end of input )
 	#01 ;done STA
 	;path .File/name DEO2
-	#3000 .File/length DEO2
-	;buf .File/read DEO2
-	;buf
-	&loop
-		LDAk DUP ?{ POP POP2 BRK }
-		.Console/write DEO
-		INC2 !&loop
+	PAGES ;pages STA2
+	&page
+		PAGE .File/length DEO2
+		;buf .File/read DEO2
+		.File/success DEI2 ORAk ?{ POP2 BRK }
+		;buf ADD2 ;buf
+		&loop
+			LDAk .Console/write DEO
+			INC2 GTH2k ?&loop
+		POP2 POP2
+		;pages LDA2 #0001 SUB2 DUP2 ;pages STA2 ORA ?&page
 	&done
 	BRK

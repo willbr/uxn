@@ -1,6 +1,7 @@
 /* File devices (0xa0 and 0xb0). Behaviour follows the file_* functions of
  * the uxn11 reference; all OS access goes through fs.h. */
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include "varvara.h"
 #include "fs.h"
@@ -121,6 +122,8 @@ void varvara_close(Varvara *v)
 {
 	file_reset(&v->file[0]);
 	file_reset(&v->file[1]);
+	free(v->banks);
+	v->banks = NULL;
 }
 
 static int file_open(VarvaraFile *f, const char *path, int want_write, ux_u8 flags)

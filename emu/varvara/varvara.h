@@ -23,6 +23,7 @@ typedef struct Varvara {
 	void *ctx;
 	unsigned long max_steps; /* per uxn_eval call; 0 = unlimited */
 	VarvaraFile file[2];
+	ux_u8 *banks; /* banks 1-15 (15 x 64K), NULL if allocation failed; freed by varvara_close */
 	int has_root;
 	char root[1024]; /* absolute normalized confinement root, when has_root */
 } Varvara;
@@ -48,7 +49,8 @@ const char *varvara_port_name(ux_u8 port);
 /* Confine every File path to dir. Returns 0 if dir exists, nonzero (and no
  * root set) otherwise. Without a root, paths are used as given. */
 int varvara_set_root(Varvara *v, const char *dir);
-/* Close any open File device handles. Call before exiting or removing files. */
+/* Close any open File device handles and free the extra memory banks. Call
+ * before exiting or removing files; varvara_init may follow. */
 void varvara_close(Varvara *v);
 
 /* Per-device handlers, dispatched on (port & 0xf0). Internal. */
