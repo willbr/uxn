@@ -9,6 +9,8 @@ static ux_u8 varvara_dei(Uxn *u, ux_u8 port)
 	switch (port & 0xf0) {
 	case 0x00: return system_dei(v, port);
 	case 0x10: return console_dei(v, port);
+	case 0xa0: case 0xb0: return file_dei(v, port);
+	case 0xc0: return datetime_dei(v, port);
 	}
 	return u->dev[port];
 }
@@ -19,6 +21,8 @@ static void varvara_deo(Uxn *u, ux_u8 port)
 	switch (port & 0xf0) {
 	case 0x00: system_deo(v, port); break;
 	case 0x10: console_deo(v, port); break;
+	case 0xa0: case 0xb0: file_deo(v, port); break;
+	case 0xc0: datetime_deo(v, port); break;
 	}
 }
 
@@ -90,6 +94,8 @@ const char *varvara_port_name(ux_u8 port)
 	switch (port & 0xf0) {
 	case 0x00: return system_port_name(port);
 	case 0x10: return console_port_name(port);
+	case 0xa0: case 0xb0: return file_port_name(port);
+	case 0xc0: return datetime_port_name(port);
 	}
 	return NULL;
 }

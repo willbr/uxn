@@ -1,0 +1,32 @@
+( lists the directory named by the first argument to stdout, in one File/read )
+
+|10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
+|a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
+|2f00 @len $2 @done $1
+|3000 @path
+|4000 @buf
+
+|0100
+
+	;on-console .Console/vector DEO2
+	BRK
+
+@on-console ( -> )
+	.Console/type DEI #02 NEQ ?&not-arg
+	.Console/read DEI ;len LDA2 ;path ADD2 STA
+	;len LDA2 INC2 ;len STA2
+	BRK
+	&not-arg
+	.Console/type DEI #04 NEQ ?&done
+	;done LDA ?&done ( the CLI repeats the final event at end of input )
+	#01 ;done STA
+	;path .File/name DEO2
+	#3000 .File/length DEO2
+	;buf .File/read DEO2
+	;buf
+	&loop
+		LDAk DUP ?{ POP POP2 BRK }
+		.Console/write DEO
+		INC2 !&loop
+	&done
+	BRK

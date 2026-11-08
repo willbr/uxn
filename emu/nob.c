@@ -316,13 +316,244 @@ static bool cli_rejects_bad_roms(void)
 	return ok;
 }
 
-static bool build_cli(void)
+#define REF_UXN11 "vendor/ref/uxn11"
+#define FS_OBJ "build/fs.obj"
+
+/* The Varvara sources that are strict C89. fs.c, the OS shim, is built
+ * separately: it is also strict C89 here (clang on Windows accepts the
+ * Win32 headers under -std=c89 -pedantic), so it needs no -std=c99 exemption. */
+static const char *const VARVARA_SRCS[] = {
+	"varvara/varvara.c", "varvara/system.c", "varvara/console.c",
+	"varvara/datetime.c", "varvara/file.c", "core/uxn.c"
+};
+
+static bool build_fs_obj(void)
 {
 	Cmd cmd = {0};
 	if (!mkdir_if_not_exists("build")) return false;
 	cmd_append(&cmd, "clang", "-std=c89", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O2",
-		"-D_CRT_SECURE_NO_WARNINGS", "-Icore", "-Ivarvara", "-o", UXNCLI,
-		"cli/uxncli.c", "varvara/varvara.c", "varvara/system.c", "varvara/console.c", "core/uxn.c");
+		"-D_CRT_SECURE_NO_WARNINGS", "-c", "-o", FS_OBJ, "varvara/fs.c");
+	return cmd_run(&cmd);
+}
+
+static bool build_cli(void)
+{
+	Cmd cmd = {0};
+	size_t i;
+	if (!build_fs_obj()) return false;
+	cmd_append(&cmd, "clang", "-std=c89", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O2",
+		"-D_CRT_SECURE_NO_WARNINGS", "-Icore", "-Ivarvara", "-o", UXNCLI, "cli/uxncli.c", FS_OBJ);
+	for (i = 0; i < sizeof VARVARA_SRCS / sizeof VARVARA_SRCS[0]; i++) cmd_append(&cmd, VARVARA_SRCS[i]);
+	return cmd_run(&cmd);
+}
+
+/* Absolute path of the emu directory, captured at startup so tests can chdir. */
+static char abs_root[1024];
+
+static const char *abs_path(const char *rel)
+{
+	return temp_sprintf("%s/%s", abs_root, rel);
+}
+
+/* Deletes dir (if present) and creates it again, empty. */
+static bool fresh_dir(const char *dir)
+{
+	Cmd cmd = {0};
+	if (file_exists(dir)) {
+#ifdef _WIN32
+		char *w = temp_strdup(dir);
+		char *c;
+		for (c = w; *c; c++) if (*c == '/') *c = '\\';
+		cmd_append(&cmd, "cmd", "/c", "rd", "/s", "/q", w);
+#else
+		cmd_append(&cmd, "rm", "-rf", dir);
+#endif
+		if (!cmd_run(&cmd)) return false;
+	}
+	return mkdir_if_not_exists(dir);
+}
+
+/* Writes a file whose name is UTF-8 (nob's own file functions use the ANSI APIs). */
+static bool write_file_utf8(const char *path, const char *data, size_t n)
+{
+	FILE *f;
+	bool ok;
+#ifdef _WIN32
+	WCHAR w[1024];
+	if (!MultiByteToWideChar(CP_UTF8, 0, path, -1, w, 1024)) return false;
+	f = _wfopen(w, L"wb");
+#else
+	f = fopen(path, "wb");
+#endif
+	if (!f) return false;
+	ok = fwrite(data, 1, n, f) == n;
+	return fclose(f) == 0 && ok;
+}
+
+static size_t count_substr(const char *path, const char *needle)
+{
+	String_Builder sb = {0};
+	size_t n = 0, len = strlen(needle);
+	const char *p;
+
+	if (slurp(path, &sb)) {
+		sb_append_null(&sb);
+		for (p = strstr(sb.items, needle); p; p = strstr(p + len, needle)) n++;
+	}
+	sb_free(sb);
+	return n;
+}
+
+/* Runs uxncli on rom (an emu-relative path) with working directory dir
+ * (emu-relative, or NULL for the current one), stdout to out. Returns the exit
+ * code or -1. */
+static int run_rom(const char *dir, const char *rom, const char *extra, const char *out)
+{
+	const char *args[3];
+	int code;
+
+	args[0] = abs_path(UXNCLI);
+	args[1] = abs_path(rom);
+	args[2] = extra;
+	if (dir && !set_current_dir(abs_path(dir))) return -1;
+	code = run_code(args, extra ? 3 : 2, abs_path(TEST_DIR "/empty.txt"), abs_path(out), NULL);
+	if (dir && !set_current_dir(abs_root)) return -1;
+	return code;
+}
+
+/* Expects exactly `passes` "pass" lines, no "fail", and exit code 0. */
+static bool pass_fail_ok(const char *what, int code, const char *out, size_t passes)
+{
+	size_t p = count_substr(out, "pass\n"), f = count_substr(out, "fail\n");
+	if (code != 0 || f != 0 || p != passes) {
+		nob_log(ERROR, "%s: exit %d, %d pass, %d fail (wanted %d pass, 0 fail)",
+			what, code, (int)p, (int)f, (int)passes);
+		return false;
+	}
+	return true;
+}
+
+static bool system_matches_uxn11(void)
+{
+	const char *tal[] = { REF_UXN11 "/etc/tests/system.tal" };
+	if (!assemble(UXNMIN, tal, 1, TEST_DIR "/system.rom")) return false;
+	return pass_fail_ok("system.tal", run_rom(NULL, TEST_DIR "/system.rom", NULL, TEST_DIR "/system.out"),
+		TEST_DIR "/system.out", 6);
+}
+
+static bool file_matches_uxn11(void)
+{
+	const char *tal[] = { REF_UXN11 "/etc/tests/file.tal" };
+	if (!assemble(UXNMIN, tal, 1, TEST_DIR "/file.rom")) return false;
+	if (!fresh_dir(TEST_DIR "/filetest")) return false;
+	return pass_fail_ok("file.tal",
+		run_rom(TEST_DIR "/filetest", TEST_DIR "/file.rom", NULL, TEST_DIR "/file.out"),
+		TEST_DIR "/file.out", 12);
+}
+
+/* datetime.tal prints text: "YYYY-MM-DD" on its first line. */
+static bool datetime_runs(void)
+{
+	const char *tal[] = { REF_UXN11 "/etc/tests/datetime.tal" };
+	String_Builder sb = {0};
+	int year = 0, code;
+	bool ok;
+
+	if (!assemble(UXNMIN, tal, 1, TEST_DIR "/datetime.rom")) return false;
+	code = run_rom(NULL, TEST_DIR "/datetime.rom", NULL, TEST_DIR "/datetime.out");
+	ok = code == 0 && slurp(TEST_DIR "/datetime.out", &sb);
+	if (ok) {
+		sb_append_null(&sb);
+		ok = sscanf(sb.items, "%d-", &year) == 1 && year >= 2025 && year <= 2100
+			&& strstr(sb.items, "The date is:") != NULL;
+	}
+	if (!ok) nob_log(ERROR, "datetime.tal: exit %d, year %d", code, year);
+	sb_free(sb);
+	return ok;
+}
+
+#define LIST_FILES 300
+
+static bool file_listing_edge_cases(void)
+{
+	const char *tal[] = { "tests/roms/listing.tal" };
+	static char expect[LIST_FILES + 3][64];
+	static char used[LIST_FILES + 3];
+	String_Builder sb = {0};
+	char name[64], data[64];
+	const char *line;
+	size_t n_expect = 0, nlines = 0, i;
+	bool ok = false;
+	int code;
+
+	if (!assemble(UXNMIN, tal, 1, TEST_DIR "/listing.rom")) return false;
+	if (!fresh_dir(TEST_DIR "/listdir")) return false;
+	if (!mkdir_if_not_exists(TEST_DIR "/listdir/sub")) return false;
+	memset(data, 'x', sizeof data);
+	for (i = 0; i < LIST_FILES; i++) {
+		sprintf(name, TEST_DIR "/listdir/f%03d.txt", (int)i);
+		if (!write_file_utf8(name, data, i % 40)) return false;
+		sprintf(expect[n_expect++], "%04x\tf%03d.txt\n", (unsigned)(i % 40), (int)i);
+	}
+	if (!write_file_utf8(TEST_DIR "/listdir/a b.txt", data, 3)) return false;
+	strcpy(expect[n_expect++], "0003\ta b.txt\n");
+	if (!write_file_utf8(TEST_DIR "/listdir/\xc3\xbcn\xc3\xaf.txt", data, 10)) return false;
+	strcpy(expect[n_expect++], "000a\t\xc3\xbcn\xc3\xaf.txt\n");
+	strcpy(expect[n_expect++], "----\tsub/\n");
+
+	code = run_rom(NULL, TEST_DIR "/listing.rom", TEST_DIR "/listdir", TEST_DIR "/listing.out");
+	if (code != 0 || !slurp(TEST_DIR "/listing.out", &sb)) {
+		nob_log(ERROR, "listing: exit code %d", code);
+		goto done;
+	}
+	sb_append_null(&sb);
+	/* every line must be one expected entry, each exactly once, none cut short */
+	for (line = sb.items; *line; nlines++) {
+		const char *nl = strchr(line, '\n');
+		size_t len, k;
+		bool found = false;
+		if (!nl) { nob_log(ERROR, "listing: partial last line"); goto done; }
+		len = (size_t)(nl - line) + 1;
+		for (k = 0; k < n_expect && !found; k++) {
+			if (strlen(expect[k]) == len && memcmp(expect[k], line, len) == 0) {
+				if (used[k]) { nob_log(ERROR, "listing: duplicate %s", expect[k]); goto done; }
+				used[k] = 1;
+				found = true;
+			}
+		}
+		if (!found) { nob_log(ERROR, "listing: unexpected line %.*s", (int)len - 1, line); goto done; }
+		line = nl + 1;
+	}
+	if (nlines != n_expect) {
+		nob_log(ERROR, "listing: %d lines, wanted %d", (int)nlines, (int)n_expect);
+		goto done;
+	}
+	/* listing ".." from a filesystem root must not crash */
+#ifdef _WIN32
+	code = run_rom(NULL, TEST_DIR "/listing.rom", "C:/..", TEST_DIR "/listing_up.out");
+#else
+	code = run_rom(NULL, TEST_DIR "/listing.rom", "/..", TEST_DIR "/listing_up.out");
+#endif
+	if (code != 0) { nob_log(ERROR, "listing ..: exit code %d", code); goto done; }
+	ok = true;
+done:
+	sb_free(sb);
+	return ok;
+}
+
+static bool build_run_varvara_test(void)
+{
+	Cmd cmd = {0};
+	size_t i;
+
+	if (!build_fs_obj()) return false;
+	cmd_append(&cmd, "clang", "-std=c89", "-pedantic", "-Wall", "-Wextra", "-Werror", "-O0",
+		"-D_CRT_SECURE_NO_WARNINGS", "-Icore", "-Ivarvara", "-o", "build/varvara_test.exe",
+		"tests/varvara_test.c", FS_OBJ);
+	for (i = 0; i < sizeof VARVARA_SRCS / sizeof VARVARA_SRCS[0]; i++) cmd_append(&cmd, VARVARA_SRCS[i]);
+	if (!cmd_run(&cmd)) return false;
+	if (!fresh_dir(TEST_DIR "/vt")) return false;
+	cmd_append(&cmd, "build/varvara_test.exe", TEST_DIR "/vt");
 	return cmd_run(&cmd);
 }
 
@@ -341,6 +572,10 @@ static bool run_varvara_cli_tests(void)
 	VT(drifloon_self_matches);
 	VT(console_binary_roundtrip);
 	VT(cli_rejects_bad_roms);
+	VT(system_matches_uxn11);
+	VT(file_matches_uxn11);
+	VT(datetime_runs);
+	VT(file_listing_edge_cases);
 #undef VT
 	printf("varvara-cli: %d passed, %d failed\n", total - failures, failures);
 	return failures == 0;
@@ -348,14 +583,16 @@ static bool run_varvara_cli_tests(void)
 
 static bool run_tests(void)
 {
-	if (!build_run_core_test()) return false;
-	return run_varvara_cli_tests();
+	bool ok = build_run_core_test();
+	ok = build_run_varvara_test() && ok;
+	return run_varvara_cli_tests() && ok;
 }
 
 int main(int argc, char **argv)
 {
 	const char *target;
 	NOB_GO_REBUILD_URSELF(argc, argv);
+	snprintf(abs_root, sizeof abs_root, "%s", get_current_dir_temp());
 	target = argc > 1 ? argv[1] : "";
 	if (strcmp(target, "ref") == 0) return build_ref() ? 0 : 1;
 	if (strcmp(target, "check-core") == 0) return check_core() ? 0 : 1;
