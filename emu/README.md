@@ -85,8 +85,8 @@ or a chord. The layout is checked at start and when it changes.
 
 **Right Ctrl** toggles the debugger; the key never reaches the ROM. The panels
 show the disassembly, stacks, memory, and breakpoints. Shortcuts work only
-while a debugger panel has focus: Ctrl+S step, Ctrl+N step over, Ctrl+G
-continue, Ctrl+P pause. There are no function-key shortcuts.
+while a debugger panel has focus (and you are not typing in the address box):
+J step, L step over (both repeat while held), Ctrl+G continue, Ctrl+P pause. There are no function-key shortcuts.
 
 With the debugger open the ROM keeps running and keeps the keyboard; the
 mouse reaches it while the pointer is over the screen. Click a panel to give

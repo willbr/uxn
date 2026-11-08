@@ -1,9 +1,10 @@
 /* cimgui debugger: menu bar, CPU, disassembly, memory and console panels.
  * Draws state and reports clicks as a DebugAction; the host acts on them.
  *
- * Shortcuts (only while an imgui window has focus; Ctrl + letter, so no
- * function keys, Insert, Page Up/Down, End or arrows):
- *   Ctrl+S step   Ctrl+N step over   Ctrl+G continue   Ctrl+P pause */
+ * Shortcuts (only while a panel has focus and no text box is being typed in;
+ * home-row keys, so no function keys, Insert, Page Up/Down, End or arrows):
+ *   J step   L step over (both repeat while held)
+ *   Ctrl+G continue   Ctrl+P pause */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -108,9 +109,9 @@ static void cpu_panel(DebuggerUI *ui, const Varvara *v, const DebugInfo *info, D
 	igBeginDisabled(!info->paused);
 	if (igButton("Continue (Ctrl+G)", v2(0, 0))) act->kind = DA_CONTINUE;
 	igEndDisabled();
-	if (igButton("Step (Ctrl+S)", v2(0, 0))) act->kind = DA_STEP;
+	if (igButton("Step (J)", v2(0, 0))) act->kind = DA_STEP;
 	igSameLine(0, -1);
-	if (igButton("Step over (Ctrl+N)", v2(0, 0))) act->kind = DA_STEP_OVER;
+	if (igButton("Step over (L)", v2(0, 0))) act->kind = DA_STEP_OVER;
 	igSameLine(0, -1);
 	if (igButton("Reset", v2(0, 0))) act->kind = DA_RESET;
 	igSeparator();
@@ -307,10 +308,12 @@ DebugAction debugger_frame(DebuggerUI *ui, SDL_Renderer *ren, const Varvara *v, 
 	/* the ROM draws its own pointer */
 	if (info->mouse_on_screen && !io->WantCaptureMouse) igSetMouseCursor(ImGuiMouseCursor_None);
 
+	if (focused && !io->WantTextInput && !io->KeyCtrl && !io->KeyShift && !io->KeyAlt && act.kind == DA_NONE) {
+		if (igIsKeyPressed_Bool(ImGuiKey_J, true)) act.kind = DA_STEP;
+		else if (igIsKeyPressed_Bool(ImGuiKey_L, true)) act.kind = DA_STEP_OVER;
+	}
 	if (focused && io->KeyCtrl && !io->KeyShift && !io->KeyAlt && act.kind == DA_NONE) {
-		if (igIsKeyPressed_Bool(ImGuiKey_S, false)) act.kind = DA_STEP;
-		else if (igIsKeyPressed_Bool(ImGuiKey_N, false)) act.kind = DA_STEP_OVER;
-		else if (igIsKeyPressed_Bool(ImGuiKey_G, false)) act.kind = DA_CONTINUE;
+		if (igIsKeyPressed_Bool(ImGuiKey_G, false)) act.kind = DA_CONTINUE;
 		else if (igIsKeyPressed_Bool(ImGuiKey_P, false)) act.kind = DA_PAUSE;
 	}
 
