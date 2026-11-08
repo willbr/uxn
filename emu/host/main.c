@@ -2,10 +2,9 @@
  *
  *   emu.exe [--root DIR] [--zoom 1|2|3] rom.rom [args...]
  *
- * Organised for the debugger panel that follows: a Host state struct,
- * host_event() for one SDL event, host_frame() for one 60 Hz tick and
- * host_draw() for presentation. Right Ctrl toggles host->debugger_open and
- * never reaches the ROM. */
+ * A Host state struct, host_event() for one SDL event, host_frame() for one
+ * 60 Hz tick and host_draw() for presentation. Right Ctrl toggles the
+ * debugger (debugger.c draws it) and never reaches the ROM. */
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +14,7 @@
 #include "varvara.h"
 #include "keymap.h"
 #include "input_queue.h"
+#include "debugger.h"
 
 #define FRAME_NS (1000000000 / 60)
 /* Per vector call. Also stored in v->max_steps, which the input vectors use. */
@@ -29,8 +29,13 @@ typedef struct Host {
 	int zoom;
 	Varvara *v;
 	KeyState keys;
-	int debugger_open; /* toggled by Right Ctrl; the debugger panel will draw from this */
-	int busy;          /* a vector hit STEP_LIMIT and is suspended; resume at resume_pc */
+	int debugger_open; /* toggled by Right Ctrl */
+	DebuggerUI ui;     /* panels, console capture and the DebugSession (ui.sess.paused) */
+	char rom_path[1024];
+	/* A vector is suspended (at STEP_LIMIT, a breakpoint or a debugger step)
+	 * and resumes at resume_pc. This, not v->u.pc, is the resume point: other
+	 * code may run uxn_eval on the machine. */
+	int busy;
 	unsigned resume_pc;
 	InputQueue iq;     /* input held back while busy; replayed when the vector ends */
 	int quit;
@@ -42,7 +47,7 @@ typedef struct Host {
 
 static void on_console(void *ctx, int fd, int c)
 {
-	(void)ctx;
+	debugger_console_put(&((Host *)ctx)->ui, fd, c);
 	fputc(c, fd == 2 ? stderr : stdout);
 }
 
@@ -63,6 +68,7 @@ static Varvara *machine_new(const Host *h, const char *rom, int argc, char **arg
 	if (!v) return NULL;
 	varvara_init(v);
 	v->on_console = on_console;
+	v->ctx = (void *)h;
 	v->max_steps = STEP_LIMIT;
 	if ((h->has_root && varvara_set_root(v, h->root)) || varvara_load(v, rom)) {
 		varvara_close(v);
@@ -90,8 +96,10 @@ static void host_set_title(Host *h, const char *rom)
 int host_load_rom(Host *h, const char *path)
 {
 	char *argv[2];
+	char keep[sizeof h->rom_path];
 	Varvara *nv;
 
+	snprintf(keep, sizeof keep, "%s", path); /* path may be h->rom_path itself */
 	argv[0] = (char *)"emu";
 	argv[1] = (char *)path;
 	nv = machine_new(h, path, 2, argv);
@@ -106,7 +114,9 @@ int host_load_rom(Host *h, const char *path)
 	}
 	h->v = nv;
 	h->busy = 0;
+	h->ui.sess.paused = 0; /* breakpoints stay */
 	iq_init(&h->iq);
+	memcpy(h->rom_path, keep, sizeof keep);
 	host_set_title(h, path);
 	return 0;
 }
@@ -140,6 +150,17 @@ void host_open_rom_dialog(Host *h)
 
 /* ---- screen texture ---- */
 
+/* Size the window for the screen and, when the debugger is open, its panels. */
+static void host_layout(Host *h)
+{
+	int w, hh;
+
+	if (h->tex_w < 1) return;
+	debugger_window_size(h->debugger_open, h->tex_w, h->tex_h, h->zoom, &w, &hh);
+	SDL_SetWindowSize(h->win, w, hh);
+	h->ui.relayout = 1;
+}
+
 /* Recreate the streaming texture and resize the window when the ROM changed
  * the screen size. */
 static int host_sync_screen(Host *h)
@@ -157,11 +178,45 @@ static int host_sync_screen(Host *h)
 	SDL_SetTextureScaleMode(h->tex, SDL_SCALEMODE_NEAREST);
 	h->tex_w = v->width;
 	h->tex_h = v->height;
-	SDL_SetWindowSize(h->win, v->width * h->zoom, v->height * h->zoom);
+	host_layout(h);
 	return 0;
 }
 
 /* ---- input ---- */
+
+/* ---- running vectors ---- */
+
+static unsigned screen_vector(const Varvara *v)
+{
+	return (unsigned)v->u.dev[0x20] << 8 | v->u.dev[0x21];
+}
+
+static void host_check_halt(Host *h)
+{
+	if (varvara_halted(h->v)) {
+		h->exit_code = varvara_exit_code(h->v);
+		h->quit = 1;
+	}
+}
+
+/* Run a vector from pc until BRK, STEP_LIMIT or (when a breakpoint is set) a
+ * breakpoint. Leaves busy / resume_pc describing a vector that did not finish.
+ * With no breakpoints this is the plain fast path. */
+static void host_run(Host *h, unsigned pc)
+{
+	Varvara *v = h->v;
+	int r;
+
+	if (h->ui.sess.nbp > 0) {
+		v->u.pc = (ux_u16)pc;
+		r = dbg_continue(&h->ui.sess, v, STEP_LIMIT);
+	} else {
+		r = uxn_eval(&v->u, (ux_u16)pc, STEP_LIMIT);
+	}
+	v->u.fault = 0;
+	h->busy = (r == UXN_LIMIT);
+	if (h->busy) h->resume_pc = v->u.pc;
+}
 
 /* Input never runs a vector while another is suspended: an input vector would
  * overwrite u.pc and share the stacks. host_input() runs the call at once, or
@@ -169,7 +224,12 @@ static int host_sync_screen(Host *h)
 static void host_dispatch(Host *h, const InputEv *e)
 {
 	Varvara *v = h->v;
+	int dbg = h->ui.sess.nbp > 0;
 
+	/* With breakpoints the input function may only run one instruction; the
+	 * rest of its vector then goes through host_run, which checks them. A
+	 * breakpoint on the vector's first instruction is therefore not seen. */
+	v->max_steps = dbg ? 1 : STEP_LIMIT;
 	switch (e->kind) {
 	case IQ_BUTTON: varvara_button(v, (ux_u8)e->a, e->b); break;
 	case IQ_KEY: varvara_key(v, (ux_u8)e->a); break;
@@ -177,9 +237,11 @@ static void host_dispatch(Host *h, const InputEv *e)
 	case IQ_MOUSE_BUTTON: varvara_mouse_button(v, (ux_u8)e->a, e->b); break;
 	case IQ_SCROLL: varvara_mouse_scroll(v, e->a, e->b); break;
 	}
+	v->max_steps = STEP_LIMIT;
 	if (v->limit_hit) {
 		h->busy = 1;
 		h->resume_pc = v->u.pc;
+		if (dbg) host_run(h, h->resume_pc);
 	}
 }
 
@@ -187,6 +249,8 @@ static void host_input(Host *h, IqKind kind, int a, int b)
 {
 	InputEv e;
 
+	/* While the debugger has the machine paused, input is dropped. */
+	if (h->ui.sess.paused) return;
 	e.kind = kind;
 	e.a = a;
 	e.b = b;
@@ -227,6 +291,24 @@ static void host_release_buttons(Host *h)
 		if (mask & (1 << b)) host_input(h, IQ_BUTTON, 1 << b, 0);
 }
 
+/* Leave the paused state. Releases that were dropped while paused are sent
+ * now: Controller buttons the ROM has down that the host no longer holds, and
+ * any Mouse button the ROM has down (the debugger owns the mouse). */
+static void host_unpause(Host *h)
+{
+	ux_u8 stuck, mouse;
+	int b;
+
+	if (!h->ui.sess.paused) return;
+	h->ui.sess.paused = 0;
+	stuck = iq_stuck_buttons(h->v->u.dev[0x82], h->keys.buttons);
+	mouse = (ux_u8)(h->v->u.dev[0x96] & 7);
+	for (b = 0; b < 8; b++) {
+		if (stuck & (1 << b)) host_input(h, IQ_BUTTON, 1 << b, 0);
+		if (b < 3 && (mouse & (1 << b))) host_input(h, IQ_MOUSE_BUTTON, 1 << b, 0);
+	}
+}
+
 static void host_key(Host *h, const SDL_KeyboardEvent *k)
 {
 	ux_u8 changed, ch;
@@ -240,6 +322,8 @@ static void host_key(Host *h, const SDL_KeyboardEvent *k)
 	if (keymap_event(&h->keys, k->key, k->mod, k->down, &changed, &ch) == KEY_TOGGLE_DEBUGGER) {
 		h->debugger_open = !h->debugger_open;
 		host_release_buttons(h);
+		host_layout(h);
+		if (!h->debugger_open) host_unpause(h); /* a hidden debugger must not hold the ROM */
 		return;
 	}
 	if (h->debugger_open) {
@@ -319,26 +403,69 @@ void host_event(Host *h, const SDL_Event *e)
 int host_frame(Host *h)
 {
 	Varvara *v = h->v;
-	unsigned start = h->busy ? h->resume_pc : ((unsigned)v->u.dev[0x20] << 8 | v->u.dev[0x21]);
 
-	h->busy = 0;
-	if (start) {
-		int r = uxn_eval(&v->u, (ux_u16)start, STEP_LIMIT);
+	/* Paused in the debugger: nothing runs and queued input waits. */
+	if (!h->ui.sess.paused) {
+		unsigned start = h->busy ? h->resume_pc : screen_vector(v);
 
-		v->u.fault = 0;
-		h->busy = (r == UXN_LIMIT);
-		if (h->busy) h->resume_pc = v->u.pc;
+		h->busy = 0;
+		if (start) host_run(h, start);
+		if (!h->ui.sess.paused) host_replay(h);
 	}
-	host_replay(h);
-	if (varvara_halted(v)) {
-		h->exit_code = varvara_exit_code(v);
-		h->quit = 1;
-	}
+	host_check_halt(h);
 	if (host_sync_screen(h)) return 1;
 	varvara_render(v, h->rgba);
 	if (!SDL_UpdateTexture(h->tex, NULL, h->rgba, h->tex_w * 4)) return host_fail("SDL_UpdateTexture");
 	fflush(stdout);
 	return 0;
+}
+
+/* ---- debugger actions ---- */
+
+/* One debugger step. If no vector is suspended, the next one to run is the
+ * Screen vector, so stepping walks through the frame. The session runs from
+ * resume_pc, which is the only record of where the vector stands. */
+static void host_step(Host *h, int over)
+{
+	Varvara *v = h->v;
+	int r;
+
+	h->ui.sess.paused = 1;
+	if (!h->busy) {
+		unsigned sv = screen_vector(v);
+
+		if (!sv) return;
+		h->busy = 1;
+		h->resume_pc = sv;
+	}
+	v->u.pc = (ux_u16)h->resume_pc;
+	r = over ? dbg_step_over(&h->ui.sess, v) : dbg_step(&h->ui.sess, v);
+	v->u.fault = 0;
+	h->busy = (r == UXN_LIMIT);
+	if (h->busy) h->resume_pc = v->u.pc;
+	host_check_halt(h);
+}
+
+static void host_action(Host *h, DebugAction a)
+{
+	switch (a.kind) {
+	case DA_NONE: break;
+	case DA_PAUSE: h->ui.sess.paused = 1; break;
+	case DA_CONTINUE: host_unpause(h); break;
+	case DA_STEP: host_step(h, 0); break;
+	case DA_STEP_OVER: host_step(h, 1); break;
+	case DA_RESET:
+	case DA_RELOAD:
+		if (h->rom_path[0]) host_load_rom(h, h->rom_path);
+		break;
+	case DA_OPEN: host_open_rom_dialog(h); break;
+	case DA_ZOOM:
+		if (a.zoom >= 1 && a.zoom <= 3 && a.zoom != h->zoom) {
+			h->zoom = a.zoom;
+			host_layout(h);
+		}
+		break;
+	}
 }
 
 void host_draw(Host *h)
@@ -348,11 +475,20 @@ void host_draw(Host *h)
 	SDL_SetRenderDrawColor(h->ren, 0, 0, 0, 255);
 	SDL_RenderClear(h->ren);
 	dst.x = 0;
-	dst.y = 0;
+	dst.y = h->debugger_open ? DBG_MENU_H : 0;
 	dst.w = (float)(h->tex_w * h->zoom);
 	dst.h = (float)(h->tex_h * h->zoom);
 	SDL_RenderTexture(h->ren, h->tex, NULL, &dst);
-	if (h->busy) {
+	if (h->debugger_open) {
+		DebugInfo info;
+
+		info.paused = h->ui.sess.paused;
+		info.in_vector = h->busy;
+		info.pc = h->busy ? h->resume_pc : screen_vector(h->v);
+		info.zoom = h->zoom;
+		info.can_reload = h->rom_path[0] != '\0';
+		host_action(h, debugger_frame(&h->ui, h->ren, h->v, &info));
+	} else if (h->busy) {
 		SDL_SetRenderDrawColor(h->ren, 255, 255, 0, 255);
 		SDL_RenderDebugText(h->ren, 8, 8, "ROM busy");
 	}
@@ -414,6 +550,8 @@ int main(int argc, char **argv)
 	host.ren = SDL_CreateRenderer(host.win, NULL);
 	if (!host.ren) return host_fail("SDL_CreateRenderer");
 	host_set_title(&host, rom);
+	if (debugger_init(host.win, host.ren)) return host_fail("debugger_init");
+	host.ui.mem_addr = 0x100;
 	if (!SDL_StartTextInput(host.win)) return host_fail("SDL_StartTextInput");
 	if (varvara_halted(host.v)) {
 		host.exit_code = varvara_exit_code(host.v);
@@ -425,7 +563,10 @@ int main(int argc, char **argv)
 		SDL_Event e;
 		Uint64 now;
 
-		while (SDL_PollEvent(&e)) host_event(h, &e);
+		while (SDL_PollEvent(&e)) {
+			if (host.debugger_open) debugger_event(&e);
+			host_event(h, &e);
+		}
 		if (host.quit) break;
 		if (host_frame(h)) { host.exit_code = 1; break; }
 		host_draw(h);
@@ -439,6 +580,7 @@ int main(int argc, char **argv)
 	varvara_close(host.v);
 	free(host.v);
 	free(host.rgba);
+	debugger_shutdown();
 	if (host.tex) SDL_DestroyTexture(host.tex);
 	SDL_DestroyRenderer(host.ren);
 	SDL_DestroyWindow(host.win);
