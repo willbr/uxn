@@ -20,21 +20,27 @@ tools and Left are all vendored under `vendor/`. A fresh clone needs no network.
 Requirements (Windows): `clang`/`clang++`, `tcc` (only for `check-core`), and
 CMake + Ninja (only to build SDL3). No network.
 
+From a fresh clone:
+
 ```
 cd emu
 clang -o nob.exe nob.c
 ./nob.exe test
+./nob.exe emu
 ```
 
-`./nob.exe` with no argument builds nothing; it prints the usage line and
-exits with an error. Targets (see `main` in `nob.c`):
+`test` builds what it needs first (the reference tools via `ref`, when
+`build/ref/` is not complete yet) and runs `check-core` along with the test
+groups. `emu` builds SDL3 with CMake + Ninja the first time, which takes a
+few minutes. `./nob.exe` with no argument builds nothing; it prints the usage
+line and exits with an error. Targets (see `main` in `nob.c`):
 
 | Target | Does |
 |---|---|
 | `ref` | Builds the vendored uxnmin and assembles Left into `build/ref/left.rom` |
 | `check-core` | Compiles `core/uxn.c` strictly as C89 (clang and tcc) and checks it uses nothing from libc |
 | `cli` | Builds `build/uxncli.exe` |
-| `test` | Builds and runs all test groups (core, varvara, debug, keymap, ROM cross-checks against the references) |
+| `test` | Builds `ref` if needed, runs `check-core`, then builds and runs all test groups (core, varvara, varvara-cli ROM cross-checks against the references, debug, runner, keymap) |
 | `sdl3` | Builds static SDL3 with CMake + Ninja |
 | `imgui` | Builds cimgui/Dear ImGui objects |
 | `smoke` | Builds `build/smoke.exe`, a minimal SDL3 + ImGui program |

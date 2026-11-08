@@ -734,9 +734,29 @@ static bool run_runner_tests(void)
 	return cmd_run(&cmd);
 }
 
+/* The reference tools and ROMs the tests use; `test` builds them (the `ref`
+ * target) when any is missing, so a fresh clone can run `test` directly. */
+static bool ref_built(void)
+{
+	static const char *const outs[] = {
+		BUILD_REF "/uxnmin.exe", BUILD_REF "/drifloon.rom", BUILD_REF "/opctest.rom",
+		BUILD_REF "/console.rom", BUILD_REF "/left.rom"
+	};
+	size_t i;
+	for (i = 0; i < sizeof outs / sizeof outs[0]; i++)
+		if (file_exists(outs[i]) != 1) return false;
+	return true;
+}
+
 static bool run_tests(void)
 {
-	bool ok = build_run_core_test();
+	bool ok;
+
+	if (ref_built()) nob_log(INFO, "ref: already built");
+	else if (!build_ref()) return false;
+	ok = check_core();
+	printf("check-core: %s\n", ok ? "passed" : "FAILED");
+	ok = build_run_core_test() && ok;
 	ok = build_run_varvara_test() && ok;
 	ok = run_varvara_cli_tests() && ok;
 	ok = run_debug_tests() && ok;
