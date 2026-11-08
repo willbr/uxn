@@ -242,17 +242,44 @@ static void host_unpause(Host *h)
 	}
 }
 
+/* Whether the keyboard layout has AltGr: some key types a printable
+ * character with AltGr that it does not type alone. On Windows, SDL builds
+ * the SDL_KMOD_MODE column from Ctrl+Alt, which a layout without AltGr leaves
+ * empty. Checked at start and when the layout changes. */
+static int layout_has_altgr(void)
+{
+	int sc;
+
+	for (sc = SDL_SCANCODE_A; sc <= SDL_SCANCODE_NONUSBACKSLASH; sc++) {
+		SDL_Keycode plain, alt;
+
+		if (sc > SDL_SCANCODE_0 && sc < SDL_SCANCODE_MINUS) continue; /* Return..Space */
+		if (sc > SDL_SCANCODE_SLASH && sc != SDL_SCANCODE_NONUSBACKSLASH) continue;
+		plain = SDL_GetKeyFromScancode((SDL_Scancode)sc, SDL_KMOD_NONE, false);
+		alt = SDL_GetKeyFromScancode((SDL_Scancode)sc, SDL_KMOD_MODE, false);
+		if (alt >= 0x20 && alt != 0x7f && !(alt & SDLK_SCANCODE_MASK) && alt != plain) return 1;
+	}
+	return 0;
+}
+
 static void host_key(Host *h, const SDL_KeyboardEvent *k)
 {
 	ux_u8 changed, ch;
+	/* the key's character with Shift applied, for chords (Ctrl+Shift+V = 'V') */
+	SDL_Keycode typed = SDL_GetKeyFromScancode(k->scancode, k->mod & SDL_KMOD_SHIFT, false);
 
 	if (k->repeat) {
-		/* auto-repeat repeats characters (Backspace, Ctrl+letter), not buttons */
-		if (!h->debugger_open && keymap_event(&h->keys, k->key, k->mod, 1, &changed, &ch) == KEY_NONE && ch)
-			host_input(h, IQ_KEY, ch, 0);
+		/* auto-repeat repeats characters (Backspace, Ctrl+letter) and the
+		 * direction and Home buttons (Left moves on each Controller vector
+		 * call), not the modifier buttons */
+		if (!h->debugger_open) {
+			keymap_repeat(&h->keys, k->key, typed, k->mod, &changed, &ch);
+			if (changed) host_input(h, IQ_BUTTON, changed, 1);
+			if (ch) host_input(h, IQ_KEY, ch, 0);
+		}
 		return;
 	}
-	if (keymap_event(&h->keys, k->key, k->mod, k->down, &changed, &ch) == KEY_TOGGLE_DEBUGGER) {
+	if (keymap_event(&h->keys, k->key, typed, k->mod, k->down, &changed, &ch) == KEY_TOGGLE_DEBUGGER) {
 		h->debugger_open = !h->debugger_open;
 		host_release_buttons(h);
 		host_layout(h);
@@ -288,8 +315,12 @@ void host_event(Host *h, const SDL_Event *e)
 	case SDL_EVENT_KEY_UP:
 		host_key(h, &e->key);
 		break;
+	case SDL_EVENT_KEYMAP_CHANGED:
+		h->keys.altgr = layout_has_altgr();
+		break;
 	case SDL_EVENT_TEXT_INPUT:
-		if (!h->debugger_open) {
+		/* not while a chord is held: keymap_event already sent its character */
+		if (!h->debugger_open && keymap_text_allowed(&h->keys, SDL_GetModState())) {
 			const unsigned char *p = (const unsigned char *)e->text.text;
 			for (; *p; p++) host_input(h, IQ_KEY, *p, 0); /* UTF-8 bytes pass through */
 		}
@@ -444,6 +475,7 @@ int main(int argc, char **argv)
 
 	if (!SDL_Init(SDL_INIT_VIDEO)) return host_fail("SDL_Init");
 	host.open_event = SDL_RegisterEvents(1);
+	host.keys.altgr = layout_has_altgr();
 	v = machine_new(&host, rom);
 	if (!v) {
 		fprintf(stderr, "emu: cannot load %s\n", rom);

@@ -54,9 +54,19 @@ runs N screen frames headless and writes the screen as a PPM image.
 
 ### Controller keys
 
-Left Ctrl = A, Alt = B, Shift = Select, Home = Start, arrow keys = directions.
-Left Ctrl plus a letter sends that letter to the ROM, as uxn11 does.
-Tab, Return, Escape, Backspace and Delete pass through to the ROM.
+Left Ctrl = A, Alt = B (Right Alt: see below), Shift = Select, Home = Start,
+arrow keys = directions.
+Holding an arrow key or Home repeats it, as uxn11 does on key autorepeat.
+
+While Left Ctrl or Alt is held, a printable key also sends its character
+with Shift applied, as uxn11 does: Ctrl+s sends `s`, Ctrl+Shift+V `V`,
+Ctrl+/ `/`, Alt+a `a`. Tab, Return, Escape, Backspace and Delete pass through
+to the ROM. Other characters come from the system's text input.
+
+Right Alt is Alt (button B) only on a keyboard layout without AltGr. On a
+layout with AltGr (UK, German, US-International...) Right Alt is AltGr: it
+types characters such as `@` or `€` through text input and is never button B
+or a chord. The layout is checked at start and when it changes.
 
 ### Debugger
 
