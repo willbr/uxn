@@ -21,7 +21,11 @@ typedef struct Varvara {
 	ux_u8 ram[0x10000];
 	void (*on_console)(void *ctx, int fd, int c); /* fd 1 (write) or 2 (error) */
 	void *ctx;
-	unsigned long max_steps; /* per uxn_eval call; 0 = unlimited */
+	/* Step limit per uxn_eval call made by the input functions (varvara_button,
+	 * varvara_key, varvara_mouse_*, varvara_console_input); 0 = unlimited.
+	 * varvara_boot and varvara_frame take their own max_steps argument and do
+	 * not use this field. The SDL host sets both to 2,000,000. */
+	unsigned long max_steps;
 	VarvaraFile file[2];
 	ux_u8 *banks; /* banks 1-15 (15 x 64K), NULL if allocation failed; freed by varvara_close */
 	int has_root;

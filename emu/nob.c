@@ -687,11 +687,26 @@ static bool run_varvara_cli_tests(void)
 	return failures == 0;
 }
 
+/* Keymap tests need the SDL3 headers only (no link with SDL). */
+static bool run_keymap_tests(void)
+{
+	Cmd cmd = {0};
+	if (!mkdir_if_not_exists("build")) return false;
+	if (!mkdir_if_not_exists(TEST_DIR)) return false;
+	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-Werror", "-O0", "-D_CRT_SECURE_NO_WARNINGS",
+		"-Ivendor/sdl3/include", "-Icore", "-Ihost", "-o", "build/keymap_test.exe",
+		"tests/keymap_test.c", "host/keymap.c");
+	if (!cmd_run(&cmd)) return false;
+	cmd_append(&cmd, "build/keymap_test.exe");
+	return cmd_run(&cmd);
+}
+
 static bool run_tests(void)
 {
 	bool ok = build_run_core_test();
 	ok = build_run_varvara_test() && ok;
-	return run_varvara_cli_tests() && ok;
+	ok = run_varvara_cli_tests() && ok;
+	return run_keymap_tests() && ok;
 }
 
 /* ---- GUI dependencies: SDL3 (CMake) and Dear ImGui + cimgui (clang++) ---- */
@@ -770,6 +785,19 @@ static bool build_smoke(void)
 	return cmd_run(&cmd);
 }
 
+static bool build_emu(void)
+{
+	Cmd cmd = {0};
+	size_t i;
+	if (!build_sdl3() || !build_imgui() || !build_fs_obj()) return false;
+	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-O2", "-D_CRT_SECURE_NO_WARNINGS",
+		"-Icore", "-Ivarvara", "-Ivendor/sdl3/include", "-Ivendor/cimgui", "-Ihost",
+		"-o", "build/emu.exe", "host/main.c", "host/keymap.c", FS_OBJ);
+	for (i = 0; i < sizeof VARVARA_SRCS / sizeof VARVARA_SRCS[0]; i++) cmd_append(&cmd, VARVARA_SRCS[i]);
+	link_gui(&cmd);
+	return cmd_run(&cmd);
+}
+
 int main(int argc, char **argv)
 {
 	const char *target;
@@ -783,6 +811,7 @@ int main(int argc, char **argv)
 	if (strcmp(target, "sdl3") == 0) return build_sdl3() ? 0 : 1;
 	if (strcmp(target, "imgui") == 0) return build_imgui() ? 0 : 1;
 	if (strcmp(target, "smoke") == 0) return build_smoke() ? 0 : 1;
-	nob_log(ERROR, "usage: nob <target>   targets: ref check-core cli test sdl3 imgui smoke");
+	if (strcmp(target, "emu") == 0) return build_emu() ? 0 : 1;
+	nob_log(ERROR, "usage: nob <target>   targets: ref check-core cli test sdl3 imgui smoke emu");
 	return 1;
 }
