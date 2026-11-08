@@ -28,6 +28,10 @@ class UxnRom():
         self.scope = None
         self.refs = []
         self.labels = {}
+        # macros, types and words are shared by every ~included file, as in uxnasm
+        self.inline_words = {}
+        self.types = {}
+        self.words = []
         self.debug = False
         self.litlast = False
 
@@ -229,6 +233,7 @@ class UxnRom():
                 self.pc = ref_addr + 1
                 self.write_short(label_addr)
             elif rune == ':':
+                self.pc = ref_addr
                 self.write_short(label_addr)
             else:
                 assert False
@@ -334,6 +339,10 @@ class Tokeniser:
                 while self.data[self.i] not in '"':
                     self.i += 1
                 self.i += 1
+            elif c == '%':
+                # a macro name runs to whitespace, as in uxnasm (%C_{ is a name)
+                while self.data[self.i] not in self.whitespace:
+                    self.i += 1
             elif c in '{}()':
                 self.i += 1
             else:
@@ -368,9 +377,9 @@ def assemble(rom, data):
 
     xp = Tokeniser(data)
 
-    inline_words = {}
-    types = {}
-    words = []
+    inline_words = rom.inline_words
+    types = rom.types
+    words = rom.words
     queue = []
 
     var_ptr  = 0xc000
