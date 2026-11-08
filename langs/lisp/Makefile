@@ -1,6 +1,6 @@
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     detected_OS := Windows
-	PATH := $(PATH);../bin/
+	PATH := $(PATH);../../bin/
 	mkdir := mkdir
 	make := make
 	rm := del
@@ -12,7 +12,7 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	uxnasm := c:\tools\uxn\uxnasm.exe
 	uxncli := c:\tools\uxn\uxncli.exe
 	uxnemu := c:\tools\uxn\uxnemu.exe
-	uxn32 := c:\tools\uxn32\uxn32.exe
+	uxnfasm := python ..\..\langs\uxnfasm\uxnfasm.py
 	turye := c:\tools\uxn32\turye.rom font.uf2
 else
     detected_OS := $(shell uname)  # same as "uname -s"
@@ -28,44 +28,25 @@ else
     uxnasm := $(uxn_folder)/uxnasm
     uxncli := $(uxn_folder)/uxncli
     uxnemu := $(uxn_folder)/uxnemu
+	uxnfasm := python ../../langs/uxnfasm/uxnfasm.py
     turye := ~/src/turye/bin/turye.rom
 
 endif
 
-bin/test.tal: one.fth header.tal forth.fth uxnfasm.py sin-table.fth
+bin/out.tal: lisp.fth
 	- $(mkdir) bin
-#	python uxnfasm.py $<
-	python uxnfasm.py $< > $@
+	$(uxnfasm) $< > $@
 
-bin/test.rom: bin/test.tal
+bin/out.rom: bin/out.tal
 	$(uxnasm) $< $@
 #	make run
 
 wrun:
 	watchexec -cr --ignore "*.rom" "make run"
 
-run: bin/test.rom FORCE
+run: bin/out.rom FORCE
 #	$(uxncli) $<
-	$(uxnemu) $<
-
-wcat:
-	watchexec -cr --ignore "*.rom" "make cat"
-
-wsin:
-	watchexec -cr --ignore "*.rom" "make sin-table.fth"
-
-sin-table.fth: gen-sin-table.py
-	python $< $@
-	$(cat) $@
-
-cat: bin/test.tal
-	head -25 $<
-
-wscratch:
-	watchexec -cr --ignore "*.rom" "make scratch"
-
-scratch: FORCE
-	python scratch.py
-
+	$(uxncli) $< < test.txt
+ 
 FORCE: ;
 

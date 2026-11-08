@@ -1,5 +1,16 @@
 # uxn
 
+Experiments with the [uxn](https://100r.co/site/uxn.html) virtual machine.
+
+| Folder | What's in it |
+|---|---|
+| `emu/` | A uxn/Varvara emulator: C89 core, SDL3 window, debugger. See `emu/README.md`. |
+| `games/` | `pong`, `pico8-worm`, `10-print`, and notes for `squiddy`. |
+| `utils/` | `talie` (a uxntal assembler in Python, plus REPL and tests), `bin2tal`, `readline`. |
+| `langs/` | Language experiments: `forth`, `lisp`, `threif` (a 3-instruction Forth), `uxnfasm` (Forth to uxntal), `starting`. |
+| `docs/` | Design and plan for the emulator. |
+
+
 ## ops
 
 |       | Stack   |           |               |

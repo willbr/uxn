@@ -1,6 +1,7 @@
+
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     detected_OS := Windows
-	PATH := $(PATH);../bin/
+	PATH := $(PATH);../../bin/
 	mkdir := mkdir
 	make := make
 	rm := del
@@ -12,7 +13,6 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	uxnasm := c:\tools\uxn\uxnasm.exe
 	uxncli := c:\tools\uxn\uxncli.exe
 	uxnemu := c:\tools\uxn\uxnemu.exe
-	uxnfasm := python ..\uxnfasm\uxnfasm.py
 	turye := c:\tools\uxn32\turye.rom font.uf2
 else
     detected_OS := $(shell uname)  # same as "uname -s"
@@ -28,25 +28,37 @@ else
     uxnasm := $(uxn_folder)/uxnasm
     uxncli := $(uxn_folder)/uxncli
     uxnemu := $(uxn_folder)/uxnemu
-	uxnfasm := python ../uxnfasm/uxnfasm.py
     turye := ~/src/turye/bin/turye.rom
 
 endif
 
-bin/out.tal: game.fth FORCE
-	- $(mkdir) bin
-	$(uxnfasm) $< > $@
+wbuild:
+	watchexec -cr --ignore "*.rom" "make build"
 
-bin/out.rom: bin/out.tal
-	$(uxnasm) $< $@
-#	make run
+build-test: test-random.tal
+	$(cat) $<
+#	python ..\..\utils\talie\talie.py $< out.rom
+	$(uxnasm) $< out.rom
+#	python ..\..\utils\talie\uxndis.py out.rom
+#	python ..\uxnemu.py --trace out.rom
+#	python ..\uxnemu.py out.rom
+	c:\tools\uxn\uxncli.exe .\out.rom
 
-wrun:
-	watchexec -cr --ignore "*.rom" "make run"
+build: readline.tal font.tal
+#	$(cat) $<
+#	python ..\..\utils\talie\talie.py $< out.rom
+	$(uxnasm) $< out.rom
+#	python ..\..\utils\talie\uxndis.py out.rom
+#	python ..\uxnemu.py --trace out.rom
+#	python ..\uxnemu.py out.rom
+	make run
 
-run: bin/out.rom FORCE
-#	$(uxncli) $<
-	$(uxnemu) $<
- 
-FORCE: ;
+run:
+	$(uxnemu) out.rom
+
+font.tal: font.uf2
+	$(uxncli) ../bin2tal/out.rom $< > $@
+
+edit-font:
+	$(uxnemu) $(turye) font.uf2
 

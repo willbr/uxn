@@ -2,7 +2,7 @@
 
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
     detected_OS := Windows
-	PATH := $(PATH);../bin/
+	PATH := $(PATH);../../bin/
 	make := make
 	rm := del
 	cat := type
@@ -38,9 +38,9 @@ build: bin/forth.rom FORCE
 
 bin/forth.rom:	main.tal input.txt
 #	$(cat) $<
-#	python ..\src\talie.py $< out.rom
+#	python ..\..\utils\talie\talie.py $< out.rom
 	$(uxnasm) $< $@
-#	python ..\src\uxndis.py out.rom
+#	python ..\..\utils\talie\uxndis.py out.rom
 #	python ..\uxnemu.py --trace out.rom
 #	python ..\uxnemu.py out.rom
 
