@@ -45,6 +45,8 @@ typedef struct Host {
 	Uint32 open_event; /* custom event: open-ROM dialog finished (data1 = SDL_strdup'd path) */
 } Host;
 
+static int host_run_hook(Varvara *v, ux_u16 pc, unsigned long max_steps);
+
 static void on_console(void *ctx, int fd, int c)
 {
 	debugger_console_put(&((Host *)ctx)->ui, fd, c);
@@ -69,6 +71,7 @@ static Varvara *machine_new(const Host *h, const char *rom, int argc, char **arg
 	varvara_init(v);
 	v->on_console = on_console;
 	v->ctx = (void *)h;
+	v->run = host_run_hook;
 	v->max_steps = STEP_LIMIT;
 	if ((h->has_root && varvara_set_root(v, h->root)) || varvara_load(v, rom)) {
 		varvara_close(v);
@@ -199,23 +202,45 @@ static void host_check_halt(Host *h)
 	}
 }
 
-/* Run a vector from pc until BRK, STEP_LIMIT or (when a breakpoint is set) a
- * breakpoint. Leaves busy / resume_pc describing a vector that did not finish.
- * With no breakpoints this is the plain fast path. */
-static void host_run(Host *h, unsigned pc)
+/* Record how a vector run ended. A vector that did not finish stays suspended
+ * at resume_pc; one that did gets Varvara's deferred port clears applied. */
+static void host_vector_result(Host *h, int r)
+{
+	h->busy = (r == UXN_LIMIT);
+	if (h->busy) h->resume_pc = h->v->u.pc;
+	else varvara_vector_done(h->v);
+}
+
+/* The Varvara run hook: every vector Varvara starts (input, Screen) is a fresh
+ * start, so a breakpoint on its first instruction fires. With no breakpoints
+ * this is plain uxn_eval. */
+static int host_run_hook(Varvara *v, ux_u16 pc, unsigned long max_steps)
+{
+	Host *h = (Host *)v->ctx;
+
+	if (h->ui.sess.nbp > 0) return dbg_run(&h->ui.sess, v, pc, max_steps);
+	return uxn_eval(&v->u, pc, max_steps);
+}
+
+/* Run a vector from pc until BRK, STEP_LIMIT or a breakpoint. fresh: pc is a
+ * vector's entry (a breakpoint there fires before anything runs); otherwise
+ * it resumes a suspended vector and runs one instruction before checking. */
+static void host_run(Host *h, unsigned pc, int fresh)
 {
 	Varvara *v = h->v;
 	int r;
 
 	if (h->ui.sess.nbp > 0) {
-		v->u.pc = (ux_u16)pc;
-		r = dbg_continue(&h->ui.sess, v, STEP_LIMIT);
+		if (fresh) r = dbg_run(&h->ui.sess, v, (ux_u16)pc, STEP_LIMIT);
+		else {
+			v->u.pc = (ux_u16)pc;
+			r = dbg_continue(&h->ui.sess, v, STEP_LIMIT);
+		}
 	} else {
 		r = uxn_eval(&v->u, (ux_u16)pc, STEP_LIMIT);
 	}
 	v->u.fault = 0;
-	h->busy = (r == UXN_LIMIT);
-	if (h->busy) h->resume_pc = v->u.pc;
+	host_vector_result(h, r);
 }
 
 /* Input never runs a vector while another is suspended: an input vector would
@@ -224,12 +249,6 @@ static void host_run(Host *h, unsigned pc)
 static void host_dispatch(Host *h, const InputEv *e)
 {
 	Varvara *v = h->v;
-	int dbg = h->ui.sess.nbp > 0;
-
-	/* With breakpoints the input function may only run one instruction; the
-	 * rest of its vector then goes through host_run, which checks them. A
-	 * breakpoint on the vector's first instruction is therefore not seen. */
-	v->max_steps = dbg ? 1 : STEP_LIMIT;
 	switch (e->kind) {
 	case IQ_BUTTON: varvara_button(v, (ux_u8)e->a, e->b); break;
 	case IQ_KEY: varvara_key(v, (ux_u8)e->a); break;
@@ -237,11 +256,9 @@ static void host_dispatch(Host *h, const InputEv *e)
 	case IQ_MOUSE_BUTTON: varvara_mouse_button(v, (ux_u8)e->a, e->b); break;
 	case IQ_SCROLL: varvara_mouse_scroll(v, e->a, e->b); break;
 	}
-	v->max_steps = STEP_LIMIT;
 	if (v->limit_hit) {
 		h->busy = 1;
 		h->resume_pc = v->u.pc;
-		if (dbg) host_run(h, h->resume_pc);
 	}
 }
 
@@ -406,10 +423,11 @@ int host_frame(Host *h)
 
 	/* Paused in the debugger: nothing runs and queued input waits. */
 	if (!h->ui.sess.paused) {
-		unsigned start = h->busy ? h->resume_pc : screen_vector(v);
+		int fresh = !h->busy;
+		unsigned start = fresh ? screen_vector(v) : h->resume_pc;
 
 		h->busy = 0;
-		if (start) host_run(h, start);
+		if (start) host_run(h, start, fresh);
 		if (!h->ui.sess.paused) host_replay(h);
 	}
 	host_check_halt(h);
@@ -441,8 +459,7 @@ static void host_step(Host *h, int over)
 	v->u.pc = (ux_u16)h->resume_pc;
 	r = over ? dbg_step_over(&h->ui.sess, v) : dbg_step(&h->ui.sess, v);
 	v->u.fault = 0;
-	h->busy = (r == UXN_LIMIT);
-	if (h->busy) h->resume_pc = v->u.pc;
+	host_vector_result(h, r);
 	host_check_halt(h);
 }
 
@@ -552,6 +569,7 @@ int main(int argc, char **argv)
 	host_set_title(&host, rom);
 	if (debugger_init(host.win, host.ren)) return host_fail("debugger_init");
 	host.ui.mem_addr = 0x100;
+	snprintf(host.rom_path, sizeof host.rom_path, "%s", rom); /* Reset and Reload use it */
 	if (!SDL_StartTextInput(host.win)) return host_fail("SDL_StartTextInput");
 	if (varvara_halted(host.v)) {
 		host.exit_code = varvara_exit_code(host.v);

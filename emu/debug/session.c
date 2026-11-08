@@ -69,3 +69,13 @@ int dbg_continue(DebugSession *s, Varvara *v, unsigned long max_steps)
 		if (max_steps && n >= max_steps) return UXN_LIMIT;
 	}
 }
+
+int dbg_run(DebugSession *s, Varvara *v, ux_u16 pc, unsigned long max_steps)
+{
+	v->u.pc = pc;
+	if (dbg_has_breakpoint(s, pc)) {
+		s->paused = 1;
+		return UXN_LIMIT;
+	}
+	return dbg_continue(s, v, max_steps);
+}

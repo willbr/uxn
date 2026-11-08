@@ -30,6 +30,16 @@ typedef struct Varvara {
 	 * vector stopped at max_steps. The vector is then suspended with u.pc
 	 * as the resume address; a host may continue it with uxn_eval. */
 	int limit_hit;
+	/* Optional vector runner. NULL means plain uxn_eval. Every vector the
+	 * input functions, varvara_frame and varvara_console_input start goes
+	 * through it as a fresh start at pc; a debugger host installs one that
+	 * stops at breakpoints (it may return UXN_LIMIT early, leaving u.pc as the
+	 * resume address). limit_hit is set when the vector did not finish
+	 * (UXN_LIMIT from the step budget or the runner). */
+	int (*run)(struct Varvara *v, ux_u16 pc, unsigned long max_steps);
+	/* Port clears owed after a vector that stopped early: 1 = Controller/key,
+	 * 2 = Mouse scroll. Applied by varvara_vector_done. */
+	int pending_clear;
 	VarvaraFile file[2];
 	ux_u8 *banks; /* banks 1-15 (15 x 64K), NULL if allocation failed; freed by varvara_close */
 	int has_root;
@@ -61,6 +71,13 @@ int varvara_boot(Varvara *v, int argc, char **argv, unsigned long max_steps);
 /* Deliver one console event: type 1 stdin byte, 2 argument byte, 3 argument
  * end, 4 last argument end / end of input. Runs the console vector if set. */
 void varvara_console_input(Varvara *v, int c, int type);
+/* Call when a vector that stopped early (limit_hit) has finally finished:
+ * clears Controller/key and Mouse scroll, which varvara_key and
+ * varvara_mouse_scroll only clear themselves after a vector that completed.
+ * Harmless to call at any time. */
+void varvara_vector_done(Varvara *v);
+/* Run a vector through v->run (or uxn_eval). Internal. */
+int varvara_run(Varvara *v, ux_u16 pc, unsigned long max_steps);
 int varvara_halted(const Varvara *v);    /* dev[0x0f] != 0 */
 int varvara_exit_code(const Varvara *v); /* dev[0x0f] & 0x7f */
 /* "Console/write" style name for a device port, or NULL. */

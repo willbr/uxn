@@ -4,15 +4,32 @@
 #include <stddef.h>
 #include "varvara.h"
 
-static void run_vector(Varvara *v, unsigned port)
+int varvara_run(Varvara *v, ux_u16 pc, unsigned long max_steps)
+{
+	return v->run ? v->run(v, pc, max_steps) : uxn_eval(&v->u, pc, max_steps);
+}
+
+/* Returns nonzero if the vector finished (BRK, fault or no vector). */
+static int run_vector(Varvara *v, unsigned port)
 {
 	unsigned vec = (unsigned)v->u.dev[port] << 8 | v->u.dev[port + 1];
 
 	v->limit_hit = 0;
 	if (vec) {
-		v->limit_hit = uxn_eval(&v->u, (ux_u16)vec, v->max_steps) == UXN_LIMIT;
+		v->limit_hit = varvara_run(v, (ux_u16)vec, v->max_steps) == UXN_LIMIT;
 		v->u.fault = 0;
 	}
+	return !v->limit_hit;
+}
+
+void varvara_vector_done(Varvara *v)
+{
+	if (v->pending_clear & 1) v->u.dev[0x83] = 0;
+	if (v->pending_clear & 2) {
+		v->u.dev[0x9a] = v->u.dev[0x9b] = 0;
+		v->u.dev[0x9c] = v->u.dev[0x9d] = 0;
+	}
+	v->pending_clear = 0;
 }
 
 static void poke2(ux_u8 *d, unsigned v)
@@ -33,8 +50,8 @@ void varvara_key(Varvara *v, ux_u8 ch)
 {
 	if (!ch) return;
 	v->u.dev[0x83] = ch;
-	run_vector(v, 0x80);
-	v->u.dev[0x83] = 0;
+	if (run_vector(v, 0x80)) v->u.dev[0x83] = 0;
+	else v->pending_clear |= 1;
 }
 
 void varvara_mouse_move(Varvara *v, int x, int y)
@@ -56,9 +73,12 @@ void varvara_mouse_scroll(Varvara *v, int dx, int dy)
 {
 	poke2(&v->u.dev[0x9a], (unsigned)dx & 0xffff);
 	poke2(&v->u.dev[0x9c], (0u - (unsigned)dy) & 0xffff);
-	run_vector(v, 0x90);
-	poke2(&v->u.dev[0x9a], 0);
-	poke2(&v->u.dev[0x9c], 0);
+	if (run_vector(v, 0x90)) {
+		poke2(&v->u.dev[0x9a], 0);
+		poke2(&v->u.dev[0x9c], 0);
+	} else {
+		v->pending_clear |= 2;
+	}
 }
 
 const char *controller_port_name(ux_u8 port)

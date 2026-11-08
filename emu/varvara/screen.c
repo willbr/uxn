@@ -193,7 +193,7 @@ int varvara_frame(Varvara *v, unsigned long max_steps)
 	int r;
 
 	if (!vec) return 0;
-	r = uxn_eval(&v->u, (ux_u16)vec, max_steps);
+	r = varvara_run(v, (ux_u16)vec, max_steps);
 	v->u.fault = 0;
 	return r != UXN_BRK;
 }

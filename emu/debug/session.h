@@ -27,4 +27,10 @@ int  dbg_step_over(DebugSession *s, Varvara *v);  /* JSR/JSR2/JSI: run until ret
  * UXN_LIMIT, with s->paused unchanged. */
 int  dbg_continue(DebugSession *s, Varvara *v, unsigned long max_steps);
 
+/* Fresh start of a vector at pc: stops before executing anything if pc is a
+ * breakpoint (UXN_LIMIT, paused = 1, v->u.pc = pc); otherwise dbg_continue.
+ * Resuming a stopped vector uses dbg_continue, which runs one instruction
+ * first. This is the Varvara run hook's body. */
+int  dbg_run(DebugSession *s, Varvara *v, ux_u16 pc, unsigned long max_steps);
+
 #endif

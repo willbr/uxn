@@ -132,6 +132,102 @@ static void breakpoint_stops(void)
 	CHECK(dbg_continue(&s, vv, 2) == UXN_LIMIT && vv->u.pc == 0x0104 && s.paused == 0);
 }
 
+static DebugSession *hook_sess;
+static int bp_hook(Varvara *v, ux_u16 pc, unsigned long max_steps)
+{
+	return dbg_run(hook_sess, v, pc, max_steps);
+}
+
+static void entry_breakpoint(void)
+{
+	static const ux_u8 code[] = { 0x80, 0x01, 0x00 };
+	DebugSession s;
+
+	memset(&s, 0, sizeof s);
+	fresh(code, sizeof code);
+	dbg_toggle_breakpoint(&s, 0x0100);
+	CHECK(dbg_run(&s, vv, 0x0100, 1000) == UXN_LIMIT);
+	CHECK(s.paused == 1 && vv->u.pc == 0x0100 && vv->u.wst.ptr == 0);
+	/* continuing from it executes that instruction and proceeds */
+	CHECK(dbg_continue(&s, vv, 1000) == UXN_BRK);
+	CHECK(vv->u.wst.ptr == 1 && vv->u.wst.dat[0] == 0x01);
+}
+
+/* Controller vector at 0x100: LIT 83, DEI, BRK, with a breakpoint at the DEI. */
+static void setup_key_vector(DebugSession *s)
+{
+	static const ux_u8 code[] = { 0x80, 0x83, 0x16, 0x00 };
+
+	memset(s, 0, sizeof *s);
+	fresh(code, sizeof code);
+	vv->u.dev[0x80] = 0x01;
+	vv->u.dev[0x81] = 0x00;
+	hook_sess = s;
+	vv->run = bp_hook;
+	vv->max_steps = 100000;
+}
+
+static void key_clear_after_breakpoint(void)
+{
+	DebugSession s;
+
+	setup_key_vector(&s);
+	dbg_toggle_breakpoint(&s, 0x0102);
+	varvara_key(vv, 'A');
+	CHECK(vv->limit_hit == 1 && s.paused == 1 && vv->u.pc == 0x0102);
+	CHECK(vv->u.dev[0x83] == 'A'); /* not cleared while the vector is suspended */
+	CHECK(dbg_continue(&s, vv, 1000) == UXN_BRK);
+	CHECK(vv->u.wst.ptr == 1 && vv->u.wst.dat[0] == 0x41);
+	varvara_vector_done(vv);
+	CHECK(vv->u.dev[0x83] == 0 && vv->pending_clear == 0);
+	/* breakpoint at the vector's entry stops before any instruction */
+	setup_key_vector(&s);
+	dbg_toggle_breakpoint(&s, 0x0100);
+	varvara_key(vv, 'B');
+	CHECK(vv->limit_hit == 1 && vv->u.pc == 0x0100 && vv->u.wst.ptr == 0);
+	CHECK(dbg_continue(&s, vv, 1000) == UXN_BRK && vv->u.wst.dat[0] == 0x42);
+	varvara_vector_done(vv);
+	CHECK(vv->u.dev[0x83] == 0);
+}
+
+static void key_clear_after_step_limit(void)
+{
+	DebugSession s;
+
+	setup_key_vector(&s);
+	vv->run = NULL; /* plain uxn_eval */
+	vv->max_steps = 1;
+	varvara_key(vv, 'A');
+	CHECK(vv->limit_hit == 1 && vv->u.dev[0x83] == 'A');
+	CHECK(uxn_eval(&vv->u, vv->u.pc, 100) == UXN_BRK);
+	CHECK(vv->u.wst.ptr == 1 && vv->u.wst.dat[0] == 0x41);
+	varvara_vector_done(vv);
+	CHECK(vv->u.dev[0x83] == 0);
+	/* a vector that completes clears at once */
+	vv->max_steps = 100;
+	varvara_key(vv, 'C');
+	CHECK(vv->limit_hit == 0 && vv->u.dev[0x83] == 0);
+}
+
+static void scroll_clear_after_breakpoint(void)
+{
+	static const ux_u8 code[] = { 0x80, 0x9b, 0x16, 0x00 };
+	DebugSession s;
+
+	memset(&s, 0, sizeof s);
+	fresh(code, sizeof code);
+	vv->u.dev[0x90] = 0x01;
+	hook_sess = &s;
+	vv->run = bp_hook;
+	vv->max_steps = 1000;
+	dbg_toggle_breakpoint(&s, 0x0102);
+	varvara_mouse_scroll(vv, 3, 0);
+	CHECK(vv->limit_hit == 1 && vv->u.dev[0x9b] == 3);
+	CHECK(dbg_continue(&s, vv, 1000) == UXN_BRK && vv->u.wst.dat[0] == 3);
+	varvara_vector_done(vv);
+	CHECK(vv->u.dev[0x9b] == 0);
+}
+
 int main(void)
 {
 	int before, total = 0, bad = 0;
@@ -141,6 +237,10 @@ int main(void)
 	RUN(step_over_jsr);
 	RUN(step_over_runaway);
 	RUN(breakpoint_stops);
+	RUN(entry_breakpoint);
+	RUN(key_clear_after_breakpoint);
+	RUN(key_clear_after_step_limit);
+	RUN(scroll_clear_after_breakpoint);
 	if (vv) { varvara_close(vv); free(vv); }
 	printf("debug: %d passed, %d failed\n", total - bad, bad);
 	return bad != 0;

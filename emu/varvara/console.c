@@ -20,8 +20,9 @@ void varvara_console_input(Varvara *v, int c, int type)
 
 	v->u.dev[0x12] = (ux_u8)c;
 	v->u.dev[0x17] = (ux_u8)type;
+	v->limit_hit = 0;
 	if (vec) {
-		uxn_eval(&v->u, (ux_u16)vec, v->max_steps);
+		v->limit_hit = varvara_run(v, (ux_u16)vec, v->max_steps) == UXN_LIMIT;
 		v->u.fault = 0;
 	}
 }
