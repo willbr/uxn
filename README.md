@@ -1,90 +1,52 @@
 # uxn
 
-Experiments with the [uxn](https://100r.co/site/uxn.html) virtual machine.
+Experiments with the [uxn](https://100r.co/site/uxn.html) virtual machine: a
+uxn/Varvara emulator written from scratch, plus games, tools and language
+experiments that run on uxn.
 
-| Folder | What's in it |
-|---|---|
-| `emu/` | A uxn/Varvara emulator: C89 core, SDL3 window, debugger. See `emu/README.md`. |
+| Folder   | What's in it |
+|----------|--------------|
+| `emu/`   | The emulator: strict C89 CPU core, SDL3 window, cimgui debugger. It runs the [Left](https://100r.co/site/left.html) text editor. |
 | `games/` | `pong`, `pico8-worm`, `10-print`, and notes for `squiddy`. |
-| `utils/` | `talie` (a uxntal assembler in Python, plus REPL and tests), `bin2tal`, `readline`. |
-| `langs/` | Language experiments: `forth`, `lisp`, `threif` (a 3-instruction Forth), `uxnfasm` (Forth to uxntal), `starting`. |
-| `docs/` | Design and plan for the emulator. |
+| `utils/` | `talie` (a Uxntal assembler in Python, with a disassembler, emulator, REPL and tests), `bin2tal`, `readline`. |
+| `langs/` | Language experiments: `forth`, `lisp`, `threif` (a 3-instruction Forth), `uxnfasm` (Forth to Uxntal), `starting`. |
+| `docs/`  | The [Uxntal cheat sheet](docs/uxntal-cheatsheet.md), and the emulator's design and plan. |
 
+## Getting started
 
-## ops
+### The emulator
 
-|       | Stack   |           |               |
-|-------|---------|-----------|---------------|
-| 0x00  | brk/lit | Break     | a b c M[PC+1] |
-| 0x01  | inc     | Increment | a b c+1       |
-| 0x02  | pop     | Pop       | a b           |
-| 0x03  | dup     | Duplicate | a b c c       |
-| 0x04  | nip     | Nip       | a c           |
-| 0x05  | swp     | Swap      | a c b         |
-| 0x06  | ovr     | Over      | a b c b       |
-| 0x07  | rot     | Rotate    | b c a         |
-|       | Logic   |           |                   |
-| 0x08  | equ     | Equal     | a b?c             |
-| 0x09  | neq     | Not Equal | a b!c             |
-| 0x0a  | gth     | Greater   | a b\>c            |
-| 0x0b  | lth     | Lesser    | a b\<c            |
-| 0x0c  | jmp     | Jump      | a b {PC+=c}       |
-| 0x0d  | jcn     | JumpCond  | a {(b8)PC+=c}     |
-| 0x0e  | jsr     | JumpStash | a b {rs.PC PC+=c} |
-| 0x0f  | sth     | Stash     | a b {rs.c}        |
-|       | Memory |               |                |
-| 0x10  | ldz    | Load Zeropage | a b M[c8]      |
-| 0x11  | stz    | Save Zeropage | a {M[c8]=b}    |
-| 0x12  | ldr    | Load Rel      | a b M[PC+c8]   |
-| 0x13  | str    | Save Rel      | a {M[PC+c8]=b} |
-| 0x14  | lda    | Load Abs      | a b M[c16]     |
-| 0x15  | sta    | Save Abs      | a b {M[c16]=b} |
-| 0x16  | deo    | Device In     | a b D[c8]      |
-| 0x17  | dei    | Device Out    | a {D[c8]=b}    |
-|       | Arithmetic |              |                   |
-| 0x18  | add        | Add          | a b+c             |
-| 0x19  | sub        | Subtract     | a b-c             |
-| 0x1a  | mul        | Multiply     | a b\*c            |
-| 0x1b  | div        | Divide       | a b/c             |
-| 0x1c  | and        | And          | a b&c             |
-| 0x1d  | ora        | Or           | a b\|c            |
-| 0x1e  | eor        | Exclusive Or | a b^c             |
-| 0x1f  | sft        | Shift        | a b\>\>c8l\<\<c8h |
+```
+cd emu
+clang -o nob.exe nob.c
+./nob.exe test
+./nob.exe emu
+build/emu.exe build/ref/left.rom notes.txt
+```
 
+You need `clang` and `llvm-nm` (LLVM), `tcc`, CMake and Ninja. On Windows, clang
+also needs Visual Studio Build Tools with the Windows SDK. Everything else is
+vendored, so building needs no network. See [`emu/README.md`](emu/README.md)
+for the controls and the debugger.
 
-## labels
+### Assembling with talie
 
-|type  |                |         |size     |
-|------|----------------|---------|---------|
-|`.label`|literal address |zero page|one byte |
-|`,label`|relative address|         |one byte |
-|`;label`|literal address |         |one short|
-|`:label`|raw address     |         |one short|
+```
+python utils/talie/talie.py input.tal output.rom
+```
 
-    @label
-    &sub-label
-    label/sub-label
+talie needs Python and the `rich` package. It uses the 2022 dialect of Uxntal
+and matches the output of the May 2022 `uxnasm` byte for byte. The
+[cheat sheet](docs/uxntal-cheatsheet.md#syntax) lists how the dialects differ.
 
-## modes
+### The other projects
 
-- keep
-- return
-- short
+Each project has its own `Makefile`. These need `make`, plus `uxnasm`, `uxncli`
+and `uxnemu` from outside this repo (on Windows, in `c:\tools\uxn`). Projects
+written in Forth also need Python, and the `w*` targets need `watchexec`.
 
-## runes
+## Licence
 
-- `%` macro-define
-- `|` pad absolute
-- `$` pad relative
-- `@` label-define
-- `&` sublabel-define
-- `~` include
-- `#` literal hex
-- `.` literal addr zero-page
-- `,` literal addr relative
-- `;` literal addr absolute
-- `:` raw addr absolute
-- `'` raw char
-- `"` raw word
-
-
+This repo's own code is under the [MIT licence](LICENSE). Third-party code keeps
+its own licence: everything in `emu/vendor/` has a licence file alongside it,
+and `langs/lisp/lisp.c` carries its licence in its header.
