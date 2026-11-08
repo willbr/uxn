@@ -1,6 +1,10 @@
 /* SDL3 desktop host for the Varvara emulator.
  *
- *   emu.exe [--root DIR] [--zoom 1|2|3] rom.rom [args...]
+ *   emu.exe [--root DIR] [--zoom 1|2|3] [--no-integer] rom.rom [args...]
+ *
+ * The window is resizable; the screen is scaled to fit it (whole-number
+ * scales unless --no-integer or the Zoom menu turns integer scaling off).
+ * --zoom picks the starting size, lowered until the window fits the display.
  *
  * A Host state struct, host_event() for one SDL event, host_frame() for one
  * 60 Hz tick and host_draw() for presentation. Right Ctrl toggles the
@@ -29,7 +33,9 @@ typedef struct Host {
 	SDL_Texture *tex;
 	int tex_w, tex_h;
 	ux_u8 *rgba;
-	int zoom;
+	int zoom;    /* requested zoom (Zoom menu): sets the window size */
+	int integer; /* integer scaling */
+	LayoutView view; /* where the screen was drawn last frame */
 	Varvara *v;
 	KeyState keys;
 	int debugger_open; /* toggled by Right Ctrl */
@@ -163,15 +169,62 @@ void host_open_rom_dialog(Host *h)
 
 /* ---- screen texture ---- */
 
-/* Size the window for the screen and, when the debugger is open, its panels. */
+/* The usable area of the window's display (or the primary display before
+ * the window exists), less the window frame. */
+static SDL_Rect host_usable(const Host *h)
+{
+	SDL_Rect r;
+	SDL_DisplayID d = h->win ? SDL_GetDisplayForWindow(h->win) : SDL_GetPrimaryDisplay();
+	int top = 31, left = 8, bottom = 8, right = 8; /* a guess before the window exists */
+
+	if (!d || !SDL_GetDisplayUsableBounds(d, &r)) {
+		r.x = r.y = 0;
+		r.w = r.h = 1 << 14;
+		return r;
+	}
+	if (h->win) SDL_GetWindowBordersSize(h->win, &top, &left, &bottom, &right);
+	r.w -= left + right;
+	r.h -= top + bottom;
+	return r;
+}
+
+/* Window size for the screen at the requested zoom, lowered until it fits the
+ * display, and clamped to it when even 1x does not (the screen then shrinks). */
+static void host_fit_size(const Host *h, int sw, int sh, int *w, int *hh)
+{
+	SDL_Rect r = host_usable(h);
+	int z = layout_fit_zoom(h->debugger_open, sw, sh, h->zoom, r.w, r.h);
+
+	layout_window_size(h->debugger_open, sw, sh, z, w, hh);
+	if (*w > r.w) *w = r.w;
+	if (*hh > r.h) *hh = r.h;
+}
+
+/* Size the window for the screen and, when the debugger is open, its panels.
+ * A maximized or fullscreen window keeps its size. */
 static void host_layout(Host *h)
 {
-	int w, hh;
+	int w, hh, x, y;
+	SDL_Rect r;
 
 	if (h->tex_w < 1) return;
-	debugger_window_size(h->debugger_open, h->tex_w, h->tex_h, h->zoom, &w, &hh);
-	SDL_SetWindowSize(h->win, w, hh);
 	h->ui.relayout = 1;
+	if (SDL_GetWindowFlags(h->win) & (SDL_WINDOW_MAXIMIZED | SDL_WINDOW_FULLSCREEN)) return;
+	host_fit_size(h, h->tex_w, h->tex_h, &w, &hh);
+	SDL_SetWindowSize(h->win, w, hh);
+	/* keep it on screen */
+	r = host_usable(h);
+	if (SDL_GetWindowPosition(h->win, &x, &y) && (x < r.x || y < r.y || x + w > r.x + r.w || y + hh > r.y + r.h)) {
+		SDL_DisplayID d = SDL_GetDisplayForWindow(h->win);
+		SDL_SetWindowPosition(h->win, SDL_WINDOWPOS_CENTERED_DISPLAY(d), SDL_WINDOWPOS_CENTERED_DISPLAY(d));
+	}
+}
+
+/* Where the screen goes this frame, from the render output size. */
+static void host_view(Host *h, int *out_w, int *out_h)
+{
+	if (!SDL_GetRenderOutputSize(h->ren, out_w, out_h)) *out_w = *out_h = 0;
+	h->view = layout_view(h->debugger_open, h->tex_w, h->tex_h, *out_w, *out_h, h->integer);
 }
 
 /* Recreate the streaming texture and resize the window when the ROM changed
@@ -188,7 +241,7 @@ static int host_sync_screen(Host *h)
 		v->width, v->height);
 	h->rgba = (ux_u8 *)malloc((size_t)v->width * (size_t)v->height * 4);
 	if (!h->tex || !h->rgba) return host_fail("create screen texture");
-	SDL_SetTextureScaleMode(h->tex, SDL_SCALEMODE_NEAREST);
+	SDL_SetTextureScaleMode(h->tex, SDL_SCALEMODE_PIXELART); /* nearest; even pixels at fractional scales */
 	h->tex_w = v->width;
 	h->tex_h = v->height;
 	host_layout(h);
@@ -297,7 +350,19 @@ static void host_key(Host *h, const SDL_KeyboardEvent *k)
 
 static void host_mouse_pos(Host *h, float x, float y)
 {
-	host_input(h, IQ_MOUSE_MOVE, (int)floorf(x / (float)h->zoom), (int)floorf(y / (float)h->zoom));
+	float rx = x, ry = y;
+	int px, py;
+
+	if (h->view.scale <= 0) return;
+	SDL_RenderCoordinatesFromWindow(h->ren, x, y, &rx, &ry); /* window -> render pixels */
+	px = (int)floorf((rx - h->view.x) / h->view.scale);
+	py = (int)floorf((ry - h->view.y) / h->view.scale);
+	/* outside the screen (letterbox): pin to its edge */
+	if (px < 0) px = 0;
+	if (py < 0) py = 0;
+	if (px >= h->tex_w) px = h->tex_w - 1;
+	if (py >= h->tex_h) py = h->tex_h - 1;
+	host_input(h, IQ_MOUSE_MOVE, px, py);
 }
 
 void host_event(Host *h, const SDL_Event *e)
@@ -327,6 +392,9 @@ void host_event(Host *h, const SDL_Event *e)
 		break;
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
 		host_release_buttons(h);
+		break;
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+		h->ui.relayout = 1; /* the debugger panels follow the window */
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
 		if (!h->debugger_open) host_mouse_pos(h, e->motion.x, e->motion.y);
@@ -405,20 +473,25 @@ static void host_action(Host *h, DebugAction a)
 			host_layout(h);
 		}
 		break;
+	case DA_INTEGER:
+		h->integer = !h->integer;
+		break;
 	}
 }
 
 void host_draw(Host *h)
 {
 	SDL_FRect dst;
+	int out_w, out_h;
 
 	SDL_SetRenderDrawColor(h->ren, 0, 0, 0, 255);
 	SDL_RenderClear(h->ren);
-	dst.x = 0;
-	dst.y = h->debugger_open ? DBG_MENU_H : 0;
-	dst.w = (float)(h->tex_w * h->zoom);
-	dst.h = (float)(h->tex_h * h->zoom);
-	SDL_RenderTexture(h->ren, h->tex, NULL, &dst);
+	host_view(h, &out_w, &out_h);
+	dst.x = h->view.x;
+	dst.y = h->view.y;
+	dst.w = h->view.w;
+	dst.h = h->view.h;
+	if (dst.w > 0 && dst.h > 0) SDL_RenderTexture(h->ren, h->tex, NULL, &dst);
 	if (h->debugger_open) {
 		DebugInfo info;
 
@@ -426,6 +499,10 @@ void host_draw(Host *h)
 		info.in_vector = h->rn.busy;
 		info.pc = h->rn.busy ? h->rn.resume_pc : runner_screen_vector(&h->rn);
 		info.zoom = h->zoom;
+		info.integer = h->integer;
+		info.view = h->view;
+		info.win_w = out_w;
+		info.win_h = out_h;
 		info.can_reload = h->rom_path[0] != '\0';
 		host_action(h, debugger_frame(&h->ui, h->ren, h->v, &info));
 	} else if (h->rn.busy) {
@@ -439,7 +516,7 @@ void host_draw(Host *h)
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: emu [--root DIR] [--zoom 1|2|3] rom.rom [args...]\n");
+	fprintf(stderr, "usage: emu [--root DIR] [--zoom 1|2|3] [--no-integer] rom.rom [args...]\n");
 }
 
 int main(int argc, char **argv)
@@ -453,6 +530,7 @@ int main(int argc, char **argv)
 
 	memset(&host, 0, sizeof host);
 	host.zoom = 2;
+	host.integer = 1;
 	while (first < argc && strncmp(argv[first], "--", 2) == 0) {
 		if (strcmp(argv[first], "--root") == 0 && first + 1 < argc) {
 			snprintf(host.root, sizeof host.root, "%s", argv[first + 1]);
@@ -462,6 +540,9 @@ int main(int argc, char **argv)
 			host.zoom = atoi(argv[first + 1]);
 			if (host.zoom < 1 || host.zoom > 3) { usage(); return 2; }
 			first += 2;
+		} else if (strcmp(argv[first], "--no-integer") == 0) {
+			host.integer = 0;
+			first += 1;
 		} else {
 			usage();
 			return 2;
@@ -486,7 +567,12 @@ int main(int argc, char **argv)
 	/* Boot before the window opens, so it opens at the ROM's screen size. A
 	 * reset vector that outlasts STEP_LIMIT finishes over the first frames. */
 	host_start(&host, v, host.rom_nargs, host.rom_args);
-	host.win = SDL_CreateWindow("emu", host.v->width * host.zoom, host.v->height * host.zoom, 0);
+	{
+		int w, hh;
+
+		host_fit_size(&host, host.v->width, host.v->height, &w, &hh);
+		host.win = SDL_CreateWindow("emu", w, hh, SDL_WINDOW_RESIZABLE);
+	}
 	if (!host.win) return host_fail("SDL_CreateWindow");
 	host.ren = SDL_CreateRenderer(host.win, NULL);
 	if (!host.ren) return host_fail("SDL_CreateRenderer");

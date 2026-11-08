@@ -63,18 +63,6 @@ void debugger_event(const SDL_Event *e)
 	if (g_ctx) ImGui_ImplSDL3_ProcessEvent(e);
 }
 
-void debugger_window_size(int open, int sw, int sh, int zoom, int *w, int *h)
-{
-	*w = sw * zoom;
-	*h = sh * zoom;
-	if (open) {
-		if (*w < DBG_LEFT_MIN_W) *w = DBG_LEFT_MIN_W;
-		*w += DBG_PANEL_W;
-		*h += DBG_MENU_H + DBG_BOTTOM_H;
-		if (*h < DBG_MIN_H) *h = DBG_MIN_H;
-	}
-}
-
 void debugger_console_put(DebuggerUI *ui, int fd, int c)
 {
 	(void)fd;
@@ -229,10 +217,13 @@ DebugAction debugger_frame(DebuggerUI *ui, SDL_Renderer *ren, const Varvara *v, 
 	igNewFrame();
 	io = igGetIO_Nil();
 
-	debugger_window_size(1, v->width, v->height, info->zoom, &win_w, &win_h);
-	scr_w = v->width * info->zoom;
-	if (scr_w < DBG_LEFT_MIN_W) scr_w = DBG_LEFT_MIN_W;
-	bottom = DBG_MENU_H + v->height * info->zoom;
+	win_w = info->win_w;
+	win_h = info->win_h;
+	scr_w = win_w - DBG_PANEL_W; /* the panel column sits at the right edge */
+	if (scr_w < 0) scr_w = 0;
+	bottom = DBG_MENU_H + (int)info->view.h;
+	if (bottom > win_h - DBG_BOTTOM_H) bottom = win_h - DBG_BOTTOM_H;
+	if (bottom < DBG_MENU_H) bottom = DBG_MENU_H;
 
 	if (igBeginMainMenuBar()) {
 		if (igBeginMenu("File", true)) {
@@ -250,6 +241,8 @@ DebugAction debugger_frame(DebuggerUI *ui, SDL_Renderer *ren, const Varvara *v, 
 					act.zoom = z;
 				}
 			}
+			igSeparator();
+			if (igMenuItem_Bool("Integer scaling", NULL, info->integer != 0, true)) act.kind = DA_INTEGER;
 			igEndMenu();
 		}
 		igEndMainMenuBar();

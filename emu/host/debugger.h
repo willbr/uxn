@@ -7,18 +7,13 @@
 #include "varvara.h"
 #include "session.h"
 
-/* Window layout with the debugger open: the Varvara screen sits below the
- * menu bar, the panels in a column to its right and under it. */
-#define DBG_MENU_H 20
-#define DBG_PANEL_W 560
-#define DBG_LEFT_MIN_W 480 /* the Memory panel needs this much width under a small screen */
-#define DBG_BOTTOM_H 260
-#define DBG_MIN_H 700
+#include "layout.h"
+
 #define DBG_CON_SIZE 16384
 
 typedef enum {
 	DA_NONE, DA_PAUSE, DA_CONTINUE, DA_STEP, DA_STEP_OVER,
-	DA_RESET, DA_OPEN, DA_RELOAD, DA_ZOOM
+	DA_RESET, DA_OPEN, DA_RELOAD, DA_ZOOM, DA_INTEGER
 } DebugActionKind;
 
 typedef struct DebugAction {
@@ -31,7 +26,10 @@ typedef struct DebugInfo {
 	int paused;
 	int in_vector;   /* a vector is suspended at pc (otherwise pc is the next Screen vector) */
 	unsigned pc;
-	int zoom;
+	int zoom;        /* the Zoom menu's choice (sets the window size) */
+	int integer;     /* integer scaling on */
+	LayoutView view; /* where the screen is drawn this frame */
+	int win_w, win_h; /* render output size */
 	int can_reload;  /* a ROM path is known */
 } DebugInfo;
 
@@ -44,8 +42,6 @@ typedef struct DebuggerUI {
 	char mem_text[8];
 } DebuggerUI;
 
-/* Window size for a screen of sw x sh pixels at the given zoom. */
-void debugger_window_size(int open, int sw, int sh, int zoom, int *w, int *h);
 
 /* Creates the imgui context and backends. Returns 0 on success. */
 int debugger_init(SDL_Window *win, SDL_Renderer *ren);

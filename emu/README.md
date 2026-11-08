@@ -51,12 +51,19 @@ All output goes to `build/` (ignored by git).
 ## Run
 
 ```
-build/emu.exe    [--root DIR] [--zoom 1|2|3] rom.rom [args...]
+build/emu.exe    [--root DIR] [--zoom 1|2|3] [--no-integer] rom.rom [args...]
 build/uxncli.exe [--root DIR] [--max-steps N] [--frames N --dump out.ppm] rom.rom [args...]
 ```
 
 `--root` confines the File device to a directory. `--frames N --dump out.ppm`
 runs N screen frames headless and writes the screen as a PPM image.
+
+The emu window is resizable and the screen scales to fit it. With integer
+scaling on (the default) it uses whole-number scales for crisp pixels;
+`--no-integer`, or Zoom > Integer scaling in the debugger's menu, lets it fill
+the window instead. `--zoom` (default 2) sets the starting size and is lowered
+until the window fits the display; a screen bigger than the display at 1x
+shrinks to fit.
 
 ### Controller keys
 

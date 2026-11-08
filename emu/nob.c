@@ -701,6 +701,18 @@ static bool run_keymap_tests(void)
 	return cmd_run(&cmd);
 }
 
+/* Window layout: pure C, no SDL. */
+static bool run_layout_tests(void)
+{
+	Cmd cmd = {0};
+	if (!mkdir_if_not_exists("build")) return false;
+	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-Werror", "-O0",
+		"-Ihost", "-o", "build/layout_test.exe", "tests/layout_test.c", "host/layout.c");
+	if (!cmd_run(&cmd)) return false;
+	cmd_append(&cmd, "build/layout_test.exe");
+	return cmd_run(&cmd);
+}
+
 /* Disassembler and debug session: strict C89, no SDL. */
 static bool run_debug_tests(void)
 {
@@ -761,6 +773,7 @@ static bool run_tests(void)
 	ok = run_varvara_cli_tests() && ok;
 	ok = run_debug_tests() && ok;
 	ok = run_runner_tests() && ok;
+	ok = run_layout_tests() && ok;
 	return run_keymap_tests() && ok;
 }
 
@@ -847,7 +860,7 @@ static bool build_emu(void)
 	if (!build_sdl3() || !build_imgui() || !build_fs_obj()) return false;
 	cmd_append(&cmd, "clang", "-std=c99", "-Wall", "-Wextra", "-O2", "-D_CRT_SECURE_NO_WARNINGS",
 		"-Icore", "-Ivarvara", "-Idebug", "-Ivendor/sdl3/include", "-Ivendor/cimgui", "-Ihost",
-		"-o", "build/emu.exe", "host/main.c", "host/debugger.c", "host/keymap.c", "host/input_queue.c", "host/runner.c",
+		"-o", "build/emu.exe", "host/main.c", "host/debugger.c", "host/keymap.c", "host/input_queue.c", "host/runner.c", "host/layout.c",
 		"debug/disasm.c", "debug/session.c", FS_OBJ);
 	for (i = 0; i < sizeof VARVARA_SRCS / sizeof VARVARA_SRCS[0]; i++) cmd_append(&cmd, VARVARA_SRCS[i]);
 	link_gui(&cmd);
