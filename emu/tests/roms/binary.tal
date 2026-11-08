@@ -1,0 +1,14 @@
+( echoes every byte read from stdin to stdout, ignoring the argument and end events )
+
+|10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
+
+|0100
+
+	;on-console .Console/vector DEO2
+	BRK
+
+@on-console ( -> )
+	.Console/type DEI #01 NEQ ?&done
+	.Console/read DEI .Console/write DEO
+	&done
+	BRK
